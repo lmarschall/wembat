@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  uid       String   @id @default(cuid())
+  challenge String   @unique @default("")
+  mail      String   @unique
+  token     String   @default("")
+  devices   Device[]
+  claims    Claim[]
+}
+
+model Device {
+  id                  Int    @id @default(autoincrement())
+  userUId             String
+  credentialPublicKey Bytes
+  credentialId        Bytes  @unique
+  counter             Int
+  transports          String?
+  user                User   @relation(fields: [userUId], references: [uid])
+}
+
+model Report {
+  uid    String       @id @default(cuid())
+  score  Float        @default(0.0)
+  date   DateTime     @default(now())
+  status ReportStatus @default(Created)
+  appUId String
+  html   String       @default("")
+  app    Application  @relation(fields: [appUId], references: [uid])
+}
+
+model Claim {
+  uid     String      @id @default(cuid())
+  url     String
+  token   String      @unique @default(cuid())
+  appUId  String
+  userUId String
+  app     Application @relation(fields: [appUId], references: [uid])
+  user    User @relation(fields: [userUId], references: [uid])
+}
+
+model Application {
+  uid         String   @id @default(cuid())
+  name        String   @default("")
+  url         String   @unique
+  description String   @default("")
+  icon        String   @default("")
+  categories  String   @default("")
+  screenshots String   @default("")
+  token       String   @default("")
+  claims      Claim[]
+  reports     Report[]
+}
+
+model Client {
+  uid    String @id @default(cuid())
+  secret String @default("")
+}
+
+enum ReportStatus {
+  Created
+  Handled
+  Finished
+}
