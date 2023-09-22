@@ -84,7 +84,9 @@ router.post('/request-register', async (req, res) => {
         supportedAlgorithmIDs: [-7, -257]
     };
 
-    const options = generateRegistrationOptions(opts);
+    const options = await generateRegistrationOptions(opts);
+
+    console.log("update user challenge");
 
     // update the user challenge
     await prisma.user.update({
@@ -109,6 +111,8 @@ router.post('/register', async (req, res) => {
     // get the signed credentials and the expected challenge from request
     const { challenge, credentials, deviceToken } = req.body.challengeResponse;
 
+    // TODO add check for largeBlob supported
+
     // find user with expected challenge
     const user = await prisma.user.findUnique({
         where: {
@@ -128,12 +132,15 @@ router.post('/register', async (req, res) => {
 
     let verification;
     try {
+        // credentials.response.id = credentials.id;
         const opts = {
-            credential: credentials,
+            response: credentials,
             expectedChallenge: `${user.challenge}`,
             expectedOrigin,
             expectedRPID: rpId,
         };
+        // opts.credential.response.id = opts.credential.id;
+        console.log(opts);
         verification = await verifyRegistrationResponse(opts);
     } catch (error) {
         const _error = error;
@@ -153,39 +160,41 @@ router.post('/register', async (req, res) => {
         console.log(deviceToken);
         console.log(user.devices.length);
 
+        // TODO handle multiple devices
+
         // check if user has already registered devices
         // if so, check if token for new device was provided
         // if not, return error and generate token and email
-        if(user.devices.length) {
+        // if(user.devices.length) {
 
-            if(deviceToken == "") {
+        //     if(deviceToken == "") {
 
-                //generate token and send mail
-                const token = "XYZ"
+        //         // TODO generate token and send mail
+        //         const token = "XYZ"
 
-                await prisma.user.update({
-                    where: {
-                        uid: user.uid
-                    },
-                    data: {
-                        token: token,
-                    }
-                }).catch((err: any) => {
-                    console.log(err);
-                    return res.status(400).send();
-                })
+        //         await prisma.user.update({
+        //             where: {
+        //                 uid: user.uid
+        //             },
+        //             data: {
+        //                 token: token,
+        //             }
+        //         }).catch((err: any) => {
+        //             console.log(err);
+        //             return res.status(400).send();
+        //         })
 
-                return res.status(500).send();
-            } else {
+        //         return res.status(500).send();
+        //     } else {
 
-                if(user.token != deviceToken) return res.status(400).send();
-            }
-        }
+        //         if(user.token != deviceToken) return res.status(400).send();
+        //     }
+        // }
 
         // check if device is already registered with user, else create device registration for user
         await prisma.device.upsert({
             where: {
-                credentialId: credentialID
+                credentialId: Buffer.from(credentialID)
             },
             update: {
                 userUId: user.uid,
@@ -193,8 +202,8 @@ router.post('/register', async (req, res) => {
             },
             create: {
                 userUId: user.uid,
-                credentialPublicKey: credentialPublicKey,
-                credentialId: credentialID,
+                credentialPublicKey: Buffer.from(credentialPublicKey),
+                credentialId: Buffer.from(credentialID),
                 counter: counter
             }
         })
@@ -222,6 +231,8 @@ router.post('/login', async (req, res) => {
         return res.status(400).send();
     }) as UserWithDevices
 
+    console.log(user);
+
     if (!user) return res.status(400).send();
 
     const opts = {
@@ -237,9 +248,15 @@ router.post('/login', async (req, res) => {
          */
         userVerification: 'preferred',
         rpId,
+        // TODO determine write or read for largeblob
+        extensions: {
+            largeBlob: {
+                read: true
+            }
+        },
     };
 
-    const options = generateAuthenticationOptions(opts);
+    const options = await generateAuthenticationOptions(opts);
 
     // update the user challenge
     await prisma.user.update({
@@ -295,13 +312,13 @@ router.post('/login-challenge', async (req, res) => {
     let verification;
     try {
         const opts = {
-            credential: credentials,
+            response: credentials,
             expectedChallenge: `${user.challenge}`,
             expectedOrigin,
             expectedRPID: rpId,
             authenticator: dbAuthenticator,
         };
-        verification = verifyAuthenticationResponse(opts);
+        verification = await verifyAuthenticationResponse(opts);
     } catch (error) {
         const _error = error;
         console.error(_error);

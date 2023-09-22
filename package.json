@@ -23,7 +23,7 @@
   "dependencies": {
     "@prisma/client": "^3.13.0",
     "@sendgrid/mail": "^7.6.2",
-    "@simplewebauthn/server": "^7.4.0",
+    "@simplewebauthn/server": "^8.0.2",
     "base64url": "^3.0.1",
     "body-parser": "^1.19.2",
     "compression": "^1.7.4",
