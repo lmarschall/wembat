@@ -216,7 +216,7 @@ router.post('/login', async (req, res) => {
 
     if(!req.body.userInfo) return res.status(400).send();
 
-    const { userMail} = req.body.userInfo;
+    const { userMail } = req.body.userInfo;
 
     // search for user if name already exists, else generate new user
     const user = await prisma.user.findUnique({
@@ -248,10 +248,86 @@ router.post('/login', async (req, res) => {
          */
         userVerification: 'preferred',
         rpId,
-        // TODO determine write or read for largeblob
         extensions: {
             largeBlob: {
                 read: true
+            }
+        },
+    };
+
+    const options = await generateAuthenticationOptions(opts);
+
+    // update the user challenge
+    await prisma.user.update({
+        where: {
+            uid: user.uid
+        },
+        data: {
+            challenge: options.challenge,
+        }
+    }).catch((err: any) => {
+        console.log(err);
+        return res.status(400).send();
+    })
+
+    res.send(options);
+});
+
+router.post('/login-write', async (req, res) => {
+
+    if(!req.body.userInfo) return res.status(400).send();
+
+    const { userMail } = req.body.userInfo;
+
+    // search for user if name already exists, else generate new user
+    const user = await prisma.user.findUnique({
+        where: {
+            mail: userMail,
+        },
+        include: {
+            devices: true
+        }
+    }).catch((err: any) => {
+        console.log(err);
+        return res.status(400).send();
+    }) as UserWithDevices
+
+    console.log(user);
+
+    if (!user) return res.status(400).send();
+
+    const { publicKey, privateKey } = await generateKeyPair('ES256')
+
+    const publicJwk = await exportJWK(privateKey)
+
+    const jsonString = JSON.stringify(publicJwk);
+
+    console.log(jsonString);
+
+    const encodedString = new TextEncoder().encode(jsonString);
+
+    console.log(typeof(encodedString));
+
+    console.log(new ArrayBuffer(8));
+
+    console.log(new Uint8Array(new ArrayBuffer(8)));
+
+    const opts = {
+        timeout: 60000,
+        allowCredentials: user.devices.map(dev => ({
+            id: dev.credentialId,
+            type: 'public-key',
+            transports: dev.transports || ['usb', 'ble', 'nfc', 'internal'],
+        })),
+        /**
+         * This optional value controls whether or not the authenticator needs be able to uniquely
+         * identify the user interacting with it (via built-in PIN pad, fingerprint scanner, etc...)
+         */
+        userVerification: 'preferred',
+        rpId,
+        extensions: {
+            largeBlob: {
+                write: Uint8Array.from(jsonString.split("").map(c => c.codePointAt(0))),
             }
         },
     };
