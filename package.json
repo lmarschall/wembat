@@ -13,8 +13,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix src",
-    "format": "prettier ./src --write --ignore-path ./vue-example ./backend",
+    "lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix ./src/*.ts",
+    "format": "prettier ./src --write",
     "prepublish": "npm run build"
   },
   "dependencies": {
