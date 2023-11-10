@@ -28,7 +28,7 @@ jobs:
           context: .
           platforms: linux/arm64/v8
           push: true
-          tags: ghcr.io/pwahub/pwahub-api:latest
+          tags: ghcr.io/lmarschall/wembat:latest
       # run: |
       #   docker build . --tag ghcr.io/pwahub/pwahub-api:latest
       #   docker push ghcr.io/pwahub/pwahub-api:latest 
