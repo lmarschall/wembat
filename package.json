@@ -2,6 +2,7 @@
   "name": "@wembat/client",
   "version": "0.0.1",
   "author": "Lukas Marschall <mail@lmarschall.com>",
+  "main": "src/dist/index.js",
   "license": "MIT",
   "repository": {
     "type": "git",

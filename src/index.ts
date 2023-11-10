@@ -1,8 +1,16 @@
 import axios from "axios";
+
 import {
   startRegistration,
   startAuthentication,
 } from "@simplewebauthn/browser";
+
+import {
+  PublicKeyCredentialCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON,
+  RegistrationResponseJSON,
+  AuthenticationResponseJSON,
+} from "@simplewebauthn/typescript-types";
 
 // class
 class WembatSession {
@@ -15,17 +23,21 @@ class WembatSession {
 
   // helper function
   str2ab(str: string) {
-    const buf = new ArrayBuffer(str.length);
-    const bufView = new Uint8Array(buf);
-    for (let i = 0, strLen = str.length; i < strLen; i++) {
-      bufView[i] = str.charCodeAt(i);
-    }
-    return buf;
+    // const buf = new ArrayBuffer(str.length);
+    // const bufView = new Uint8Array(buf);
+    // for (let i = 0, strLen = str.length; i < strLen; i++) {
+    //   bufView[i] = str.charCodeAt(i);
+    // }
+    // return buf;
+    const encoder = new TextEncoder();
+    return encoder.encode(str).buffer;
   }
 
   // helper function
-  ab2str(buf: any) {
-    return String.fromCharCode.apply(null, new Uint8Array(buf));
+  ab2str(buf: ArrayBuffer) {
+    // return String.fromCharCode.apply(null, new Uint8Array(buf));
+    const decoder = new TextDecoder("utf-8");
+    return decoder.decode(buf);
   }
 
   // main function
@@ -39,11 +51,14 @@ class WembatSession {
   }
 
   // main function
-  async register(challengeOptions: any, token: string = "") {
+  async register(
+    challengeOptions: PublicKeyCredentialCreationOptionsJSON,
+    token = ""
+  ) {
     console.log(challengeOptions);
 
     const credentials = await startRegistration(challengeOptions).catch(
-      (err: any) => {
+      (err: string) => {
         throw Error(err);
       }
     );
@@ -83,7 +98,10 @@ class WembatSession {
   }
 
   // main function
-  async login(challengeOptions: any, credentials: any) {
+  async login(
+    challengeOptions: PublicKeyCredentialRequestOptionsJSON,
+    credentials: RegistrationResponseJSON
+  ) {
     return axios.post(`${this.apiUrl}/webauthn/login-challenge`, {
       headers: {
         "content-type": "Application/Json",
@@ -96,14 +114,23 @@ class WembatSession {
   }
 
   // main function
-  async loginRead(challengeOptions: any): Promise<any> {
+  async loginRead(
+    challengeOptions: PublicKeyCredentialRequestOptionsJSON
+  ): Promise<
+    Array<
+      | AuthenticationResponseJSON
+      | CryptoKey
+      | undefined
+      | PublicKeyCredentialRequestOptionsJSON
+    >
+  > {
     let privKey: CryptoKey | undefined;
 
     console.log(challengeOptions);
 
     // check if we want to read
-    if (challengeOptions.extensions.largeBlob.read) {
-      console.log(challengeOptions.extensions.largeBlob.read);
+    if (challengeOptions.extensions?.largeBlob.read) {
+      console.log(challengeOptions.extensions?.largeBlob.read);
     }
 
     const credentials = await startAuthentication(challengeOptions);
@@ -111,9 +138,7 @@ class WembatSession {
     console.log(credentials);
 
     // TODO check if read was successful
-    //@ts-ignore
     if (Object.keys(credentials.clientExtensionResults.largeBlob).length) {
-      //@ts-ignore
       const keyBuffer = String.fromCodePoint(
         ...new Uint8Array(credentials.clientExtensionResults.largeBlob.blob)
       );
@@ -137,10 +162,12 @@ class WembatSession {
   }
 
   // main function
-  async loginWrite(challengeOptions: any): Promise<any> {
+  async loginWrite(
+    challengeOptions: PublicKeyCredentialRequestOptionsJSON
+  ): Promise<Array<AuthenticationResponseJSON | CryptoKey>> {
     console.log(challengeOptions);
 
-    let keyPair = await window.crypto.subtle.generateKey(
+    const keyPair = await window.crypto.subtle.generateKey(
       {
         name: "ECDH",
         namedCurve: "P-384",
@@ -152,8 +179,8 @@ class WembatSession {
     console.log(keyPair);
 
     // check if we want to write
-    if (challengeOptions.extensions.largeBlob.write) {
-      console.log(challengeOptions.extensions.largeBlob.write);
+    if (challengeOptions.extensions?.largeBlob.write) {
+      console.log(challengeOptions.extensions?.largeBlob.write);
       const exported = await window.crypto.subtle.exportKey(
         "jwk",
         keyPair.privateKey
