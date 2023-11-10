@@ -296,22 +296,6 @@ router.post('/login-write', async (req, res) => {
 
     if (!user) return res.status(400).send();
 
-    const { publicKey, privateKey } = await generateKeyPair('ES256')
-
-    const publicJwk = await exportJWK(privateKey)
-
-    const jsonString = JSON.stringify(publicJwk);
-
-    console.log(jsonString);
-
-    const encodedString = new TextEncoder().encode(jsonString);
-
-    console.log(typeof(encodedString));
-
-    console.log(new ArrayBuffer(8));
-
-    console.log(new Uint8Array(new ArrayBuffer(8)));
-
     const opts = {
         timeout: 60000,
         allowCredentials: user.devices.map(dev => ({
@@ -327,7 +311,7 @@ router.post('/login-write', async (req, res) => {
         rpId,
         extensions: {
             largeBlob: {
-                write: Uint8Array.from(jsonString.split("").map(c => c.codePointAt(0))),
+                write: new Uint8Array(1),
             }
         },
     };

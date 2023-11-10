@@ -48,16 +48,6 @@ export const addToRedisCache = async (url: string, items: string) => {
     await client.set(url, items);
 }
 
-export const addToServiceTokens = async (token: string) => {
-    console.log(`adding ${token} to service tokens`);
-    const result = await client.sAdd('service_tokens', token);
-    if(result === 1) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
 export const addToWebAuthnTokens = async (token: string) => {
     console.log(`adding ${token} to webauthn tokens`);
     const result = await client.sAdd('webauthn_tokens', token);
@@ -66,12 +56,6 @@ export const addToWebAuthnTokens = async (token: string) => {
     } else {
         return false;
     }
-}
-
-export const checkForServiceToken = async (token: string) => {
-    console.log(`checking if service token ${token} exists`);
-    const result = await client.sIsMember('service_tokens', token);
-    return result;
 }
 
 export const checkForWebAuthnToken = async (token: string) => {
