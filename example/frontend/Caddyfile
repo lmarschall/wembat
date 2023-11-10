@@ -1,0 +1,17 @@
+{
+    admin off
+    auto_https off
+}
+:8080
+file_server {
+    precompressed br gzip
+	root /app
+    index index.html
+}
+
+log {
+    output stdout
+    format console
+    level INFO
+}
+try_files {path} /index.html

@@ -1,0 +1,18 @@
+
+# define build stage and create gzipped files
+FROM node:16 as build-stage
+RUN apt-get update
+RUN apt-get install gettext-base
+WORKDIR /build
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+RUN npx gzipper compress ./dist
+
+# define run stage and serve application
+FROM nginx:alpine as run-stage
+WORKDIR /app
+COPY --from=build-stage /build/dist/ /app/static
+COPY ./nginx.conf /etc/nginx/nginx.conf
+EXPOSE 8080

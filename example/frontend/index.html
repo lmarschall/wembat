@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="shortcut icon" href="/assets/icons/icon-144x144.png" />
+    <link rel="apple-touch-icon" href="/assets/icons/icon-152x152.png" />
+
+    <title>Vite Vue Typescript Template</title>
+
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("serviceworker.js")
+          .then(function (registration) {
+            console.log("Service worker registered successfully", registration);
+          })
+          .catch(function (err) {
+            console.log("Service worker registration failed: ", err);
+          });
+      }
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
