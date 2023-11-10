@@ -1,0 +1,6 @@
+node_modules
+dist
+Dockerfile
+Dockerfile_caddy
+Dockerfile_nginx
+docker-compose.yml

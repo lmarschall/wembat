@@ -1,0 +1,39 @@
+{
+  "name": "vite-vue-ts-template",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "postbuild": "export CACHE_ID=$(echo $RANDOM | md5sum | head -c 20); /usr/bin/envsubst '$CACHE_ID' < public/serviceworker.js > dist/serviceworker.js;",
+    "lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix src",
+    "format": "prettier .  --write"
+  },
+  "dependencies": {
+    "@simplewebauthn/browser": "^8.0.2",
+    "axios": "^1.4.0",
+    "bootstrap": "^5.1.3",
+    "vue": "^3.2.25",
+    "vue-router": "^4.0.16"
+  },
+  "devDependencies": {
+    "@types/bootstrap": "^5.1.12",
+    "@typescript-eslint/eslint-plugin": "^5.39.0",
+    "@typescript-eslint/parser": "^5.39.0",
+    "@vitejs/plugin-vue": "^2.3.3",
+    "@vue/eslint-config-typescript": "^11.0.2",
+    "@simplewebauthn/typescript-types": "^7.4.0",
+    "eslint": "^8.24.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-vue": "^9.5.1",
+    "gzipper": "^7.1.0",
+    "prettier": "2.7.1",
+    "typescript": "^4.5.4",
+    "vite": "^2.9.9",
+    "vite-plugin-eslint": "^1.6.1",
+    "vue-eslint-parser": "^9.1.0",
+    "vue-tsc": "^0.34.7"
+  }
+}
