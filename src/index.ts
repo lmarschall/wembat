@@ -12,8 +12,16 @@ import {
   AuthenticationResponseJSON,
 } from "@simplewebauthn/typescript-types";
 
+interface ChallengeInputOptions extends AuthenticationExtensionsClientInputs {
+  largeBlob: any
+}
+
+interface ChallengeOutputptions extends AuthenticationExtensionsClientOutputs {
+  largeBlob: any
+}
+
 // class
-class WembatSession {
+class WembatClient {
   apiUrl = "";
 
   // constructor
@@ -128,19 +136,23 @@ class WembatSession {
 
     console.log(challengeOptions);
 
+    const inputOptions: ChallengeInputOptions | undefined = challengeOptions.extensions as ChallengeInputOptions;
+
     // check if we want to read
-    if (challengeOptions.extensions?.largeBlob.read) {
-      console.log(challengeOptions.extensions?.largeBlob.read);
+    if (inputOptions?.largeBlob.read) {
+      console.log(inputOptions?.largeBlob.read);
     }
 
     const credentials = await startAuthentication(challengeOptions);
 
     console.log(credentials);
 
+    const outputOptions: ChallengeOutputptions | undefined = credentials.clientExtensionResults as ChallengeOutputptions;
+
     // TODO check if read was successful
-    if (Object.keys(credentials.clientExtensionResults.largeBlob).length) {
+    if (Object.keys(outputOptions.largeBlob).length) {
       const keyBuffer = String.fromCodePoint(
-        ...new Uint8Array(credentials.clientExtensionResults.largeBlob.blob)
+        ...new Uint8Array(outputOptions.largeBlob.blob)
       );
       console.log(JSON.parse(keyBuffer));
       privKey = await window.crypto.subtle.importKey(
@@ -178,9 +190,13 @@ class WembatSession {
 
     console.log(keyPair);
 
+    const inputOptions: ChallengeInputOptions | undefined = challengeOptions.extensions as ChallengeInputOptions;
+
+    // TODO check if extensions are provided
+
     // check if we want to write
-    if (challengeOptions.extensions?.largeBlob.write) {
-      console.log(challengeOptions.extensions?.largeBlob.write);
+    if (inputOptions.largeBlob.write) {
+      console.log(inputOptions.largeBlob.write);
       const exported = await window.crypto.subtle.exportKey(
         "jwk",
         keyPair.privateKey
@@ -190,10 +206,10 @@ class WembatSession {
       // const exportedKeyBuffer = this.str2ab(JSON.stringify(exported))
       // challengeOptions.extensions.largeBlob.write = exportedKeyBuffer;
       const blob = JSON.stringify(exported) as string;
-      challengeOptions.extensions.largeBlob.write = Uint8Array.from(
-        blob.split("").map((c) => c.codePointAt(0))
+      inputOptions.largeBlob.write = Uint8Array.from(
+        blob.split("").map((c: string) => c.codePointAt(0)) as number[]
       );
-      console.log(challengeOptions.extensions.largeBlob.write);
+      console.log(inputOptions.largeBlob.write);
     }
 
     console.log(challengeOptions);
@@ -209,4 +225,4 @@ class WembatSession {
   }
 }
 
-export default WembatSession;
+export { WembatClient };
