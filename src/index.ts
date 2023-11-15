@@ -13,11 +13,11 @@ import {
 } from "@simplewebauthn/typescript-types";
 
 interface ChallengeInputOptions extends AuthenticationExtensionsClientInputs {
-  largeBlob: any
+  largeBlob: any;
 }
 
 interface ChallengeOutputptions extends AuthenticationExtensionsClientOutputs {
-  largeBlob: any
+  largeBlob: any;
 }
 
 // class
@@ -136,7 +136,8 @@ class WembatClient {
 
     console.log(challengeOptions);
 
-    const inputOptions: ChallengeInputOptions | undefined = challengeOptions.extensions as ChallengeInputOptions;
+    const inputOptions: ChallengeInputOptions | undefined =
+      challengeOptions.extensions as ChallengeInputOptions;
 
     // check if we want to read
     if (inputOptions?.largeBlob.read) {
@@ -147,7 +148,8 @@ class WembatClient {
 
     console.log(credentials);
 
-    const outputOptions: ChallengeOutputptions | undefined = credentials.clientExtensionResults as ChallengeOutputptions;
+    const outputOptions: ChallengeOutputptions | undefined =
+      credentials.clientExtensionResults as ChallengeOutputptions;
 
     // TODO check if read was successful
     if (Object.keys(outputOptions.largeBlob).length) {
@@ -190,7 +192,8 @@ class WembatClient {
 
     console.log(keyPair);
 
-    const inputOptions: ChallengeInputOptions | undefined = challengeOptions.extensions as ChallengeInputOptions;
+    const inputOptions: ChallengeInputOptions | undefined =
+      challengeOptions.extensions as ChallengeInputOptions;
 
     // TODO check if extensions are provided
 
