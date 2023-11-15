@@ -179,9 +179,11 @@
 </style>
 
 <script setup lang="ts">
-import WebAuthnService from "../services/webauthn";
+// import WebAuthnService from "../services/webauthn";
 import WebCryptoService from "../services/crypto";
 import TokenService from "../services/token";
+
+import { WembatClient } from "@wembat/client";
 
 import { Modal } from "bootstrap";
 
@@ -195,12 +197,13 @@ const registered = ref(
   localStorage.getItem("deviceRegistered") === "true" ? true : false
 );
 const loading = ref(false);
+const wembatClient = new WembatClient("http://localhost:8080");
 
 function register() {
   loading.value = true;
 
-  WebAuthnService.requestRegister(email.value).then((response: any) => {
-    WebAuthnService.register(response.data, token.value)
+  wembatClient.requestRegister(email.value).then((response: any) => {
+    wembatClient.register(response.data, token.value)
       .then((response: any) => {
         console.log(response.data);
         localStorage.setItem("deviceRegistered", "true");
@@ -239,8 +242,8 @@ function register() {
 
 function login() {
   loading.value = true;
-  WebAuthnService.requestLoginRead(email.value).then((response: any) => {
-    WebAuthnService.loginRead(response.data).then(async (response: any) => {
+  wembatClient.requestLoginRead(email.value).then((response: any) => {
+    wembatClient.loginRead(response.data).then(async (response: any) => {
       const credentials = response[0];
       const privKey = response[1];
       const challengeOptions = response[2];
@@ -269,7 +272,7 @@ function login() {
         return;
       }
 
-      WebAuthnService.login(challengeOptions, credentials).then((response: any) => {
+      wembatClient.login(challengeOptions, credentials).then((response: any) => {
         if (response.data.verified) {
           console.log("login verified, save token");
           TokenService.setToken(response.data.jwt);
@@ -281,8 +284,8 @@ function login() {
 }
 
 function createBlob() {
-  WebAuthnService.requestLoginWrite(email.value).then((response: any) => {
-    WebAuthnService.loginWrite(response.data).then(async (response: any) => {
+  wembatClient.requestLoginWrite(email.value).then((response: any) => {
+    wembatClient.loginWrite(response.data).then(async (response: any) => {
       const credentials = response[0];
       const pubKey = response[1];
 
