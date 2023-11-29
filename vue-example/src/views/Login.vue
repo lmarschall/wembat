@@ -183,7 +183,7 @@
 import WebCryptoService from "../services/crypto";
 import TokenService from "../services/token";
 
-import { WembatClient } from "@wembat/client";
+import { WembatClient, WembatActionResponse } from "@wembat/client";
 
 import { Modal } from "bootstrap";
 
@@ -199,105 +199,121 @@ const registered = ref(
 const loading = ref(false);
 const wembatClient = new WembatClient("http://localhost:8080");
 
-function register() {
+async function register() {
   loading.value = true;
 
-  wembatClient.requestRegister(email.value).then((response: any) => {
-    wembatClient.register(response.data, token.value)
-      .then((response: any) => {
-        console.log(response.data);
-        localStorage.setItem("deviceRegistered", "true");
-        registered.value = true;
-        loading.value = false;
-      })
-      .catch((err: any) => {
-        console.log(err.message);
+  const registerResponse = await wembatClient.register(email.value);
+  if(registerResponse.success) {
+    const verified = registerResponse.result;
+    localStorage.setItem("deviceRegistered", "true");
+    registered.value = true;
+    loading.value = false;
+  } else {
+      // console.log(err.message);
 
-        // check if error came from api or was local
-        if (err.response) console.log(err.response);
+  //       // check if error came from api or was local
+  //       if (err.response) console.log(err.response);
 
-        if (
-          err.message ==
-          "InvalidStateError: The authenticator was previously registered"
-        ) {
-          alert("The device is already registered, proceed to login!");
-          registered.value = true;
-        }
+  //       if (
+  //         err.message ==
+  //         "InvalidStateError: The authenticator was previously registered"
+  //       ) {
+  //         alert("The device is already registered, proceed to login!");
+  //         registered.value = true;
+  //       }
 
-        if (err.message == "Request failed with status code 500") {
-          token.value = "";
-          const registerModal = new Modal(
-            document.getElementById("registerModal") as HTMLElement,
-            {
-              keyboard: false,
-            }
-          );
-          if (registerModal) registerModal.show();
-        }
+  //       if (err.message == "Request failed with status code 500") {
+  //         token.value = "";
+  //         const registerModal = new Modal(
+  //           document.getElementById("registerModal") as HTMLElement,
+  //           {
+  //             keyboard: false,
+  //           }
+  //         );
+  //         if (registerModal) registerModal.show();
+  //       }
 
-        loading.value = false;
-      });
-  });
+  //       loading.value = false;
+    }
 }
 
-function login() {
+async function login() {
   loading.value = true;
-  wembatClient.requestLoginRead(email.value).then((response: any) => {
-    wembatClient.loginRead(response.data).then(async (response: any) => {
-      const credentials = response[0];
-      const privKey = response[1];
-      const challengeOptions = response[2];
 
-      console.log(credentials.clientExtensionResults.largeBlob);
+  const loginReadResponse = await wembatClient.loginRead(email.value);
 
-      if (Object.keys(credentials.clientExtensionResults.largeBlob).length) {
-        try {
-          WebCryptoService.setCryptoPrivateKey(privKey);
-          // WebCryptoService.loadCryptoPublicKey();
-          // WebCryptoService.setCryptoPublicKey(keyPair.publicKey);
-          // await decryptMessage();
-        } catch (error) {
-          console.log(error);
-        } finally {
-          loading.value = false;
-        }
-      } else {
-        const initModal = new Modal(
-          document.getElementById("initModal") as HTMLElement,
-          {
-            keyboard: false,
-          }
-        );
-        if (initModal) initModal.show();
-        return;
+  if(loginReadResponse.success) {
+
+    const loginReadResult: any = loginReadResponse.result;
+    const credentials = loginReadResult.credentials;
+    const privKey = loginReadResult.privateKey;
+    const challengeOptions = loginReadResult.challengeOptions;
+
+    console.log(credentials.clientExtensionResults.largeBlob);
+
+    if (Object.keys(credentials.clientExtensionResults.largeBlob).length) {
+      try {
+        WebCryptoService.setCryptoPrivateKey(privKey);
+        // WebCryptoService.loadCryptoPublicKey();
+        // WebCryptoService.setCryptoPublicKey(keyPair.publicKey);
+        // await decryptMessage();
+      } catch (error) {
+        console.log(error);
+      } finally {
+        loading.value = false;
       }
-
-      wembatClient.login(challengeOptions, credentials).then((response: any) => {
-        if (response.data.verified) {
-          console.log("login verified, save token");
-          TokenService.setToken(response.data.jwt);
-          router.push("/");
+    } else {
+      const initModal = new Modal(
+        document.getElementById("initModal") as HTMLElement,
+        {
+          keyboard: false,
         }
-      });
-    });
-  });
+      );
+      if (initModal) initModal.show();
+      return;
+    }
+
+    const loginResponse = await wembatClient.login(challengeOptions, credentials);
+
+    if(loginResponse.success) {
+      const loginResult: any = loginResponse.result;
+
+      if (loginResult.verified) {
+        console.log("login verified, save token");
+        TokenService.setToken(loginResult.jwt);
+        router.push("/");
+      }
+    }
+
+  } else {
+    const initModal = new Modal(
+      document.getElementById("initModal") as HTMLElement,
+      {
+        keyboard: false,
+      }
+    );
+    if (initModal) initModal.show();
+    return;
+  }
 }
 
-function createBlob() {
-  wembatClient.requestLoginWrite(email.value).then((response: any) => {
-    wembatClient.loginWrite(response.data).then(async (response: any) => {
-      const credentials = response[0];
-      const pubKey = response[1];
+async function createBlob() {
 
-      console.log(credentials.clientExtensionResults.largeBlob);
+  const loginWriteResponse = await wembatClient.loginWrite(email.value);
+  if(loginWriteResponse.success) {
+    const loginWriteResult: any = loginWriteResponse.result;
 
-      if (credentials.clientExtensionResults.largeBlob.written) {
-        console.log("WRITE SUCCESSFUL");
-        await WebCryptoService.saveCryptoPublicKey(pubKey);
+    const credentials = loginWriteResult.credentials;
+    const pubKey = loginWriteResult.publicKey;
 
-        // TODO send public key to backend
-      }
-    });
-  });
+    console.log(credentials.clientExtensionResults.largeBlob);
+
+    if (credentials.clientExtensionResults.largeBlob.written) {
+      console.log("WRITE SUCCESSFUL");
+      await WebCryptoService.saveCryptoPublicKey(pubKey);
+
+      // TODO send public key to backend
+    }
+  }
 }
 </script>
