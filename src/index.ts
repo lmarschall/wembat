@@ -57,6 +57,9 @@ interface LoginWriteResult {
 // class
 class WembatClient {
   apiUrl = "";
+  publicKey: CryptoKey | undefined;
+  privateKey: CryptoKey | undefined;
+  encryptionKey: CryptoKey | undefined;
 
   // constructor
   constructor(url: string) {
@@ -218,6 +221,9 @@ class WembatClient {
       );
 
       console.log(privKey);
+
+      // TODO save private key locally
+      await this.setCryptoPrivateKey(privKey);
     } else {
       const errorMessage: ErrorResult = {
         error: "response.statusText",
@@ -308,6 +314,16 @@ class WembatClient {
 
     console.log(credentials);
 
+    const outputOptions: ChallengeOutputptions | undefined =
+      credentials.clientExtensionResults as ChallengeOutputptions;
+
+    if (outputOptions.largeBlob.written) {
+      console.log("WRITE SUCCESSFUL");
+      await this.saveCryptoPublicKey(keyPair.publicKey);
+
+      // TODO send public key to backend
+    }
+
     const result: LoginWriteResult = {
       credentials: credentials,
       publicKey: keyPair.publicKey,
@@ -364,6 +380,117 @@ class WembatClient {
     }
 
     return actionResponse;
+  }
+
+  async deriveEncryptionKey() {
+    if(this.privateKey != undefined && this.publicKey != undefined) {
+      this.encryptionKey = await window.crypto.subtle.deriveKey(
+        {
+          name: "ECDH",
+          public: this.publicKey,
+        },
+        this.privateKey,
+        {
+          name: "AES-GCM",
+          length: 256,
+        },
+        false,
+        ["encrypt", "decrypt"],
+      );
+    }
+  }
+
+  async saveCryptoPublicKey(key: CryptoKey) {
+
+    const exported = await window.crypto.subtle.exportKey("jwk", key);
+    const keyBufferString = JSON.stringify(exported);
+    localStorage.setItem('cryptoPublicKey', keyBufferString);
+    this.setCryptoPublicKey(key);
+  }
+
+  async loadCryptoPublicKey() {
+    const pubKeyString = localStorage.getItem('cryptoPublicKey');
+    if(pubKeyString != null) {
+
+      const pubKey = await window.crypto.subtle.importKey(
+        "jwk",
+        JSON.parse(pubKeyString),
+        {
+          name: "ECDH",
+          namedCurve: "P-384",
+        },
+        false,
+        [],
+      //   ["deriveKey", "deriveBits"],
+      );
+      this.setCryptoPublicKey(pubKey);
+    }
+  }
+
+  async encrypt(message: string) {
+
+    if (this.encryptionKey != undefined) {
+
+      let enc = new TextEncoder();
+      const encoded =  enc.encode(message);
+      const iv = window.crypto.getRandomValues(new Uint8Array(12));
+
+      const encrypted = await window.crypto.subtle.encrypt(
+        {
+            name: "AES-GCM",
+            iv: iv,
+        },
+        this.encryptionKey,
+        encoded
+      );
+      
+      localStorage.setItem('iv', this.ab2str(iv));
+      return this.ab2str(encrypted);
+
+    } else {
+      return "";
+    } 
+  }
+
+  async decrypt(ciphertext: string) {
+    const iv = localStorage.getItem('iv');
+
+    if (this.encryptionKey != undefined && iv != null) {
+      const decrypted = await window.crypto.subtle.decrypt(
+        {
+            name: "AES-GCM",
+            iv: this.str2ab(iv),
+        },
+        this.encryptionKey,
+        this.str2ab(ciphertext)
+      );
+
+      let dec = new TextDecoder();
+      return dec.decode(decrypted);
+    } else {
+      return "";
+    }
+  }
+
+  resetCryptoKeys() {
+    localStorage.removeItem('cryptoPublicKey');
+    localStorage.removeItem('cryptoPrivateKey');
+  }
+
+  getCryptoPublicKey() {
+    return this.publicKey;
+  }
+
+  getCryptoPrivateKey() {
+    return this.privateKey;
+  }
+
+  setCryptoPublicKey(key: CryptoKey) {
+    this.publicKey = key;
+  }
+
+  setCryptoPrivateKey(key: CryptoKey) {
+    this.privateKey = key;
   }
 }
 

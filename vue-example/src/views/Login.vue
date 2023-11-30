@@ -249,20 +249,7 @@ async function login() {
     const privKey = loginReadResult.privateKey;
     const challengeOptions = loginReadResult.challengeOptions;
 
-    console.log(credentials.clientExtensionResults.largeBlob);
-
-    if (Object.keys(credentials.clientExtensionResults.largeBlob).length) {
-      try {
-        WebCryptoService.setCryptoPrivateKey(privKey);
-        // WebCryptoService.loadCryptoPublicKey();
-        // WebCryptoService.setCryptoPublicKey(keyPair.publicKey);
-        // await decryptMessage();
-      } catch (error) {
-        console.log(error);
-      } finally {
-        loading.value = false;
-      }
-    } else {
+    if (wembatClient.getCryptoPrivateKey() === undefined) {
       const initModal = new Modal(
         document.getElementById("initModal") as HTMLElement,
         {
@@ -305,15 +292,6 @@ async function createBlob() {
 
     const credentials = loginWriteResult.credentials;
     const pubKey = loginWriteResult.publicKey;
-
-    console.log(credentials.clientExtensionResults.largeBlob);
-
-    if (credentials.clientExtensionResults.largeBlob.written) {
-      console.log("WRITE SUCCESSFUL");
-      await WebCryptoService.saveCryptoPublicKey(pubKey);
-
-      // TODO send public key to backend
-    }
   }
 }
 </script>
