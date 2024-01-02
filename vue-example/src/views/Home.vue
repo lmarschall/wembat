@@ -52,15 +52,18 @@
 </style>
 
 <script setup lang="ts">
-import WebCryptoService from "../services/crypto";
-import MessageService from "../services/message";
-import TokenService from "../services/token";
 
-import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
-const message = ref("" as string);
+import { ref, onMounted, inject } from "vue";
+import { WembatClient } from "@wembat/client";
+
+import TokenService from "../services/token";
+import MessageService from "../services/message";
+
 const loading = ref(false);
 const router = useRouter();
+const message = ref("" as string);
+const wembatClient: WembatClient = inject('wembatClient') as WembatClient
 
 onMounted(async () => {
   if(TokenService.getToken()) {
@@ -71,19 +74,19 @@ onMounted(async () => {
 })
 
 async function encryptMessage() {
-  const encryptedString = await WebCryptoService.encrypt(message.value);
+  const encryptedString = await wembatClient.encrypt(message.value);
   MessageService.setEncryptedMessage(encryptedString);
   console.log(encryptedString);
   router.push("/login");
 }
 
 async function decryptMessage() {
-  await WebCryptoService.loadCryptoPublicKey();
-  await WebCryptoService.deriveEncryptionKey();
-  console.log(WebCryptoService.getCryptoPrivateKey());
-  console.log(WebCryptoService.getCryptoPublicKey());
+  await wembatClient.loadCryptoPublicKey();
+  await wembatClient.deriveEncryptionKey();
+  console.log(wembatClient.getCryptoPrivateKey());
+  console.log(wembatClient.getCryptoPublicKey());
   const encryptedMessage = MessageService.getEncryptedMessage() as string;
   if (encryptedMessage != "")
-    message.value = await WebCryptoService.decrypt(encryptedMessage);
+    message.value = await wembatClient.decrypt(encryptedMessage);
 }
 </script>

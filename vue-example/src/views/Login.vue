@@ -179,25 +179,22 @@
 </style>
 
 <script setup lang="ts">
-// import WebAuthnService from "../services/webauthn";
-import WebCryptoService from "../services/crypto";
-import TokenService from "../services/token";
-
-import { WembatClient, WembatActionResponse } from "@wembat/client";
 
 import { Modal } from "bootstrap";
-
-import { ref } from "vue";
+import { ref, inject } from "vue";
 import { useRouter } from "vue-router";
+import { WembatClient } from "@wembat/client";
 
-const email = ref("" as string);
+import TokenService from "../services/token";
+
+const loading = ref(false);
 const router = useRouter();
+const email = ref("" as string);
 const token = ref("" as string);
+const wembatClient: WembatClient = inject('wembatClient') as WembatClient
 const registered = ref(
   localStorage.getItem("deviceRegistered") === "true" ? true : false
 );
-const loading = ref(false);
-const wembatClient = new WembatClient("http://localhost:8080");
 
 async function register() {
   loading.value = true;
