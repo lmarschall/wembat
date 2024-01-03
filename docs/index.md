@@ -16,6 +16,9 @@ hero:
     - theme: brand
       text: Client
       link: /client/index
+    - theme: brand
+      text: Get Started
+      link: /getting-started
 
 features:
   - title: Feature A
