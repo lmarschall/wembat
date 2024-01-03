@@ -13,6 +13,9 @@ hero:
     - theme: alt
       text: API Examples
       link: /api-examples
+    - theme: brand
+      text: Client
+      link: /client/index
 
 features:
   - title: Feature A

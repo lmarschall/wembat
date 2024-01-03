@@ -1,0 +1,24 @@
+[
+  {
+    "text": "Classes",
+    "collapsed": true,
+    "items": [
+      {
+        "text": "WembatClient",
+        "link": "/docs/client/classes/WembatClient.md",
+        "collapsed": true
+      }
+    ]
+  },
+  {
+    "text": "Interfaces",
+    "collapsed": true,
+    "items": [
+      {
+        "text": "WembatActionResponse",
+        "link": "/docs/client/interfaces/WembatActionResponse.md",
+        "collapsed": true
+      }
+    ]
+  }
+]
