@@ -1,4 +1,4 @@
-import axios, { AxiosError } from "axios";
+import axios, { AxiosError, AxiosInstance } from "axios";
 
 import {
   startRegistration,
@@ -20,10 +20,17 @@ interface ChallengeOutputptions extends AuthenticationExtensionsClientOutputs {
   largeBlob: any;
 }
 
+export interface WembatMessage {
+  iv: string,
+  message: string,
+  encrypted: string
+}
+
 export interface WembatActionResponse {
   success: boolean;
   result:
-    LoginResult
+    WembatMessage
+    | LoginResult
     | RegisterResult
     | LoginReadResult
     | LoginWriteResult
@@ -57,6 +64,7 @@ interface LoginWriteResult {
 // class
 class WembatClient {
   apiUrl = "";
+  axiosClient: AxiosInstance | undefined;
   publicKey: CryptoKey | undefined;
   privateKey: CryptoKey | undefined;
   encryptionKey: CryptoKey | undefined;
@@ -64,6 +72,12 @@ class WembatClient {
   // constructor
   constructor(url: string) {
     this.apiUrl = url;
+    this.axiosClient = axios.create({
+      baseURL: `${this.apiUrl}/webauthn`
+    });
+    this.axiosClient.defaults.headers.common["content-type"] = "Application/Json";
+    // TODO add api token
+    // this.axiosClient.defaults.headers.common['Authorization'] = AUTH_TOKEN;
   }
 
   // helper function
@@ -84,302 +98,307 @@ class WembatClient {
   // main function
   async register(userUId: string): Promise<WembatActionResponse> {
 
+    // TODO maybe check for largeblob not supported
+
     const actionResponse = {
       success: false,
       result: {},
     } as WembatActionResponse;
 
-    const requestRegisterResponse = await axios.post<PublicKeyCredentialCreationOptionsJSON>(
-      `${this.apiUrl}/webauthn/request-register`,
-      {
-        headers: {
-          "content-type": "Application/Json",
-        },
-        userInfo: { userMail: userUId },
-      }
-    );
+    try {
 
-    if (requestRegisterResponse.status !== 200) {
-      // i guess we need to handle errors here
+      const requestRegisterResponse = await axios.post<PublicKeyCredentialCreationOptionsJSON>(
+        `/request-register`,
+        {
+          userInfo: { userMail: userUId },
+        }
+      );
+  
+      if (requestRegisterResponse.status !== 200) {
+        // i guess we need to handle errors here
+        throw Error(requestRegisterResponse.statusText)
+      }
+  
+      const challengeOptions = requestRegisterResponse.data;
+  
+      const credentials = await startRegistration(challengeOptions).catch(
+        (err: string) => {
+          throw Error(err);
+        }
+      );
+  
+      const registerResponse = await axios.post<boolean>(
+        `/register`,
+        {
+          challengeResponse: {
+            credentials: credentials,
+            challenge: challengeOptions.challenge,
+            deviceToken: "",
+          },
+        }
+      );
+  
+      if (registerResponse.status !== 200) {
+        // i guess we need to handle errors here
+        throw Error(registerResponse.statusText)
+      }
+  
+      const registerResult: RegisterResult = {
+        verifiedStatus: registerResponse.data,
+      };
+      actionResponse.result = registerResult;
+      actionResponse.success = true;
+
+    } catch (error: any) {
       const errorMessage: ErrorResult = {
-        error: requestRegisterResponse.statusText,
+        error: error,
       };
       actionResponse.result = errorMessage;
-      console.error(requestRegisterResponse.statusText);
+      console.error(error);
+
+    } finally {
       return actionResponse;
     }
-
-    const challengeOptions = requestRegisterResponse.data;
-
-    const credentials = await startRegistration(challengeOptions).catch(
-      (err: string) => {
-        throw Error(err);
-      }
-    );
-
-    const registerResponse = await axios.post<boolean>(
-      `${this.apiUrl}/webauthn/register`, 
-      {
-        headers: {
-          "content-type": "Application/Json",
-        },
-        challengeResponse: {
-          credentials: credentials,
-          challenge: challengeOptions.challenge,
-          deviceToken: "",
-        },
-      }
-    );
-
-    if (registerResponse.status !== 200) {
-      // i guess we need to handle errors here
-      const errorMessage: ErrorResult = {
-        error: registerResponse.statusText,
-      };
-      actionResponse.result = errorMessage;
-      console.error(registerResponse.statusText);
-      return actionResponse;
-    }
-
-    const verifiedStatus: RegisterResult = {
-      verifiedStatus: registerResponse.data,
-    };
-    actionResponse.result = verifiedStatus;
-    actionResponse.success = true;
-
-    return actionResponse;
   }
 
   // main function
-  async loginRead(userUId: string): Promise<WembatActionResponse> {
+  async login(userUId: string): Promise<WembatActionResponse> {
 
     const actionResponse = {
       success: false,
       result: {},
     } as WembatActionResponse;
 
-    const loginResponse = await axios.post(
-      `${this.apiUrl}/webauthn/login`,
-      {
-        headers: {
-          "content-type": "Application/Json",
-        },
-        userInfo: { userMail: userUId },
-      }
-    );
+    try {
 
-    if (loginResponse.status !== 200) {
-      // i guess we need to handle errors here
-      const errorMessage: ErrorResult = {
-        error: loginResponse.statusText,
-      };
-      actionResponse.result = errorMessage;
-      console.error(loginResponse.statusText);
-      return actionResponse;
-    }
-
-    const challengeOptions = loginResponse.data;
-
-    let privKey: CryptoKey | undefined;
-
-    console.log(challengeOptions);
-
-    const inputOptions: ChallengeInputOptions | undefined =
-      challengeOptions.extensions as ChallengeInputOptions;
-
-    // check if we want to read
-    if (inputOptions?.largeBlob.read) {
-      console.log(inputOptions?.largeBlob.read);
-    }
-
-    const credentials = await startAuthentication(challengeOptions);
-
-    console.log(credentials);
-
-    const outputOptions: ChallengeOutputptions | undefined =
-      credentials.clientExtensionResults as ChallengeOutputptions;
-
-    if (Object.keys(outputOptions.largeBlob).length) {
-      const keyBuffer = String.fromCodePoint(
-        ...new Uint8Array(outputOptions.largeBlob.blob)
+      const loginRequestResponse = await axios.post(
+        `/request-login`,
+        {
+          userInfo: { userMail: userUId },
+        }
       );
-      console.log(JSON.parse(keyBuffer));
-      privKey = await window.crypto.subtle.importKey(
-        "jwk",
-        // JSON.parse(ab2str(keyBuffer)),
-        JSON.parse(keyBuffer),
+  
+      if (loginRequestResponse.status !== 200) {
+        // i guess we need to handle errors here
+        throw Error(loginRequestResponse.statusText)
+      }
+  
+      const challengeOptions = loginRequestResponse.data.options;
+      const publicServerKey = loginRequestResponse.data.pubKey;
+  
+      let privateKey: CryptoKey | undefined;
+      let publicKey: CryptoKey | undefined;
+  
+      console.log(challengeOptions);
+  
+      const inputOptions: ChallengeInputOptions | undefined =
+        challengeOptions.extensions as ChallengeInputOptions;
+  
+      // check if we want to read or write
+      if (inputOptions?.largeBlob.read) {
+        // publicKey = await this.loadCryptoPublicKeyFromString(loginRequestResponse.data.pubKey)
+      } else if (inputOptions.largeBlob.write) {
+
+        // generate key material to be saved
+        const keyPair = await window.crypto.subtle.generateKey(
+          {
+            name: "ECDH",
+            namedCurve: "P-384",
+          },
+          true,
+          ["deriveKey", "deriveBits"]
+        );
+
+        publicKey = keyPair.publicKey;
+        privateKey = keyPair.privateKey;
+        
+        // export to jwk format buffer to save private key in large blob
+        const blob = await this.saveCryptoKeyAsString(privateKey);
+        inputOptions.largeBlob.write = Uint8Array.from(
+          blob.split("").map((c: string) => c.codePointAt(0)) as number[]
+        );
+        console.log(inputOptions.largeBlob.write);
+      } else {
+        // not reading or writing is not intended
+        throw Error("not reading or writing");
+      }
+  
+      const credentials = await startAuthentication(challengeOptions).catch(
+        (err: string) => {
+          throw Error(err);
+        }
+      );
+  
+      console.log(credentials);
+  
+      const outputOptions: ChallengeOutputptions | undefined =
+        credentials.clientExtensionResults as ChallengeOutputptions;
+      
+      // check if read or write was successful
+      if (outputOptions.largeBlob.written) {
+        console.log("WRITE SUCCESSFUL");
+      } else if (Object.keys(outputOptions.largeBlob).length) {
+        console.log("READ SUCCESSFUL");
+        const keyBuffer = String.fromCodePoint(
+          ...new Uint8Array(outputOptions.largeBlob.blob)
+        );
+        console.log(JSON.parse(keyBuffer));
+
+        privateKey = await this.loadCryptoPrivateKeyFromString(keyBuffer);
+      }
+
+      // TODO private key public key verification
+      // server generates secret from private server key and public user key if present
+      // server sends public server key
+      // user generates secret from private user key and public server key
+      // sends secret to server
+      // server checks if secret already present or generates secret and compares for vaildation
+
+      // TODO maybe just save after login challegne successfully completed
+
+
+      // generate shared secret for key validation
+      const sharedSecret = await window.crypto.subtle.deriveBits(
         {
           name: "ECDH",
           namedCurve: "P-384",
+          public: publicServerKey,
         },
-        false,
-        ["deriveKey", "deriveBits"]
+        privateKey,
+        128,
       );
+      
+      // send public key to server if we just created one
+      const pubKeyString = (publicKey !== undefined) ? await this.saveCryptoKeyAsString(publicKey): "";
+  
+      const response = await axios.post(
+        `/login`,
+        {
+          // TODO interfaces for request bodies
+          challengeResponse: {
+            credentials: credentials,
+            challenge: challengeOptions.challenge,
+            pubKey: pubKeyString,
+            secret: this.ab2str(sharedSecret)
+          },
+        }
+      );
+    
+      if (response.status !== 200) {
+        throw Error(response.statusText);
+      }
 
-      console.log(privKey);
+      if(privateKey !== undefined && publicKey !== undefined) {
+        this.setCryptoPrivateKey(privateKey);
+        this.setCryptoPublicKey(response.data.publicKey);
+      } else {
+        // TODO throw error
+      }
 
-      // TODO save private key locally
-      await this.setCryptoPrivateKey(privKey);
-    } else {
-      const errorMessage: ErrorResult = {
-        error: "response.statusText",
+      const loginResult: LoginResult = {
+        verified: response.data.verified,
+        jwt: response.data.jwt
       };
-      actionResponse.success = false;
+      actionResponse.result = loginResult;
+      actionResponse.success = true;
+      
+    } catch (error: any) {
+      const errorMessage: ErrorResult = {
+        error: error,
+      };
       actionResponse.result = errorMessage;
+      console.error(error);
+    } finally {
       return actionResponse;
     }
-
-    const loginReadResult: LoginReadResult = {
-      credentials: credentials,
-      privateKey: privKey,
-      challengeOptions: challengeOptions
-    };
-    actionResponse.result = loginReadResult;
-    actionResponse.success = true;
-
-    return actionResponse;
   }
 
-  // main function
-  async loginWrite(userUId: string): Promise<WembatActionResponse> {
+  async encrypt(wembatMessage: WembatMessage): Promise<WembatActionResponse> {
 
     const actionResponse = {
       success: false,
       result: {},
     } as WembatActionResponse;
 
-    const loginWriteResponse = await axios.post(
-      `${this.apiUrl}/webauthn/login-write`,
-      {
-        headers: {
-          "content-type": "Application/Json",
-        },
-        userInfo: { userMail: userUId },
-      }
-    );
+    try {
 
-    if (loginWriteResponse.status !== 200) {
-      // i guess we need to handle errors here
+      const encryptionKey = await this.deriveEncryptionKey();
+      const iv = window.crypto.getRandomValues(new Uint8Array(12));
+      
+      const encoder = new TextEncoder();
+      const encoded = encoder.encode(wembatMessage.message);
+      const encrypted = await window.crypto.subtle.encrypt(
+        {
+          name: "AES-GCM",
+          iv: iv,
+        },
+        encryptionKey,
+        encoded
+      );
+
+      const message: WembatMessage = {
+        encrypted: this.ab2str(encrypted),
+        iv: this.ab2str(iv),
+        message: ""
+      };
+      actionResponse.result = message;
+      actionResponse.success = true;
+    } catch (error: any) {
       const errorMessage: ErrorResult = {
-        error: loginWriteResponse.statusText,
+        error: error,
       };
       actionResponse.result = errorMessage;
-      console.error(loginWriteResponse.statusText);
+      console.error(error);
+    } finally {
       return actionResponse;
     }
-
-    const challengeOptions = loginWriteResponse.data;
-
-    const keyPair = await window.crypto.subtle.generateKey(
-      {
-        name: "ECDH",
-        namedCurve: "P-384",
-      },
-      true,
-      ["deriveKey", "deriveBits"]
-    );
-
-    console.log(keyPair);
-
-    const inputOptions: ChallengeInputOptions | undefined =
-      challengeOptions.extensions as ChallengeInputOptions;
-
-    // TODO check if extensions are provided
-
-    // check if we want to write
-    if (inputOptions.largeBlob.write) {
-      console.log(inputOptions.largeBlob.write);
-      const exported = await window.crypto.subtle.exportKey(
-        "jwk",
-        keyPair.privateKey
-      );
-      // const exportedKeyBuffer = new Uint8Array(exported);
-      // const exportedKeyBuffer = new Uint8Array(this.str2ab(JSON.stringify(exported)))
-      // const exportedKeyBuffer = this.str2ab(JSON.stringify(exported))
-      // challengeOptions.extensions.largeBlob.write = exportedKeyBuffer;
-      const blob = JSON.stringify(exported) as string;
-      inputOptions.largeBlob.write = Uint8Array.from(
-        blob.split("").map((c: string) => c.codePointAt(0)) as number[]
-      );
-      console.log(inputOptions.largeBlob.write);
-    }
-
-    console.log(challengeOptions);
-
-    const credentials = await startAuthentication(challengeOptions);
-
-    console.log(credentials);
-
-    const outputOptions: ChallengeOutputptions | undefined =
-      credentials.clientExtensionResults as ChallengeOutputptions;
-
-    if (outputOptions.largeBlob.written) {
-      console.log("WRITE SUCCESSFUL");
-      await this.saveCryptoPublicKey(keyPair.publicKey);
-
-      // TODO send public key to backend
-    }
-
-    const result: LoginWriteResult = {
-      credentials: credentials,
-      publicKey: keyPair.publicKey,
-    }
-
-    actionResponse.result = result;
-    actionResponse.success = true;
-
-    // TODO check if write was successful
-    // TODO if write was successful we have to send public key to backend
-
-    // return [credentials, keyPair.publicKey];
-    return actionResponse;
   }
 
-  // main function
-  async login(
-    challengeOptions: PublicKeyCredentialRequestOptionsJSON,
-    credentials: RegistrationResponseJSON
-  ): Promise<WembatActionResponse> {
+  async decrypt(wembatMessage: WembatMessage) {
 
     const actionResponse = {
-      success: true,
+      success: false,
       result: {},
     } as WembatActionResponse;
 
-    const response = await axios.post(
-      `${this.apiUrl}/webauthn/login-challenge`,
-      {
-        headers: {
-          "content-type": "Application/Json",
-        },
-        challengeResponse: {
-          credentials: credentials,
-          challenge: challengeOptions.challenge,
-        },
-      }
-    );
+    try {
 
-    if (response.status === 200) {
-      const challengeOptions: LoginResult = {
-        verified: response.data.verified,
-        jwt: response.data.jwt
+      const encryptionKey = await this.deriveEncryptionKey();
+      const iv = wembatMessage.iv;
+
+      const decrypted = await window.crypto.subtle.decrypt(
+        {
+            name: "AES-GCM",
+            iv: this.str2ab(iv),
+        },
+        encryptionKey,
+        this.str2ab(wembatMessage.encrypted)
+      );
+
+      let dec = new TextDecoder();
+      const message: WembatMessage = {
+        message: dec.decode(decrypted),
+        encrypted: "",
+        iv: iv
       };
-      actionResponse.result = challengeOptions;
-    } else {
-      // i guess we need to handle errors here
+      actionResponse.result = message;
+      actionResponse.success = true; 
+    } catch (error: any) {
       const errorMessage: ErrorResult = {
-        error: response.statusText,
+        error: error,
       };
-      actionResponse.success = false;
       actionResponse.result = errorMessage;
-      console.error(response.statusText);
+      console.error(error);
+    } finally {
+      return actionResponse;
     }
-
-    return actionResponse;
   }
 
-  async deriveEncryptionKey() {
-    if(this.privateKey != undefined && this.publicKey != undefined) {
+  async deriveEncryptionKey(): Promise<CryptoKey> {
+
+    if(this.encryptionKey !== undefined) {
+      return this.encryptionKey;
+    } else  if(this.privateKey !== undefined && this.publicKey !== undefined) {
       this.encryptionKey = await window.crypto.subtle.deriveKey(
         {
           name: "ECDH",
@@ -393,22 +412,23 @@ class WembatClient {
         false,
         ["encrypt", "decrypt"],
       );
+      return this.encryptionKey;
+    } else {
+      throw Error("Could not derive Encryption Key");
     }
   }
 
-  async saveCryptoPublicKey(key: CryptoKey) {
+  async saveCryptoKeyAsString(cryptoKey: CryptoKey): Promise<string> {
 
-    const exported = await window.crypto.subtle.exportKey("jwk", key);
-    const keyBufferString = JSON.stringify(exported);
-    localStorage.setItem('cryptoPublicKey', keyBufferString);
-    this.setCryptoPublicKey(key);
+    const exported = await window.crypto.subtle.exportKey("jwk", cryptoKey);
+    return JSON.stringify(exported);
   }
 
-  async loadCryptoPublicKey() {
-    const pubKeyString = localStorage.getItem('cryptoPublicKey');
-    if(pubKeyString != null) {
+  async loadCryptoPublicKeyFromString(pubKeyString: string): Promise<CryptoKey> {
 
-      const pubKey = await window.crypto.subtle.importKey(
+    if(pubKeyString !== "") {
+
+      return await window.crypto.subtle.importKey(
         "jwk",
         JSON.parse(pubKeyString),
         {
@@ -417,60 +437,28 @@ class WembatClient {
         },
         false,
         [],
-      //   ["deriveKey", "deriveBits"],
       );
-      this.setCryptoPublicKey(pubKey);
+    } else {
+      throw Error("Public Key String empty");
     }
   }
 
-  async encrypt(message: string) {
+  async loadCryptoPrivateKeyFromString(privateKeyString: string): Promise<CryptoKey> {
 
-    if (this.encryptionKey != undefined) {
-
-      let enc = new TextEncoder();
-      const encoded =  enc.encode(message);
-      const iv = window.crypto.getRandomValues(new Uint8Array(12));
-
-      const encrypted = await window.crypto.subtle.encrypt(
+    if(privateKeyString !== "") {
+      return await window.crypto.subtle.importKey(
+        "jwk",
+        JSON.parse(privateKeyString),
         {
-            name: "AES-GCM",
-            iv: iv,
+          name: "ECDH",
+          namedCurve: "P-384",
         },
-        this.encryptionKey,
-        encoded
+        false,
+        ["deriveKey", "deriveBits"]
       );
-      
-      localStorage.setItem('iv', this.ab2str(iv));
-      return this.ab2str(encrypted);
-
     } else {
-      return "";
-    } 
-  }
-
-  async decrypt(ciphertext: string) {
-    const iv = localStorage.getItem('iv');
-
-    if (this.encryptionKey != undefined && iv != null) {
-      const decrypted = await window.crypto.subtle.decrypt(
-        {
-            name: "AES-GCM",
-            iv: this.str2ab(iv),
-        },
-        this.encryptionKey,
-        this.str2ab(ciphertext)
-      );
-
-      let dec = new TextDecoder();
-      return dec.decode(decrypted);
-    } else {
-      return "";
+      throw Error("Private Key String empty")
     }
-  }
-
-  resetCryptoKeys() {
-    localStorage.removeItem('cryptoPublicKey');
-    localStorage.removeItem('cryptoPrivateKey');
   }
 
   getCryptoPublicKey() {

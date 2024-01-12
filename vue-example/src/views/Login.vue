@@ -205,90 +205,22 @@ async function register() {
     localStorage.setItem("deviceRegistered", "true");
     registered.value = true;
     loading.value = false;
-  } else {
-      // console.log(err.message);
-
-  //       // check if error came from api or was local
-  //       if (err.response) console.log(err.response);
-
-  //       if (
-  //         err.message ==
-  //         "InvalidStateError: The authenticator was previously registered"
-  //       ) {
-  //         alert("The device is already registered, proceed to login!");
-  //         registered.value = true;
-  //       }
-
-  //       if (err.message == "Request failed with status code 500") {
-  //         token.value = "";
-  //         const registerModal = new Modal(
-  //           document.getElementById("registerModal") as HTMLElement,
-  //           {
-  //             keyboard: false,
-  //           }
-  //         );
-  //         if (registerModal) registerModal.show();
-  //       }
-
-  //       loading.value = false;
-    }
+  }
 }
 
 async function login() {
   loading.value = true;
 
-  const loginReadResponse = await wembatClient.loginRead(email.value);
+  const loginResponse = await wembatClient.login(email.value);
 
-  if(loginReadResponse.success) {
+  if(loginResponse.success) {
+    const loginResult: any = loginResponse.result;
 
-    const loginReadResult: any = loginReadResponse.result;
-    const credentials = loginReadResult.credentials;
-    const privKey = loginReadResult.privateKey;
-    const challengeOptions = loginReadResult.challengeOptions;
-
-    if (wembatClient.getCryptoPrivateKey() === undefined) {
-      const initModal = new Modal(
-        document.getElementById("initModal") as HTMLElement,
-        {
-          keyboard: false,
-        }
-      );
-      if (initModal) initModal.show();
-      return;
+    if (loginResult.verified) {
+      console.log("login verified, save token");
+      TokenService.setToken(loginResult.jwt);
+      router.push("/");
     }
-
-    const loginResponse = await wembatClient.login(challengeOptions, credentials);
-
-    if(loginResponse.success) {
-      const loginResult: any = loginResponse.result;
-
-      if (loginResult.verified) {
-        console.log("login verified, save token");
-        TokenService.setToken(loginResult.jwt);
-        router.push("/");
-      }
-    }
-
-  } else {
-    const initModal = new Modal(
-      document.getElementById("initModal") as HTMLElement,
-      {
-        keyboard: false,
-      }
-    );
-    if (initModal) initModal.show();
-    return;
-  }
-}
-
-async function createBlob() {
-
-  const loginWriteResponse = await wembatClient.loginWrite(email.value);
-  if(loginWriteResponse.success) {
-    const loginWriteResult: any = loginWriteResponse.result;
-
-    const credentials = loginWriteResult.credentials;
-    const pubKey = loginWriteResult.publicKey;
   }
 }
 </script>
