@@ -1,8 +1,8 @@
 import { Router} from 'express';
 import base64url from 'base64url';
 import { addToWebAuthnTokens } from '../redis';
+import { createJWT, createSharedSecret, getPublicKeyFromString, getPublicServerSecretKey } from '../crypto';
 import { PrismaClient, User, Prisma } from '@prisma/client';
-import { generateKeyPair, exportJWK, SignJWT } from 'jose';
 
 type UserWithDevices = Prisma.UserGetPayload<{
     include: { devices: true }
@@ -110,8 +110,6 @@ router.post('/register', async (req, res) => {
 
     // get the signed credentials and the expected challenge from request
     const { challenge, credentials, deviceToken } = req.body.challengeResponse;
-
-    // TODO add check for largeBlob supported
 
     // find user with expected challenge
     const user = await prisma.user.findUnique({
@@ -236,7 +234,8 @@ router.post('/request-login', async (req, res) => {
     if (!user) return res.status(400).send();
 
     let opts = {}
-    const pubKey = user.pubKey;
+    const pubKey = user.publicKey;
+    const publicServerKey = getPublicServerSecretKey();
 
     if(pubKey !== "") {
         opts = {
@@ -258,6 +257,11 @@ router.post('/request-login', async (req, res) => {
                 }
             }
         }
+
+        const publicUserKey = await getPublicKeyFromString(pubKey);
+        const sharedSecret = await createSharedSecret(publicUserKey);
+
+        // save secret on redis
     } else {
         opts = {
             timeout: 60000,
@@ -295,7 +299,7 @@ router.post('/request-login', async (req, res) => {
         return res.status(400).send();
     })
 
-    res.send({ options, pubKey });
+    res.send({ options, publicServerKey });
 });
 
 router.post('/login', async (req, res) => {
@@ -304,7 +308,7 @@ router.post('/login', async (req, res) => {
 
     if(!req.body.challengeResponse) return res.status(400).send();
 
-    const { challenge, credentials, pubKey } = req.body.challengeResponse;
+    const { challenge, credentials, pubKey, secret } = req.body.challengeResponse;
 
     // search for user by challenge
     const user = await prisma.user.findUnique({
@@ -318,6 +322,8 @@ router.post('/login', async (req, res) => {
         console.log(err);
         return res.status(400).send();
     }) as UserWithDevices
+
+    if (!user) return res.status(400).send();
 
     let dbAuthenticator;
     const bodyCredIDBuffer = base64url.toBuffer(credentials.rawId);
@@ -352,23 +358,36 @@ router.post('/login', async (req, res) => {
     const { verified, authenticationInfo } = verification;
 
     if (verified) {
+
+        if(user.secret !== "" && user.secret == secret) {
+
+        } else {
+            // TODO only compare secret if one is present on user
+            const publicUserKey = await getPublicKeyFromString(pubKey)
+            const sharedSecret = await createSharedSecret(publicUserKey);
+
+            if(sharedSecret !== secret) {
+                // TODO throw error
+            } else {
+                await prisma.user.update({
+                    where: {
+                        uid: user.uid
+                    },
+                    data: {
+                        publicKey: pubKey,
+                    }
+                }).catch((err: any) => {
+                    console.log(err);
+                    return res.status(400).send();
+                })
+            }
+        }
+
         // Update the authenticator's counter in the DB to the newest count in the authentication
-        dbAuthenticator.counter = authenticationInfo.newCounter;
-
-        // create key pair for signing and verifying json web token
-        const { publicKey, privateKey } = await generateKeyPair('ES256')
-
-        // generate jwk from public to include into token header
-        const publicJwk = await exportJWK(publicKey)
+        dbAuthenticator.counter = authenticationInfo.newCounter;        
 
         // create new json web token for api calls
-        const jwt = await new SignJWT({ 'urn:example:claim': true, 'userId': user.uid })
-            .setProtectedHeader({ alg: 'ES256', jwk: publicJwk })
-            .setIssuedAt()
-            .setIssuer('urn:example:issuer')
-            .setAudience('urn:example:audience')
-            // .setExpirationTime('2h') // no exp time
-            .sign(privateKey)
+        const jwt = await createJWT(user);
 
         // add self generated jwt to whitelist
         await addToWebAuthnTokens(jwt);
@@ -377,45 +396,4 @@ router.post('/login', async (req, res) => {
     }
 
     res.send({ verified })
-});
-
-router.post('/test-token', async (req, res) => {
-
-    if(!req.body.userMail) return res.status(400).send();
-    
-    // get user mail from request body
-    const mail = req.body.userMail
-
-    // find userId for given mail
-    const user = await prisma.user.findUnique({
-        where: {
-            mail: mail,
-        }
-    }).catch((err) => {
-        console.log(err);
-        return res.status(400).send();
-    }) as User
-
-    // check if user with given mail acutally exists
-    if(!user) return res.status(400).send();
-
-    // create key pair for creating json web token
-    const { publicKey, privateKey } = await generateKeyPair('ES256')
-
-    const publicJwk = await exportJWK(publicKey)
-
-    // create new json web token for api calls
-    const jwt = await new SignJWT({ 'urn:example:claim': true, 'userId': user.uid })
-        .setProtectedHeader({ alg: 'ES256', jwk: publicJwk })
-        .setIssuedAt()
-        .setIssuer('urn:example:issuer')
-        .setAudience('urn:example:audience')
-        // .setExpirationTime('2h') // no exp time
-        .sign(privateKey)
-
-    // add self generated jwt to whitelist
-    await addToWebAuthnTokens(jwt);
-
-    res.send({jwt})
-
 });

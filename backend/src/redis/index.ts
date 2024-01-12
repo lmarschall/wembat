@@ -18,7 +18,7 @@ export const initRedis = async () => {
         console.log('connected to redis cache!');
     });
     
-    client.connect();
+    await client.connect();
 }
 
 export const checkRedisCache = async (req, res, next) => {
@@ -46,6 +46,16 @@ export const resetRedisCache = async (url: string) => {
 export const addToRedisCache = async (url: string, items: string) => {
     console.log("adding to redis cache");
     await client.set(url, items);
+}
+
+export const storeUserSecret = async (userSecret: string) => {
+    console.log(`adding ${userSecret} to service tokens`);
+    const result = await client.('service_tokens', token);
+    if(result === 1) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 export const addToServiceTokens = async (token: string) => {

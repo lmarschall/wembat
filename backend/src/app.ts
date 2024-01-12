@@ -7,10 +7,12 @@ import compression from 'compression';
 
 import webauthn = require('./webauthn');
 import redis = require('./redis');
+import crypto = require('./crypto');
 
 const port = process.env.PORT || 8080;
 
 redis.initRedis();
+crypto.initCrypto();
 
 const app = express();
 

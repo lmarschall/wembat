@@ -126,6 +126,8 @@ class WembatClient {
           throw Error(err);
         }
       );
+
+      // TODO add check for largeBlob supported
   
       const registerResponse = await axios.post<boolean>(
         `/register`,
@@ -261,6 +263,7 @@ class WembatClient {
       const sharedSecret = await window.crypto.subtle.deriveBits(
         {
           name: "ECDH",
+          // @ts-ignore
           namedCurve: "P-384",
           public: publicServerKey,
         },

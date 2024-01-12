@@ -12,16 +12,17 @@ model User {
   challenge String   @unique @default("")
   mail      String   @unique
   token     String   @default("")
-  pubKey    String   @default("")
-  devices   Device[]
+  publicKey String   @default("")
+  devices   Device?
 }
 
 model Device {
-  id                  Int    @id @default(autoincrement())
-  userUId             String
+  id                  Int     @id @default(autoincrement())
+  userUId             String  @unique
   credentialPublicKey Bytes
-  credentialId        Bytes  @unique
+  credentialId        Bytes   @unique
   counter             Int
+  written             Boolean @default(false)
   transports          String?
-  user                User   @relation(fields: [userUId], references: [uid])
+  user                User    @relation(fields: [userUId], references: [uid])
 }
