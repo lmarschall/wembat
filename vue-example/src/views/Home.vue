@@ -91,6 +91,7 @@ async function encryptMessage() {
 async function decryptMessage() {
   // await wembatClient.loadCryptoPublicKey();
   // await wembatClient.deriveEncryptionKey();
+  // TODO make functions only private accessable
   console.log(wembatClient.getCryptoPrivateKey());
   console.log(wembatClient.getCryptoPublicKey());
   const encryptedMessage = MessageService.getEncryptedMessage() as string;

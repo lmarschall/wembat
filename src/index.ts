@@ -83,6 +83,7 @@ class WembatClient {
 
   // helper function
   str2ab(str: string): ArrayBuffer {
+    str = atob(str);
     const buf = new ArrayBuffer(str.length);
     const bufView = new Uint8Array(buf);
     for (let i = 0, strLen = str.length; i < strLen; i++) {
@@ -93,7 +94,7 @@ class WembatClient {
 
   // helper function
   ab2str(buf: ArrayBuffer): string {
-    return String.fromCharCode.apply(null, [...new Uint8Array(buf)]);
+    return btoa(String.fromCharCode.apply(null, [...new Uint8Array(buf)]));
   }
 
   // main function
@@ -382,8 +383,8 @@ class WembatClient {
 
       const decrypted = await window.crypto.subtle.decrypt(
         {
-            name: "AES-GCM",
-            iv: this.str2ab(iv),
+          name: "AES-GCM",
+          iv: this.str2ab(iv),
         },
         encryptionKey,
         this.str2ab(wembatMessage.encrypted)
