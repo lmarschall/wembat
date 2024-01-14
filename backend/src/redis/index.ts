@@ -48,15 +48,15 @@ export const addToRedisCache = async (url: string, items: string) => {
     await client.set(url, items);
 }
 
-export const storeUserSecret = async (userSecret: string) => {
-    console.log(`adding ${userSecret} to service tokens`);
-    const result = await client.('service_tokens', token);
-    if(result === 1) {
-        return true;
-    } else {
-        return false;
-    }
-}
+// export const storeUserSecret = async (userSecret: string) => {
+//     console.log(`adding ${userSecret} to service tokens`);
+//     const result = await client.('service_tokens', token);
+//     if(result === 1) {
+//         return true;
+//     } else {
+//         return false;
+//     }
+// }
 
 export const addToServiceTokens = async (token: string) => {
     console.log(`adding ${token} to service tokens`);

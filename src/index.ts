@@ -76,6 +76,7 @@ class WembatClient {
       baseURL: `${this.apiUrl}/webauthn`
     });
     this.axiosClient.defaults.headers.common["content-type"] = "Application/Json";
+    // if(this.axiosClient == undefined) throw Error("Could not create axios client");
     // TODO add api token
     // this.axiosClient.defaults.headers.common['Authorization'] = AUTH_TOKEN;
   }
@@ -107,7 +108,9 @@ class WembatClient {
 
     try {
 
-      const requestRegisterResponse = await axios.post<PublicKeyCredentialCreationOptionsJSON>(
+      if(this.axiosClient == undefined) throw Error("BLOB");
+
+      const requestRegisterResponse = await this.axiosClient.post<PublicKeyCredentialCreationOptionsJSON>(
         `/request-register`,
         {
           userInfo: { userMail: userUId },
@@ -129,7 +132,7 @@ class WembatClient {
 
       // TODO add check for largeBlob supported
   
-      const registerResponse = await axios.post<boolean>(
+      const registerResponse = await this.axiosClient.post<boolean>(
         `/register`,
         {
           challengeResponse: {
@@ -173,7 +176,9 @@ class WembatClient {
 
     try {
 
-      const loginRequestResponse = await axios.post(
+      if(this.axiosClient == undefined) throw Error("BLOB");
+
+      const loginRequestResponse = await this.axiosClient.post(
         `/request-login`,
         {
           userInfo: { userMail: userUId },
@@ -186,7 +191,7 @@ class WembatClient {
       }
   
       const challengeOptions = loginRequestResponse.data.options;
-      const publicServerKey = loginRequestResponse.data.pubKey;
+      const publicServerKey = loginRequestResponse.data.publicUserKey;
   
       let privateKey: CryptoKey | undefined;
       let publicKey: CryptoKey | undefined;
@@ -198,7 +203,7 @@ class WembatClient {
   
       // check if we want to read or write
       if (inputOptions?.largeBlob.read) {
-        // publicKey = await this.loadCryptoPublicKeyFromString(loginRequestResponse.data.pubKey)
+        publicKey = await this.loadCryptoPublicKeyFromString(loginRequestResponse.data.publicUserKey)
       } else if (inputOptions.largeBlob.write) {
 
         // generate key material to be saved
@@ -260,21 +265,34 @@ class WembatClient {
 
 
       // generate shared secret for key validation
-      const sharedSecret = await window.crypto.subtle.deriveBits(
-        {
-          name: "ECDH",
-          // @ts-ignore
-          namedCurve: "P-384",
-          public: publicServerKey,
-        },
-        privateKey,
-        128,
-      );
+      // const sharedSecret = await window.crypto.subtle.deriveBits(
+      //   {
+      //     name: "ECDH",
+      //     // @ts-ignore
+      //     namedCurve: "P-384",
+      //     public: publicServerKey,
+      //   },
+      //   privateKey,
+      //   128,
+      // );
+
+      if(privateKey !== undefined && publicKey !== undefined) {
+        this.setCryptoPrivateKey(privateKey);
+        this.setCryptoPublicKey(publicKey);
+      } else {
+        // TODO throw error
+        console.error("private key or public key undefined!");
+        // console.log(this.privateKey);
+        // console.log(this.publicKey);
+      }
+
+      // console.log(this.privateKey);
+      // console.log(this.publicKey);
       
       // send public key to server if we just created one
       const pubKeyString = (publicKey !== undefined) ? await this.saveCryptoKeyAsString(publicKey): "";
   
-      const response = await axios.post(
+      const response = await this.axiosClient.post(
         `/login`,
         {
           // TODO interfaces for request bodies
@@ -282,20 +300,13 @@ class WembatClient {
             credentials: credentials,
             challenge: challengeOptions.challenge,
             pubKey: pubKeyString,
-            secret: this.ab2str(sharedSecret)
+            // secret: this.ab2str(sharedSecret)
           },
         }
       );
     
       if (response.status !== 200) {
         throw Error(response.statusText);
-      }
-
-      if(privateKey !== undefined && publicKey !== undefined) {
-        this.setCryptoPrivateKey(privateKey);
-        this.setCryptoPublicKey(response.data.publicKey);
-      } else {
-        // TODO throw error
       }
 
       const loginResult: LoginResult = {
@@ -438,7 +449,7 @@ class WembatClient {
           name: "ECDH",
           namedCurve: "P-384",
         },
-        false,
+        true,
         [],
       );
     } else {

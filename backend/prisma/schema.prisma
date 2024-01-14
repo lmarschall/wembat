@@ -13,12 +13,12 @@ model User {
   mail      String   @unique
   token     String   @default("")
   publicKey String   @default("")
-  devices   Device?
+  devices   Device[]
 }
 
 model Device {
   id                  Int     @id @default(autoincrement())
-  userUId             String  @unique
+  userUId             String
   credentialPublicKey Bytes
   credentialId        Bytes   @unique
   counter             Int

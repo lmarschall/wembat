@@ -1,7 +1,7 @@
 import { Router} from 'express';
 import base64url from 'base64url';
 import { addToWebAuthnTokens } from '../redis';
-import { createJWT, createSharedSecret, getPublicKeyFromString, getPublicServerSecretKey } from '../crypto';
+import { createJWT } from '../crypto';
 import { PrismaClient, User, Prisma } from '@prisma/client';
 
 type UserWithDevices = Prisma.UserGetPayload<{
@@ -138,7 +138,7 @@ router.post('/register', async (req, res) => {
             expectedRPID: rpId,
         };
         // opts.credential.response.id = opts.credential.id;
-        console.log(opts);
+        // console.log(opts);
         verification = await verifyRegistrationResponse(opts);
     } catch (error) {
         const _error = error;
@@ -150,7 +150,7 @@ router.post('/register', async (req, res) => {
 
     console.log("registration result");
     console.log(verified);
-    console.log(registrationInfo);
+    // console.log(registrationInfo);
 
     if (verified && registrationInfo) {
         const { credentialPublicKey, credentialID, counter } = registrationInfo;
@@ -234,10 +234,12 @@ router.post('/request-login', async (req, res) => {
     if (!user) return res.status(400).send();
 
     let opts = {}
-    const pubKey = user.publicKey;
-    const publicServerKey = getPublicServerSecretKey();
+    // const pubKey = user.publicKey;
 
-    if(pubKey !== "") {
+    const publicUserKey = user.publicKey;
+    // const publicServerKey = getPublicServerSecretKey();
+
+    if(publicUserKey !== "") {
         opts = {
             timeout: 60000,
             allowCredentials: user.devices.map(dev => ({
@@ -258,8 +260,8 @@ router.post('/request-login', async (req, res) => {
             }
         }
 
-        const publicUserKey = await getPublicKeyFromString(pubKey);
-        const sharedSecret = await createSharedSecret(publicUserKey);
+        // publicUserKey = await getPublicKeyFromString(user.publicKey);
+        // const sharedSecret = await createSharedSecret(publicUserKey);
 
         // save secret on redis
     } else {
@@ -299,7 +301,7 @@ router.post('/request-login', async (req, res) => {
         return res.status(400).send();
     })
 
-    res.send({ options, publicServerKey });
+    res.send({ options, publicUserKey });
 });
 
 router.post('/login', async (req, res) => {
@@ -359,29 +361,42 @@ router.post('/login', async (req, res) => {
 
     if (verified) {
 
-        if(user.secret !== "" && user.secret == secret) {
-
-        } else {
-            // TODO only compare secret if one is present on user
-            const publicUserKey = await getPublicKeyFromString(pubKey)
-            const sharedSecret = await createSharedSecret(publicUserKey);
-
-            if(sharedSecret !== secret) {
-                // TODO throw error
-            } else {
-                await prisma.user.update({
-                    where: {
-                        uid: user.uid
-                    },
-                    data: {
-                        publicKey: pubKey,
-                    }
-                }).catch((err: any) => {
-                    console.log(err);
-                    return res.status(400).send();
-                })
+        // save pubKey
+        await prisma.user.update({
+            where: {
+                uid: user.uid
+            },
+            data: {
+                publicKey: pubKey,
             }
-        }
+        }).catch((err: any) => {
+            console.log(err);
+            return res.status(400).send();
+        })
+
+        // if(user.secret !== "" && user.secret == secret) {
+
+        // } else {
+        //     // TODO only compare secret if one is present on user
+        //     const publicUserKey = await getPublicKeyFromString(pubKey)
+        //     const sharedSecret = await createSharedSecret(publicUserKey);
+
+        //     if(sharedSecret !== secret) {
+        //         // TODO throw error
+        //     } else {
+        //         await prisma.user.update({
+        //             where: {
+        //                 uid: user.uid
+        //             },
+        //             data: {
+        //                 publicKey: pubKey,
+        //             }
+        //         }).catch((err: any) => {
+        //             console.log(err);
+        //             return res.status(400).send();
+        //         })
+        //     }
+        // }
 
         // Update the authenticator's counter in the DB to the newest count in the authentication
         dbAuthenticator.counter = authenticationInfo.newCounter;        
