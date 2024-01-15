@@ -283,6 +283,7 @@ class WembatClient {
       } else {
         // TODO throw error
         console.error("private key or public key undefined!");
+        throw Error("private key or public key undefined!");
         // console.log(this.privateKey);
         // console.log(this.publicKey);
       }

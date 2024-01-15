@@ -56,7 +56,8 @@ router.post('/request-register', async (req, res) => {
         userID: user.uid,
         userName: userMail,
         timeout: 60000,
-        attestationType: 'direct',
+        attestationType: 'none',
+        // attestationType: 'direct',
         /**
          * Passing in a user's list of already-registered authenticator IDs here prevents users from
          * registering the same device multiple times. The authenticator will simply throw an error in
@@ -66,7 +67,7 @@ router.post('/request-register', async (req, res) => {
         excludeCredentials: user.devices.map(dev => ({
           id: dev.credentialId,
           type: 'public-key',
-          transports: dev.transports || ['usb', 'ble', 'nfc', 'internal'],
+          transports: dev.transports,
         })),
         /**
          * The optional authenticatorSelection property allows for specifying more constraints around
@@ -76,6 +77,13 @@ router.post('/request-register', async (req, res) => {
         //   userVerification: 'preferred',
         //   requireResidentKey: false,
         // },
+        authenticatorSelection: {
+            // "Discoverable credentials" used to be called "resident keys". The
+            // old name persists in the options passed to `navigator.credentials.create()`.
+            residentKey: 'preferred',
+            userVerification: 'preferred',
+            // authenticatorAttachment: 'cross-platform',
+        },
         extensions: {
             largeBlob: {
                 support: "required"
@@ -138,7 +146,7 @@ router.post('/register', async (req, res) => {
             expectedRPID: rpId,
         };
         // opts.credential.response.id = opts.credential.id;
-        // console.log(opts);
+        console.log(credentials.response.transports);
         verification = await verifyRegistrationResponse(opts);
     } catch (error) {
         const _error = error;
@@ -202,7 +210,8 @@ router.post('/register', async (req, res) => {
                 userUId: user.uid,
                 credentialPublicKey: Buffer.from(credentialPublicKey),
                 credentialId: Buffer.from(credentialID),
-                counter: counter
+                counter: counter,
+                transports: credentials.response.transports
             }
         })
     }
@@ -245,7 +254,7 @@ router.post('/request-login', async (req, res) => {
             allowCredentials: user.devices.map(dev => ({
                 id: dev.credentialId,
                 type: 'public-key',
-                transports: dev.transports || ['usb', 'ble', 'nfc', 'internal'],
+                transports: dev.transports
             })),
             /**
              * This optional value controls whether or not the authenticator needs be able to uniquely
@@ -270,7 +279,7 @@ router.post('/request-login', async (req, res) => {
             allowCredentials: user.devices.map(dev => ({
                 id: dev.credentialId,
                 type: 'public-key',
-                transports: dev.transports || ['usb', 'ble', 'nfc', 'internal'],
+                transports: dev.transports
             })),
             /**
              * This optional value controls whether or not the authenticator needs be able to uniquely
