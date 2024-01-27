@@ -1,12 +1,13 @@
-- create documentation
+- create documentation x
 - add public key parameter to encrypt function
-- types for wembat actions correction
+- prisma db push on server start
+- fido compliance
 - only one device per user
+----------------------------------------------- Release
+- types for wembat actions correction
 - improve error handling
 - console logs überarbeiten
 - tests schreiben
-- fido compliance
-- prisma db push on server start
 - api class structure
 - handle error function
 - create error defines
