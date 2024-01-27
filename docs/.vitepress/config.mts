@@ -8,16 +8,17 @@ export default defineConfig({
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
-      { text: 'Home', link: '/' },
-      { text: 'Examples', link: '/markdown-examples' }
+      { text: 'Demo', link: 'https://github.com/lmarschall/wembat' },
+      { text: 'Documentation', link: '/getting-started' }
     ],
 
     sidebar: [
       {
-        text: 'Examples',
+        text: 'Wembat',
         items: [
-          { text: 'Markdown Examples', link: '/markdown-examples' },
-          { text: 'Runtime API Examples', link: '/api-examples' }
+          { text: 'Introduction', link: '/introduction' },
+          { text: 'Getting Started', link: '/getting-started' },
+          { text: 'Client', link: '/client/index' },
         ]
       }
     ],

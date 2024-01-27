@@ -1,5 +1,5 @@
 import { createApp } from "vue";
-import { WembatClient, WembatActionResponse } from "@wembat/client";
+import { WembatClient } from "@wembat/client";
 
 import "bootstrap";
 import "bootstrap/dist/css/bootstrap.css";

@@ -1,13 +1,13 @@
-# Getting Started
+# Introduction
 
-This page show the first steps to start the wembat backend and use the wembat client on the localhost.
+<!-- This page show the first steps to start the wembat backend and use the wembat client on the localhost. -->
 
 <!-- ## Syntax Highlighting
 
 VitePress provides Syntax Highlighting powered by [Shikiji](https://github.com/antfu/shikiji), with additional features like line-highlighting: -->
 
 
-## Start Wembat Backend
+<!-- ## Start Wembat Backend
 ```bash
 git clone https://github.com/lmarschall/wembat.git
 
@@ -16,7 +16,7 @@ cd ./backend
 docker compose up -d --build && docker compose logs -f
 ```
 
-## Create Wembat Client
+## Initialize Wembat Client
 
 ```ts{4}
 import { WembatClient } from "@wembat/client";
@@ -58,7 +58,7 @@ async function login() {
     }
   }
 }
-```
+``` -->
 
 <!-- ## Custom Containers
 
