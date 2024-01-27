@@ -5,14 +5,14 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import compression from 'compression';
 
-import webauthn = require('./webauthn');
-import redis = require('./redis');
-import crypto = require('./crypto');
+import { webauthnRoutes } from './webauthn';
+import { initRedis } from './redis';
+import { initCrypto } from './crypto';
 
 const port = process.env.PORT || 8080;
 
-redis.initRedis();
-crypto.initCrypto();
+initRedis();
+initCrypto();
 
 const app = express();
 
@@ -40,7 +40,7 @@ app.use(cors(corsOptionsDelegate));
 app.use(helmet());
 app.use(compression()); // COMPRESSION
 app.use(bodyParser.json({limit: '1mb'}));
-app.use('/webauthn', webauthn.router);
+app.use('/webauthn', webauthnRoutes);
 
 app.listen(port, () => {
 

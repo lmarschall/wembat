@@ -12,12 +12,14 @@ import {
   AuthenticationResponseJSON,
 } from "@simplewebauthn/typescript-types";
 
-interface ChallengeInputOptions extends AuthenticationExtensionsClientInputs {
-  largeBlob: any;
-}
-
-interface ChallengeOutputptions extends AuthenticationExtensionsClientOutputs {
-  largeBlob: any;
+export interface WembatActionResponse {
+  success: boolean;
+  result:
+    WembatMessage
+    | LoginResult
+    | RegisterResult
+    | LoginResult
+    | ErrorResult
 }
 
 export interface WembatMessage {
@@ -26,39 +28,25 @@ export interface WembatMessage {
   encrypted: string
 }
 
-export interface WembatActionResponse {
-  success: boolean;
-  result:
-    WembatMessage
-    | LoginResult
-    | RegisterResult
-    | LoginReadResult
-    | LoginWriteResult
-    | ErrorResult
+interface ChallengeInputOptions extends AuthenticationExtensionsClientInputs {
+  largeBlob: any;
+}
+
+interface ChallengeOutputptions extends AuthenticationExtensionsClientOutputs {
+  largeBlob: any;
 }
 
 interface RegisterResult {
   verifiedStatus: boolean
 }
 
-interface ErrorResult {
-  error: string;
-}
-
-interface LoginResult {
+export interface LoginResult {
   verified: true;
   jwt: string;
 }
 
-interface LoginReadResult {
-  credentials: AuthenticationResponseJSON;
-  privateKey: CryptoKey;
-  challengeOptions: PublicKeyCredentialRequestOptionsJSON;
-}
-
-interface LoginWriteResult {
-  credentials: AuthenticationResponseJSON;
-  publicKey: CryptoKey;
+interface ErrorResult {
+  error: string;
 }
 
 // class
@@ -152,14 +140,14 @@ class WembatClient {
       const registerResult: RegisterResult = {
         verifiedStatus: registerResponse.data,
       };
-      actionResponse.result = registerResult;
+      actionResponse.result = registerResult as RegisterResult;
       actionResponse.success = true;
 
     } catch (error: any) {
       const errorMessage: ErrorResult = {
         error: error,
       };
-      actionResponse.result = errorMessage;
+      actionResponse.result = errorMessage as ErrorResult;
       console.error(error);
 
     } finally {

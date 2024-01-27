@@ -3,21 +3,21 @@ import base64url from 'base64url';
 import { addToWebAuthnTokens } from '../redis';
 import { createJWT } from '../crypto';
 import { PrismaClient, User, Prisma } from '@prisma/client';
-
-type UserWithDevices = Prisma.UserGetPayload<{
-    include: { devices: true }
-}>
-
-const {
+import {
     // Registration
     generateRegistrationOptions,
     verifyRegistrationResponse,
     // Authentication
     generateAuthenticationOptions,
     verifyAuthenticationResponse,
-} = require('@simplewebauthn/server');
+    GenerateRegistrationOptionsOpts,
+} from '@simplewebauthn/server';
 
-export const router = Router();
+type UserWithDevices = Prisma.UserGetPayload<{
+    include: { devices: true }
+}>
+
+export const webauthnRoutes = Router();
 const prisma = new PrismaClient();
 const rpId = process.env.RPID || "pwahub.one";
 const rpName = "PWAHUB";
@@ -25,7 +25,7 @@ const expectedOrigin = `https://${rpId}:3000`;
 
 console.log('server is starting webauthn services')
 
-router.post('/request-register', async (req, res) => {
+webauthnRoutes.post('/request-register', async (req, res) => {
 
     if(!req.body.userInfo) return res.status(400).send();
 
@@ -50,46 +50,28 @@ router.post('/request-register', async (req, res) => {
         return res.status(400).send();
     }) as UserWithDevices
 
-    const opts = {
+    const opts: any = {
         rpName: rpName,
         rpId,
         userID: user.uid,
         userName: userMail,
         timeout: 60000,
         attestationType: 'none',
-        // attestationType: 'direct',
-        /**
-         * Passing in a user's list of already-registered authenticator IDs here prevents users from
-         * registering the same device multiple times. The authenticator will simply throw an error in
-         * the browser if it's asked to perform registration when one of these ID's already resides
-         * on it.
-         */
         excludeCredentials: user.devices.map(dev => ({
           id: dev.credentialId,
           type: 'public-key',
           transports: dev.transports,
         })),
-        /**
-         * The optional authenticatorSelection property allows for specifying more constraints around
-         * the types of authenticators that users to can use for registration
-         */
-        // authenticatorSelection: {
-        //   userVerification: 'preferred',
-        //   requireResidentKey: false,
-        // },
         authenticatorSelection: {
-            // "Discoverable credentials" used to be called "resident keys". The
-            // old name persists in the options passed to `navigator.credentials.create()`.
             residentKey: 'preferred',
             userVerification: 'preferred',
-            // authenticatorAttachment: 'cross-platform',
         },
+        supportedAlgorithmIDs: [-7, -257],
         extensions: {
             largeBlob: {
                 support: "required"
             }
-        },
-        supportedAlgorithmIDs: [-7, -257]
+        }
     };
 
     const options = await generateRegistrationOptions(opts);
@@ -112,7 +94,7 @@ router.post('/request-register', async (req, res) => {
     res.send(options);
 });
 
-router.post('/register', async (req, res) => {
+webauthnRoutes.post('/register', async (req, res) => {
 
     if(!req.body.challengeResponse) return res.status(400).send();
 
@@ -219,7 +201,7 @@ router.post('/register', async (req, res) => {
     res.send({ verified });
 });
 
-router.post('/request-login', async (req, res) => {
+webauthnRoutes.post('/request-login', async (req, res) => {
 
     if(!req.body.userInfo) return res.status(400).send();
 
@@ -313,7 +295,7 @@ router.post('/request-login', async (req, res) => {
     res.send({ options, publicUserKey });
 });
 
-router.post('/login', async (req, res) => {
+webauthnRoutes.post('/login', async (req, res) => {
 
     const body = req.body;
 

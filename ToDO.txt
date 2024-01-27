@@ -1,0 +1,13 @@
+- create documentation
+- add public key parameter to encrypt function
+- types for wembat actions correction
+- only one device per user
+- improve error handling
+- console logs überarbeiten
+- tests schreiben
+- fido compliance
+- prisma db push on server start
+- api class structure
+- handle error function
+- create error defines
+- encapsulate helper functions

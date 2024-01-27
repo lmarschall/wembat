@@ -186,6 +186,7 @@ import { useRouter } from "vue-router";
 import { WembatClient } from "@wembat/client";
 
 import TokenService from "../services/token";
+import { LoginResult } from "../../../src";
 
 const loading = ref(false);
 const router = useRouter();
@@ -214,7 +215,7 @@ async function login() {
   const loginResponse = await wembatClient.login(email.value);
 
   if(loginResponse.success) {
-    const loginResult: any = loginResponse.result;
+    const loginResult: LoginResult = loginResponse.result as LoginResult;
 
     if (loginResult.verified) {
       console.log("login verified, save token");
