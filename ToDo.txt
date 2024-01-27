@@ -1,6 +1,6 @@
 - create documentation x
 - add public key parameter to encrypt function x
-- prisma db push on server start
+- prisma db push on server start x
 - fido compliance
 - only one device per user
 ----------------------------------------------- Release

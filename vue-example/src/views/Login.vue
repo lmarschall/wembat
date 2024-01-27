@@ -57,51 +57,6 @@
       </div>
     </div>
 
-    <div
-      class="modal fade"
-      id="initModal"
-      style="height: 100vh"
-      tabindex="-1"
-      aria-labelledby="initModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="initModalLabel">
-              Init new Credentials
-            </h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-          <div class="modal-body">
-            We need to create new credentials for this device.<br />
-          </div>
-          <div class="modal-footer">
-            <button
-              @click="createBlob()"
-              type="button"
-              class="btn btn-primary"
-              data-bs-dismiss="modal"
-            >
-              Create
-            </button>
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <div class="container">
       <div class="d-flex justify-content-center align-items-center" style="height: 80vh;">
         <div class="card text-center border-0">

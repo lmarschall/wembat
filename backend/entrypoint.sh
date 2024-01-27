@@ -1,4 +1,4 @@
-#!/usr/bin/bash+
+#!/usr/bin/bash
 
 # deploy migrations to database
 npx prisma migrate deploy
