@@ -80,23 +80,20 @@ async function encryptMessage() {
     encrypted: ""
   } 
 
-  const encryptionResult = await wembatClient.encrypt(encryptMessage);
+  const publicKey = wembatClient.getCryptoPublicKey();
+  const encryptionResult = await wembatClient.encrypt(encryptMessage, publicKey);
   if(encryptionResult.success) {
     MessageService.setEncryptedMessage(JSON.stringify(encryptionResult.result));
-    // console.log(encryptedString);
     router.push("/login");
   }
 }
 
 async function decryptMessage() {
-  // await wembatClient.loadCryptoPublicKey();
-  // await wembatClient.deriveEncryptionKey();
   // TODO make functions only private accessable
-  console.log(wembatClient.getCryptoPrivateKey());
-  console.log(wembatClient.getCryptoPublicKey());
+  const publicKey = wembatClient.getCryptoPublicKey();
   const encryptedMessage = MessageService.getEncryptedMessage() as string;
   if (encryptedMessage != "") {
-    const decryptionResult = await wembatClient.decrypt(JSON.parse(encryptedMessage));
+    const decryptionResult = await wembatClient.decrypt(JSON.parse(encryptedMessage), publicKey);
     if(decryptionResult.success) message.value = (decryptionResult.result as WembatMessage).message;
   }
 }

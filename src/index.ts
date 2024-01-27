@@ -55,7 +55,6 @@ class WembatClient {
   axiosClient: AxiosInstance | undefined;
   publicKey: CryptoKey | undefined;
   privateKey: CryptoKey | undefined;
-  encryptionKey: CryptoKey | undefined;
 
   // constructor
   constructor(url: string) {
@@ -317,7 +316,7 @@ class WembatClient {
     }
   }
 
-  async encrypt(wembatMessage: WembatMessage): Promise<WembatActionResponse> {
+  async encrypt(wembatMessage: WembatMessage, publicKey: CryptoKey): Promise<WembatActionResponse> {
 
     const actionResponse = {
       success: false,
@@ -326,7 +325,7 @@ class WembatClient {
 
     try {
 
-      const encryptionKey = await this.deriveEncryptionKey();
+      const encryptionKey = await this.deriveEncryptionKey(publicKey);
       const iv = window.crypto.getRandomValues(new Uint8Array(12));
       
       const encoder = new TextEncoder();
@@ -358,7 +357,7 @@ class WembatClient {
     }
   }
 
-  async decrypt(wembatMessage: WembatMessage) {
+  async decrypt(wembatMessage: WembatMessage, publicKey: CryptoKey) {
 
     const actionResponse = {
       success: false,
@@ -367,7 +366,7 @@ class WembatClient {
 
     try {
 
-      const encryptionKey = await this.deriveEncryptionKey();
+      const encryptionKey = await this.deriveEncryptionKey(publicKey);
       const iv = wembatMessage.iv;
 
       const decrypted = await window.crypto.subtle.decrypt(
@@ -398,12 +397,10 @@ class WembatClient {
     }
   }
 
-  async deriveEncryptionKey(): Promise<CryptoKey> {
+  async deriveEncryptionKey(publicKey: CryptoKey): Promise<CryptoKey> {
 
-    if(this.encryptionKey !== undefined) {
-      return this.encryptionKey;
-    } else  if(this.privateKey !== undefined && this.publicKey !== undefined) {
-      this.encryptionKey = await window.crypto.subtle.deriveKey(
+    if(this.privateKey !== undefined && publicKey !== undefined) {
+      const encryptionKey = await window.crypto.subtle.deriveKey(
         {
           name: "ECDH",
           public: this.publicKey,
@@ -416,7 +413,7 @@ class WembatClient {
         false,
         ["encrypt", "decrypt"],
       );
-      return this.encryptionKey;
+      return encryptionKey;
     } else {
       throw Error("Could not derive Encryption Key");
     }
