@@ -46,6 +46,6 @@ features:
   - title: Typescript
     details: Wembat client library boasts seamless TypeScript support, empowering developers with type safety and enhanced code readability. Developers can leverage static typing to catch potential errors early in the development process.
     icon:
-      src: /public/braces.svg
+      src: /braces.svg
 ---
 
