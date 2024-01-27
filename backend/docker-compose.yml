@@ -22,7 +22,7 @@ services:
         ports:
             - 6379:6379    
     api:
-        image: pwahub-api
+        image: wembat-api
         build: "./"
         restart: always
         command: ""
