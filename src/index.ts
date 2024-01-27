@@ -69,6 +69,22 @@ class WembatClient {
     // this.axiosClient.defaults.headers.common['Authorization'] = AUTH_TOKEN;
   }
 
+  getCryptoPublicKey() {
+    return this.publicKey;
+  }
+
+  getCryptoPrivateKey() {
+    return this.privateKey;
+  }
+
+  setCryptoPublicKey(key: CryptoKey) {
+    this.publicKey = key;
+  }
+
+  setCryptoPrivateKey(key: CryptoKey) {
+    this.privateKey = key;
+  }
+
   // helper function
   str2ab(str: string): ArrayBuffer {
     str = atob(str);
@@ -95,7 +111,7 @@ class WembatClient {
     } as WembatActionResponse;
 
     try {
-      if (this.axiosClient == undefined) throw Error("BLOB");
+      if (this.axiosClient == undefined) throw Error("Axiso Client undefined!");
 
       const requestRegisterResponse =
         await this.axiosClient.post<PublicKeyCredentialCreationOptionsJSON>(
@@ -160,7 +176,7 @@ class WembatClient {
     } as WembatActionResponse;
 
     try {
-      if (this.axiosClient == undefined) throw Error("BLOB");
+      if (this.axiosClient == undefined) throw Error("Axiso Client undefined!");
 
       const loginRequestResponse = await this.axiosClient.post(
         `/request-login`,
@@ -353,7 +369,10 @@ class WembatClient {
     }
   }
 
-  async decrypt(wembatMessage: WembatMessage, publicKey: CryptoKey) {
+  async decrypt(
+    wembatMessage: WembatMessage,
+    publicKey: CryptoKey
+  ): Promise<WembatActionResponse> {
     const actionResponse = {
       success: false,
       result: {},
@@ -453,22 +472,6 @@ class WembatClient {
     } else {
       throw Error("Private Key String empty");
     }
-  }
-
-  getCryptoPublicKey() {
-    return this.publicKey;
-  }
-
-  getCryptoPrivateKey() {
-    return this.privateKey;
-  }
-
-  setCryptoPublicKey(key: CryptoKey) {
-    this.publicKey = key;
-  }
-
-  setCryptoPrivateKey(key: CryptoKey) {
-    this.privateKey = key;
   }
 }
 

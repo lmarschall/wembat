@@ -39,7 +39,7 @@ features:
     details: Wembat utilizes passkeys as a secure and convenient method for user authentication. Passkeys, often stored on devices like security keys or biometric sensors, replace traditional passwords, offering a reliable way to verify user identity. 
     icon:
       src: /assets/key-fill.svg
-  - title: Compliance
+  - title: Conformance
     details: Wembat backend achieves FIDO compliance, adhering to the robust security standards set by the FIDO Alliance. This ensures that the authentication processes align with FIDO specifications, providing a foundation for secure and interoperable authentication methods.
     icon:
       src: /assets/patch-check-fill.svg
