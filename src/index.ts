@@ -15,17 +15,17 @@ import {
 export interface WembatActionResponse {
   success: boolean;
   result:
-    WembatMessage
+    | WembatMessage
     | LoginResult
     | RegisterResult
     | LoginResult
-    | ErrorResult
+    | ErrorResult;
 }
 
 export interface WembatMessage {
-  iv: string,
-  message: string,
-  encrypted: string
+  iv: string;
+  message: string;
+  encrypted: string;
 }
 
 interface ChallengeInputOptions extends AuthenticationExtensionsClientInputs {
@@ -37,7 +37,7 @@ interface ChallengeOutputptions extends AuthenticationExtensionsClientOutputs {
 }
 
 interface RegisterResult {
-  verifiedStatus: boolean
+  verifiedStatus: boolean;
 }
 
 export interface LoginResult {
@@ -60,9 +60,10 @@ class WembatClient {
   constructor(url: string) {
     this.apiUrl = url;
     this.axiosClient = axios.create({
-      baseURL: `${this.apiUrl}/webauthn`
+      baseURL: `${this.apiUrl}/webauthn`,
     });
-    this.axiosClient.defaults.headers.common["content-type"] = "Application/Json";
+    this.axiosClient.defaults.headers.common["content-type"] =
+      "Application/Json";
     // if(this.axiosClient == undefined) throw Error("Could not create axios client");
     // TODO add api token
     // this.axiosClient.defaults.headers.common['Authorization'] = AUTH_TOKEN;
@@ -86,7 +87,6 @@ class WembatClient {
 
   // main function
   async register(userUId: string): Promise<WembatActionResponse> {
-
     // TODO maybe check for largeblob not supported
 
     const actionResponse = {
@@ -95,23 +95,23 @@ class WembatClient {
     } as WembatActionResponse;
 
     try {
+      if (this.axiosClient == undefined) throw Error("BLOB");
 
-      if(this.axiosClient == undefined) throw Error("BLOB");
+      const requestRegisterResponse =
+        await this.axiosClient.post<PublicKeyCredentialCreationOptionsJSON>(
+          `/request-register`,
+          {
+            userInfo: { userMail: userUId },
+          }
+        );
 
-      const requestRegisterResponse = await this.axiosClient.post<PublicKeyCredentialCreationOptionsJSON>(
-        `/request-register`,
-        {
-          userInfo: { userMail: userUId },
-        }
-      );
-  
       if (requestRegisterResponse.status !== 200) {
         // i guess we need to handle errors here
-        throw Error(requestRegisterResponse.statusText)
+        throw Error(requestRegisterResponse.statusText);
       }
-  
+
       const challengeOptions = requestRegisterResponse.data;
-  
+
       const credentials = await startRegistration(challengeOptions).catch(
         (err: string) => {
           throw Error(err);
@@ -119,7 +119,7 @@ class WembatClient {
       );
 
       // TODO add check for largeBlob supported
-  
+
       const registerResponse = await this.axiosClient.post<boolean>(
         `/register`,
         {
@@ -130,25 +130,23 @@ class WembatClient {
           },
         }
       );
-  
+
       if (registerResponse.status !== 200) {
         // i guess we need to handle errors here
-        throw Error(registerResponse.statusText)
+        throw Error(registerResponse.statusText);
       }
-  
+
       const registerResult: RegisterResult = {
         verifiedStatus: registerResponse.data,
       };
       actionResponse.result = registerResult as RegisterResult;
       actionResponse.success = true;
-
     } catch (error: any) {
       const errorMessage: ErrorResult = {
         error: error,
       };
       actionResponse.result = errorMessage as ErrorResult;
       console.error(error);
-
     } finally {
       return actionResponse;
     }
@@ -156,15 +154,13 @@ class WembatClient {
 
   // main function
   async login(userUId: string): Promise<WembatActionResponse> {
-
     const actionResponse = {
       success: false,
       result: {},
     } as WembatActionResponse;
 
     try {
-
-      if(this.axiosClient == undefined) throw Error("BLOB");
+      if (this.axiosClient == undefined) throw Error("BLOB");
 
       const loginRequestResponse = await this.axiosClient.post(
         `/request-login`,
@@ -172,28 +168,29 @@ class WembatClient {
           userInfo: { userMail: userUId },
         }
       );
-  
+
       if (loginRequestResponse.status !== 200) {
         // i guess we need to handle errors here
-        throw Error(loginRequestResponse.statusText)
+        throw Error(loginRequestResponse.statusText);
       }
-  
+
       const challengeOptions = loginRequestResponse.data.options;
       const publicServerKey = loginRequestResponse.data.publicUserKey;
-  
+
       let privateKey: CryptoKey | undefined;
       let publicKey: CryptoKey | undefined;
-  
+
       console.log(challengeOptions);
-  
+
       const inputOptions: ChallengeInputOptions | undefined =
         challengeOptions.extensions as ChallengeInputOptions;
-  
+
       // check if we want to read or write
       if (inputOptions?.largeBlob.read) {
-        publicKey = await this.loadCryptoPublicKeyFromString(loginRequestResponse.data.publicUserKey)
+        publicKey = await this.loadCryptoPublicKeyFromString(
+          loginRequestResponse.data.publicUserKey
+        );
       } else if (inputOptions.largeBlob.write) {
-
         // generate key material to be saved
         const keyPair = await window.crypto.subtle.generateKey(
           {
@@ -206,7 +203,7 @@ class WembatClient {
 
         publicKey = keyPair.publicKey;
         privateKey = keyPair.privateKey;
-        
+
         // export to jwk format buffer to save private key in large blob
         const blob = await this.saveCryptoKeyAsString(privateKey);
         inputOptions.largeBlob.write = Uint8Array.from(
@@ -217,18 +214,18 @@ class WembatClient {
         // not reading or writing is not intended
         throw Error("not reading or writing");
       }
-  
+
       const credentials = await startAuthentication(challengeOptions).catch(
         (err: string) => {
           throw Error(err);
         }
       );
-  
+
       console.log(credentials);
-  
+
       const outputOptions: ChallengeOutputptions | undefined =
         credentials.clientExtensionResults as ChallengeOutputptions;
-      
+
       // check if read or write was successful
       if (outputOptions.largeBlob.written) {
         console.log("WRITE SUCCESSFUL");
@@ -251,7 +248,6 @@ class WembatClient {
 
       // TODO maybe just save after login challegne successfully completed
 
-
       // generate shared secret for key validation
       // const sharedSecret = await window.crypto.subtle.deriveBits(
       //   {
@@ -264,7 +260,7 @@ class WembatClient {
       //   128,
       // );
 
-      if(privateKey !== undefined && publicKey !== undefined) {
+      if (privateKey !== undefined && publicKey !== undefined) {
         this.setCryptoPrivateKey(privateKey);
         this.setCryptoPublicKey(publicKey);
       } else {
@@ -277,34 +273,33 @@ class WembatClient {
 
       // console.log(this.privateKey);
       // console.log(this.publicKey);
-      
+
       // send public key to server if we just created one
-      const pubKeyString = (publicKey !== undefined) ? await this.saveCryptoKeyAsString(publicKey): "";
-  
-      const response = await this.axiosClient.post(
-        `/login`,
-        {
-          // TODO interfaces for request bodies
-          challengeResponse: {
-            credentials: credentials,
-            challenge: challengeOptions.challenge,
-            pubKey: pubKeyString,
-            // secret: this.ab2str(sharedSecret)
-          },
-        }
-      );
-    
+      const pubKeyString =
+        publicKey !== undefined
+          ? await this.saveCryptoKeyAsString(publicKey)
+          : "";
+
+      const response = await this.axiosClient.post(`/login`, {
+        // TODO interfaces for request bodies
+        challengeResponse: {
+          credentials: credentials,
+          challenge: challengeOptions.challenge,
+          pubKey: pubKeyString,
+          // secret: this.ab2str(sharedSecret)
+        },
+      });
+
       if (response.status !== 200) {
         throw Error(response.statusText);
       }
 
       const loginResult: LoginResult = {
         verified: response.data.verified,
-        jwt: response.data.jwt
+        jwt: response.data.jwt,
       };
       actionResponse.result = loginResult;
       actionResponse.success = true;
-      
     } catch (error: any) {
       const errorMessage: ErrorResult = {
         error: error,
@@ -316,18 +311,19 @@ class WembatClient {
     }
   }
 
-  async encrypt(wembatMessage: WembatMessage, publicKey: CryptoKey): Promise<WembatActionResponse> {
-
+  async encrypt(
+    wembatMessage: WembatMessage,
+    publicKey: CryptoKey
+  ): Promise<WembatActionResponse> {
     const actionResponse = {
       success: false,
       result: {},
     } as WembatActionResponse;
 
     try {
-
       const encryptionKey = await this.deriveEncryptionKey(publicKey);
       const iv = window.crypto.getRandomValues(new Uint8Array(12));
-      
+
       const encoder = new TextEncoder();
       const encoded = encoder.encode(wembatMessage.message);
       const encrypted = await window.crypto.subtle.encrypt(
@@ -342,7 +338,7 @@ class WembatClient {
       const message: WembatMessage = {
         encrypted: this.ab2str(encrypted),
         iv: this.ab2str(iv),
-        message: ""
+        message: "",
       };
       actionResponse.result = message;
       actionResponse.success = true;
@@ -358,14 +354,12 @@ class WembatClient {
   }
 
   async decrypt(wembatMessage: WembatMessage, publicKey: CryptoKey) {
-
     const actionResponse = {
       success: false,
       result: {},
     } as WembatActionResponse;
 
     try {
-
       const encryptionKey = await this.deriveEncryptionKey(publicKey);
       const iv = wembatMessage.iv;
 
@@ -378,14 +372,14 @@ class WembatClient {
         this.str2ab(wembatMessage.encrypted)
       );
 
-      let dec = new TextDecoder();
+      const dec = new TextDecoder();
       const message: WembatMessage = {
         message: dec.decode(decrypted),
         encrypted: "",
-        iv: iv
+        iv: iv,
       };
       actionResponse.result = message;
-      actionResponse.success = true; 
+      actionResponse.success = true;
     } catch (error: any) {
       const errorMessage: ErrorResult = {
         error: error,
@@ -398,8 +392,7 @@ class WembatClient {
   }
 
   async deriveEncryptionKey(publicKey: CryptoKey): Promise<CryptoKey> {
-
-    if(this.privateKey !== undefined && publicKey !== undefined) {
+    if (this.privateKey !== undefined && publicKey !== undefined) {
       const encryptionKey = await window.crypto.subtle.deriveKey(
         {
           name: "ECDH",
@@ -411,7 +404,7 @@ class WembatClient {
           length: 256,
         },
         false,
-        ["encrypt", "decrypt"],
+        ["encrypt", "decrypt"]
       );
       return encryptionKey;
     } else {
@@ -420,15 +413,14 @@ class WembatClient {
   }
 
   async saveCryptoKeyAsString(cryptoKey: CryptoKey): Promise<string> {
-
     const exported = await window.crypto.subtle.exportKey("jwk", cryptoKey);
     return JSON.stringify(exported);
   }
 
-  async loadCryptoPublicKeyFromString(pubKeyString: string): Promise<CryptoKey> {
-
-    if(pubKeyString !== "") {
-
+  async loadCryptoPublicKeyFromString(
+    pubKeyString: string
+  ): Promise<CryptoKey> {
+    if (pubKeyString !== "") {
       return await window.crypto.subtle.importKey(
         "jwk",
         JSON.parse(pubKeyString),
@@ -437,16 +429,17 @@ class WembatClient {
           namedCurve: "P-384",
         },
         true,
-        [],
+        []
       );
     } else {
       throw Error("Public Key String empty");
     }
   }
 
-  async loadCryptoPrivateKeyFromString(privateKeyString: string): Promise<CryptoKey> {
-
-    if(privateKeyString !== "") {
+  async loadCryptoPrivateKeyFromString(
+    privateKeyString: string
+  ): Promise<CryptoKey> {
+    if (privateKeyString !== "") {
       return await window.crypto.subtle.importKey(
         "jwk",
         JSON.parse(privateKeyString),
@@ -458,7 +451,7 @@ class WembatClient {
         ["deriveKey", "deriveBits"]
       );
     } else {
-      throw Error("Private Key String empty")
+      throw Error("Private Key String empty");
     }
   }
 
