@@ -21,10 +21,18 @@ hero:
       link: /getting-started
 
 features:
-  - title: Easy
-    details: Wembat client library streamlines the integration of WebAuthn authentication into applications, offering developers a user-friendly toolkit. With intuitive APIs and this library enables developers to effortlessly implement secure authentication and encryption mechanisms.
+  - title: Effortless
+    details: Wembat client library streamlines the integration of WebAuthn authentication into applications, offering developers a user-friendly toolkit. With intuitive APIs this library enables developers to effortlessly implement secure authentication and encryption mechanisms.
     icon:
       src: /hand-thumbs-up-fill.svg
+  - title: Conformance
+    details: Wembat backend achieves FIDO compliance, adhering to the robust security standards set by the FIDO Alliance. This ensures that the authentication processes align with FIDO specifications, providing a foundation for secure and interoperable authentication methods.
+    icon:
+      src: /patch-check-fill.svg
+  - title: Passkeys
+    details: Wembat utilizes passkeys as a secure and convenient method for user authentication. Passkeys, often stored on devices like security keys or biometric sensors, replace traditional passwords, offering a reliable way to verify user identity. 
+    icon:
+      src: /key-fill.svg
   - title: Authentication
     details: Wembat enables users to log in to websites and applications using biometrics, mobile devices, or security keys, enhancing online security by eliminating the reliance on passwords. Users experience a seamless and phishing-resistant authentication process.
     icon:
@@ -35,14 +43,6 @@ features:
     details: Wembat employs robust encryption mechanisms to safeguard user authentication and sensitive data. It ensures that communication between the user's device and the server remains secure and resistant to unauthorized access.
     icon:
       src: /shield-lock-fill.svg
-  - title: Passkeys
-    details: Wembat utilizes passkeys as a secure and convenient method for user authentication. Passkeys, often stored on devices like security keys or biometric sensors, replace traditional passwords, offering a reliable way to verify user identity. 
-    icon:
-      src: /key-fill.svg
-  - title: Conformance
-    details: Wembat backend achieves FIDO compliance, adhering to the robust security standards set by the FIDO Alliance. This ensures that the authentication processes align with FIDO specifications, providing a foundation for secure and interoperable authentication methods.
-    icon:
-      src: /patch-check-fill.svg
   - title: Typescript
     details: Wembat client library boasts seamless TypeScript support, empowering developers with type safety and enhanced code readability. Developers can leverage static typing to catch potential errors early in the development process.
     icon:
