@@ -10,13 +10,14 @@ import { initRedis } from './redis';
 import { initCrypto } from './crypto';
 
 const port = process.env.PORT || 8080;
+const appUrl = process.env.APP_URL || 'https://localhost:3000';
 
 initRedis();
 initCrypto();
 
 const app = express();
 
-const whitelist = ['https://localhost:3000'];
+const whitelist = [ appUrl ];
 
 const corsOptionsDelegate = (req, callback) => {
 
