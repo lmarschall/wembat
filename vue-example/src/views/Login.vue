@@ -93,7 +93,6 @@
 
             <div class="col-12">
               <button
-                v-if="registered"
                 class="btn btn-primary"
                 type="submit"
                 @click="login()"
@@ -107,9 +106,10 @@
                 ></span>
                 Login
               </button>
+            </div>
+            <div class="col-12">
               <button
-                v-else
-                class="btn btn-primary"
+                class="btn btn-link"
                 type="submit"
                 @click="register()"
                 :disabled="loading"
@@ -148,9 +148,6 @@ const router = useRouter();
 const email = ref("" as string);
 const token = ref("" as string);
 const wembatClient: WembatClient = inject('wembatClient') as WembatClient
-const registered = ref(
-  localStorage.getItem("deviceRegistered") === "true" ? true : false
-);
 
 async function register() {
   loading.value = true;
@@ -158,8 +155,6 @@ async function register() {
   const registerResponse = await wembatClient.register(email.value);
   if(registerResponse.success) {
     const verified = registerResponse.result;
-    localStorage.setItem("deviceRegistered", "true");
-    registered.value = true;
     loading.value = false;
   }
 }
