@@ -114,12 +114,6 @@
                 @click="register()"
                 :disabled="loading"
               >
-                <span
-                  v-if="loading"
-                  class="spinner-border spinner-border-sm"
-                  role="status"
-                  aria-hidden="true"
-                ></span>
                 Register Device
               </button>
             </div>
@@ -135,7 +129,6 @@
 
 <script setup lang="ts">
 
-import { Modal } from "bootstrap";
 import { ref, inject } from "vue";
 import { useRouter } from "vue-router";
 import { WembatClient, LoginResult } from "@wembat/client";
