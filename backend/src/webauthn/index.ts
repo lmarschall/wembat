@@ -19,9 +19,9 @@ type UserWithDevices = Prisma.UserGetPayload<{
 
 export const webauthnRoutes = Router();
 const prisma = new PrismaClient();
-const rpId = process.env.RPID || "pwahub.one";
-const rpName = "PWAHUB";
-const expectedOrigin = `https://${rpId}:3000`;
+const rpId = process.env.RPID || "localhost";
+const rpName = "Wembat";
+const expectedOrigin = `https://${rpId}`;
 
 console.log('server is starting webauthn services')
 
