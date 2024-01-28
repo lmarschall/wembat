@@ -9,7 +9,7 @@
           height="24"
           class="d-inline-block align-text-top"
         />
-        WebAuthn LargeBlob Encryption Example
+        Wembat Encryption Demo
       </a>
       <!-- <ul class="nav nav-pills">
         <li class="nav-item">

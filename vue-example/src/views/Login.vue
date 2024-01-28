@@ -93,7 +93,6 @@
 
             <div class="col-12">
               <button
-                v-if="registered"
                 class="btn btn-primary"
                 type="submit"
                 @click="login()"
@@ -108,7 +107,6 @@
                 Login
               </button>
               <button
-                v-else
                 class="btn btn-primary"
                 type="submit"
                 @click="register()"
@@ -138,10 +136,9 @@
 import { Modal } from "bootstrap";
 import { ref, inject } from "vue";
 import { useRouter } from "vue-router";
-import { WembatClient } from "@wembat/client";
+import { WembatClient, LoginResult } from "@wembat/client";
 
 import TokenService from "../services/token";
-import { LoginResult } from "../../../src";
 
 const loading = ref(false);
 const router = useRouter();
