@@ -11,7 +11,7 @@ import { initCrypto } from './crypto';
 
 const port = process.env.PORT || 8080;
 const rpId = process.env.RPID || "localhost:3000";
-const expectedOrigin = `https://${rpId}`;
+const expectedOrigin = `https://${rpId}:3000`;
 
 initRedis();
 initCrypto();

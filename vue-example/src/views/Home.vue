@@ -2,19 +2,15 @@
   <div>
     <div class="container">
       <div class="d-flex justify-content-center align-items-center" style="height: 80vh;">
-        <div class="card text-center border-0">
+        <div class="card border-0">
           <div class="card-body">
-            <div class="col-12">
-              <h3>
-                <img
-                  src="./../assets/key.svg"
-                  class="img-fluid"
-                  height="48"
-                  width="48"
-                  alt="..."
-                />
+            <div class="col-12 text-start">
+              <h1 class="upper">
+                Wembat
+              </h1>
+              <h1 class="lower">
                 WebAuthn Encryption
-              </h3>
+              </h1>
               <p>
                 We are using the largeBlob extenstion of WebAuthn to encrypt your message. <br />
                 Enter your message and with the saved private key in the authenticator <br />

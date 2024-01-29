@@ -2,18 +2,11 @@
   <nav id="navbar-top" class="navbar px-3">
     <div class="container">
       <a class="navbar-brand" href="/">
-        <img
-          src="./../assets/logo.png"
-          alt=""
-          width="24"
-          height="24"
-          class="d-inline-block align-text-top"
-        />
         Wembat Encryption Demo
       </a>
       <div class="form-check form-switch">
         <input class="form-check-input" type="checkbox" role="switch" @click="toggleTheme()" id="colorSchemeSwitch">
-        <label class="form-check-label" for="flexSwitchCheckDefault">Default switch checkbox input</label>
+        <label class="form-check-label" for="flexSwitchCheckDefault"> {{ activeTheme }}</label>
       </div>
     </div>
   </nav>

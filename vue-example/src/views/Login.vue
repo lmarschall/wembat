@@ -5,10 +5,10 @@
         <div class="card border-0">
           <div class="card-body">
             <div class="col-12 text-start">
-              <h1>
+              <h1 class="upper">
                 Wembat
               </h1>
-              <h1>
+              <h1 class="lower">
                 WebAuthn Login
               </h1>
               <p>
