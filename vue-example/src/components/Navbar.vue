@@ -49,20 +49,4 @@ const setTheme = (theme: string) => {
 </script>
 
 <style scoped>
-a.nav-link {
-  color: var(--color-white-blue);
-  border-radius: 0;
-}
-a.nav-link.active {
-  color: var(--color-white-blue);
-  border-bottom: 2px solid var(--color-light-blue);
-  background-color: var(--color-dark-blue);
-}
-a.navbar-brand {
-  color: var(--color-light-blue);
-}
-nav#navbar-top {
-  background-color: var(--color-dark-blue);
-  color: var(--color-white-blue);
-}
 </style>

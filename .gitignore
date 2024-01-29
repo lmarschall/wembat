@@ -1,6 +1,5 @@
-node_modules
 dist
-*.pem
+node_modules
 
 docs/.vitepress/dist
 docs/.vitepress/cache
