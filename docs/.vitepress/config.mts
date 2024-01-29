@@ -8,7 +8,7 @@ export default defineConfig({
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
-      { text: 'Demo', link: 'https://github.com/lmarschall/wembat' },
+      { text: 'Demo', link: 'https://demo.wembat.dev' },
       { text: 'Documentation', link: '/getting-started' }
     ],
 

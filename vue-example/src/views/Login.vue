@@ -1,77 +1,16 @@
 <template>
   <div>
-    <div
-      class="modal fade"
-      id="registerModal"
-      style="height: 100vh"
-      tabindex="-1"
-      aria-labelledby="registerModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="registerModalLabel">
-              Register new device
-            </h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-          <div class="modal-body">
-            This email is already registered with a device.<br />
-            In order to register this new device please enter the token we have
-            sent to your email.<br />
-            <div class="form-floating mb-3">
-              <input
-                type="text"
-                class="form-control"
-                id="floatingToken"
-                placeholder="example@mail.com"
-                v-model="token"
-              />
-              <label for="floatingToken">Token</label>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button
-              @click="register()"
-              type="button"
-              class="btn btn-primary"
-              data-bs-dismiss="modal"
-            >
-              Register
-            </button>
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <div class="container">
       <div class="d-flex justify-content-center align-items-center" style="height: 80vh;">
-        <div class="card text-center border-0">
+        <div class="card border-0">
           <div class="card-body">
-            <div class="col-12">
-              <h3>
-                <img
-                  src="./../assets/fingerprint.svg"
-                  class="img-fluid"
-                  height="48"
-                  width="48"
-                  alt="..."
-                />
+            <div class="col-12 text-start">
+              <h1>
+                Wembat
+              </h1>
+              <h1>
                 WebAuthn Login
-              </h3>
+              </h1>
               <p>
                 We are using WebAuthn to login our users. <br />
                 Please provide a valid email address as your username and login

@@ -4,6 +4,7 @@
 - fido compliance
 - only one device per user
 ----------------------------------------------- Release
+- discoverable credentials
 - types for wembat actions correction
 - improve error handling
 - console logs überarbeiten

@@ -6,6 +6,9 @@ hero:
   name: "Wembat"
   text: "WebAuthn Based Authentication"
   tagline: Easy to use webauthn client library and backend for authentication and encryption.
+  image:
+    src: /wombat.png
+    alt: Wombat
   actions:
     # - theme: brand
     #   text: Markdown Examples

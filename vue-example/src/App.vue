@@ -22,7 +22,14 @@ import Footer from "./components/Footer.vue";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #2c3e50;
+}
+
+[data-bs-theme=dark] #app {
+  color: #dfe6ee;
+}
+
+[data-bs-theme=light] #app {
+  color: #415872;
 }
 
 .btn-primary {
