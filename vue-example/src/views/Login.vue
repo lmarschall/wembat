@@ -70,7 +70,7 @@
 
 import { ref, inject } from "vue";
 import { useRouter } from "vue-router";
-import { WembatClient, LoginResult } from "@wembat/client";
+import { WembatClient, LoginResult, ErrorResult, RegisterResult } from "@wembat/client";
 
 import TokenService from "../services/token";
 
@@ -86,8 +86,12 @@ async function register() {
   const registerResponse = await wembatClient.register(email.value);
   if(registerResponse.success) {
     const verified = registerResponse.result;
-    loading.value = false;
+  } else  {
+    const errorResult = registerResponse.result as ErrorResult;
+    alert(errorResult.error);
   }
+
+  loading.value = false;
 }
 
 async function login() {
@@ -103,6 +107,11 @@ async function login() {
       TokenService.setToken(loginResult.jwt);
       router.push("/");
     }
+  } else {
+    const errorResult = loginResponse.result as ErrorResult;
+    alert(errorResult.error);
   }
+
+  loading.value = false;
 }
 </script>
