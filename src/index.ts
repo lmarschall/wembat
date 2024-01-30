@@ -28,15 +28,7 @@ export interface WembatMessage {
   encrypted: string;
 }
 
-interface ChallengeInputOptions extends AuthenticationExtensionsClientInputs {
-  largeBlob: any;
-}
-
-interface ChallengeOutputptions extends AuthenticationExtensionsClientOutputs {
-  largeBlob: any;
-}
-
-interface RegisterResult {
+export interface RegisterResult {
   verifiedStatus: boolean;
 }
 
@@ -45,8 +37,16 @@ export interface LoginResult {
   jwt: string;
 }
 
-interface ErrorResult {
+export interface ErrorResult {
   error: string;
+}
+
+interface ChallengeInputOptions extends AuthenticationExtensionsClientInputs {
+  largeBlob: any;
+}
+
+interface ChallengeOutputptions extends AuthenticationExtensionsClientOutputs {
+  largeBlob: any;
 }
 
 // class
@@ -101,6 +101,10 @@ class WembatClient {
     return btoa(String.fromCharCode.apply(null, [...new Uint8Array(buf)]));
   }
 
+  validateStatus(status: number) {
+    return status == 200 || status == 400; // default
+  }
+
   // main function
   async register(userUId: string): Promise<WembatActionResponse> {
     // TODO maybe check for largeblob not supported
@@ -113,20 +117,21 @@ class WembatClient {
     try {
       if (this.axiosClient == undefined) throw Error("Axiso Client undefined!");
 
-      const requestRegisterResponse =
-        await this.axiosClient.post<PublicKeyCredentialCreationOptionsJSON>(
-          `/request-register`,
-          {
-            userInfo: { userMail: userUId },
-          }
-        );
+      const requestRegisterResponse = await this.axiosClient.post<any>(
+        `/request-register`,
+        {
+          userInfo: { userMail: userUId },
+        }
+      );
 
       if (requestRegisterResponse.status !== 200) {
         // i guess we need to handle errors here
-        throw Error(requestRegisterResponse.statusText);
+        throw Error(requestRegisterResponse.data);
       }
 
-      const challengeOptions = requestRegisterResponse.data;
+      const requestRegisterResponseData = requestRegisterResponse.data;
+      const challengeOptions: PublicKeyCredentialCreationOptionsJSON =
+        requestRegisterResponseData.options;
 
       const credentials = await startRegistration(challengeOptions).catch(
         (err: string) => {
@@ -136,24 +141,23 @@ class WembatClient {
 
       // TODO add check for largeBlob supported
 
-      const registerResponse = await this.axiosClient.post<boolean>(
-        `/register`,
-        {
-          challengeResponse: {
-            credentials: credentials,
-            challenge: challengeOptions.challenge,
-            deviceToken: "",
-          },
-        }
-      );
+      const registerResponse = await this.axiosClient.post<any>(`/register`, {
+        challengeResponse: {
+          credentials: credentials,
+          challenge: challengeOptions.challenge,
+          deviceToken: "",
+        },
+      });
 
       if (registerResponse.status !== 200) {
         // i guess we need to handle errors here
-        throw Error(registerResponse.statusText);
+        throw Error(registerResponse.data);
       }
 
+      const registerResponseData = registerResponse.data;
+
       const registerResult: RegisterResult = {
-        verifiedStatus: registerResponse.data,
+        verifiedStatus: registerResponseData.verified,
       };
       actionResponse.result = registerResult as RegisterResult;
       actionResponse.success = true;
@@ -178,7 +182,7 @@ class WembatClient {
     try {
       if (this.axiosClient == undefined) throw Error("Axiso Client undefined!");
 
-      const loginRequestResponse = await this.axiosClient.post(
+      const loginRequestResponse = await this.axiosClient.post<any>(
         `/request-login`,
         {
           userInfo: { userMail: userUId },
@@ -187,11 +191,13 @@ class WembatClient {
 
       if (loginRequestResponse.status !== 200) {
         // i guess we need to handle errors here
-        throw Error(loginRequestResponse.statusText);
+        throw Error(loginRequestResponse.data);
       }
 
-      const challengeOptions = loginRequestResponse.data.options;
-      const publicServerKey = loginRequestResponse.data.publicUserKey;
+      const loginRequestResponseData = loginRequestResponse.data;
+
+      const challengeOptions = loginRequestResponseData.options;
+      const pubicUserKey = loginRequestResponseData.publicUserKey;
 
       let privateKey: CryptoKey | undefined;
       let publicKey: CryptoKey | undefined;
@@ -203,9 +209,7 @@ class WembatClient {
 
       // check if we want to read or write
       if (inputOptions?.largeBlob.read) {
-        publicKey = await this.loadCryptoPublicKeyFromString(
-          loginRequestResponse.data.publicUserKey
-        );
+        publicKey = await this.loadCryptoPublicKeyFromString(pubicUserKey);
       } else if (inputOptions.largeBlob.write) {
         // generate key material to be saved
         const keyPair = await window.crypto.subtle.generateKey(
@@ -296,7 +300,7 @@ class WembatClient {
           ? await this.saveCryptoKeyAsString(publicKey)
           : "";
 
-      const response = await this.axiosClient.post(`/login`, {
+      const loginReponse = await this.axiosClient.post<any>(`/login`, {
         // TODO interfaces for request bodies
         challengeResponse: {
           credentials: credentials,
@@ -306,13 +310,17 @@ class WembatClient {
         },
       });
 
-      if (response.status !== 200) {
-        throw Error(response.statusText);
+      if (loginReponse.status !== 200) {
+        throw Error(loginReponse.data);
       }
 
+      const loginReponseData = loginReponse.data;
+
+      console.log(loginReponseData);
+
       const loginResult: LoginResult = {
-        verified: response.data.verified,
-        jwt: response.data.jwt,
+        verified: loginReponseData.verified,
+        jwt: loginReponseData.jwt,
       };
       actionResponse.result = loginResult;
       actionResponse.success = true;
