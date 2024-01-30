@@ -33,6 +33,5 @@ services:
             - "RPID=localhost"
             - "PORT=${API_PORT}"
             - "DATABASE_URL=${API_DATABASE_URL}"
-            - "SENDGRID_API_KEY=${SENDGRID_API_KEY}"
             - "REDIS_HOST=redis"
             - "REDIS_PORT=6379"
