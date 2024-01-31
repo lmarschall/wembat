@@ -4,9 +4,9 @@ import express from "express";
 import bodyParser from "body-parser";
 import compression from "compression";
 
-import { webauthnRoutes } from "./webauthn";
 import { initRedis } from "./redis";
 import { initCrypto } from "./crypto";
+import { webauthnRoutes } from "./webauthn";
 
 const port = process.env.PORT || 8080;
 const rpId = process.env.RPID || "localhost:3000";

@@ -1,31 +1,31 @@
 import { generateKeyPair, exportJWK, SignJWT } from "jose";
-import { PrismaClient, User, Prisma } from "@prisma/client";
+import { User } from "@prisma/client";
 
 const keyPairs: any = {};
 
 export const initCrypto = async () => {
-  // keyPairs.secretKeyPair = await window.crypto.subtle.generateKey(
-  //     {
-  //       name: "ECDH",
-  //       namedCurve: "P-384",
-  //     },
-  //     true,
-  //     ["deriveKey", "deriveBits"]
-  // );
+	// keyPairs.secretKeyPair = await window.crypto.subtle.generateKey(
+	//     {
+	//       name: "ECDH",
+	//       namedCurve: "P-384",
+	//     },
+	//     true,
+	//     ["deriveKey", "deriveBits"]
+	// );
 
-  keyPairs.tokenKeyPair = await generateKeyPair("ES256");
+	keyPairs.tokenKeyPair = await generateKeyPair("ES256");
 };
 
 export const createJWT = async (user: User) => {
-  const publicJwk = await exportJWK(keyPairs.tokenKeyPair.publicKey);
+	const publicJwk = await exportJWK(keyPairs.tokenKeyPair.publicKey);
 
-  return await new SignJWT({ "urn:example:claim": true, userId: user.uid })
-    .setProtectedHeader({ alg: "ES256", jwk: publicJwk })
-    .setIssuedAt()
-    .setIssuer("urn:example:issuer")
-    .setAudience("urn:example:audience")
-    // .setExpirationTime('2h') // no exp time
-    .sign(keyPairs.tokenKeyPair.privateKey);
+	return await new SignJWT({ "urn:example:claim": true, userId: user.uid })
+		.setProtectedHeader({ alg: "ES256", jwk: publicJwk })
+		.setIssuedAt()
+		.setIssuer("urn:example:issuer")
+		.setAudience("urn:example:audience")
+		// .setExpirationTime('2h') // no exp time
+		.sign(keyPairs.tokenKeyPair.privateKey);
 };
 
 // export const createSharedSecret = async(publicKey: any) => {
