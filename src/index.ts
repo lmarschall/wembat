@@ -217,9 +217,7 @@ class WembatClient {
 
 			// check if we want to read or write
 			if (inputOptions?.largeBlob.read) {
-				publicKey = await this.loadCryptoPublicKeyFromString(
-					pubicUserKey
-				);
+				publicKey = await this.loadCryptoPublicKeyFromString(pubicUserKey);
 			} else if (inputOptions.largeBlob.write) {
 				// generate key material to be saved
 				const keyPair = await window.crypto.subtle.generateKey(
@@ -237,9 +235,7 @@ class WembatClient {
 				// export to jwk format buffer to save private key in large blob
 				const blob = await this.saveCryptoKeyAsString(privateKey);
 				inputOptions.largeBlob.write = Uint8Array.from(
-					blob
-						.split("")
-						.map((c: string) => c.codePointAt(0)) as number[]
+					blob.split("").map((c: string) => c.codePointAt(0)) as number[]
 				);
 				console.log(inputOptions.largeBlob.write);
 			} else {
@@ -247,11 +243,11 @@ class WembatClient {
 				throw Error("not reading or writing");
 			}
 
-			const credentials = await startAuthentication(
-				challengeOptions
-			).catch((err: string) => {
-				throw Error(err);
-			});
+			const credentials = await startAuthentication(challengeOptions).catch(
+				(err: string) => {
+					throw Error(err);
+				}
+			);
 
 			console.log(credentials);
 
@@ -268,9 +264,7 @@ class WembatClient {
 				);
 				console.log(JSON.parse(keyBuffer));
 
-				privateKey = await this.loadCryptoPrivateKeyFromString(
-					keyBuffer
-				);
+				privateKey = await this.loadCryptoPrivateKeyFromString(keyBuffer);
 			}
 
 			// TODO private key public key verification
