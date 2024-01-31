@@ -33,12 +33,30 @@ export interface RegisterResult {
 }
 
 export interface LoginResult {
-	verified: true;
+	verified: boolean;
 	jwt: string;
 }
 
 export interface ErrorResult {
 	error: string;
+}
+
+interface RequestRegisterResponse {
+	options: PublicKeyCredentialCreationOptionsJSON;
+}
+
+interface RegisterResponse {
+	verified: boolean;
+}
+
+interface RequestLoginResponse {
+	options: PublicKeyCredentialRequestOptionsJSON;
+	publicUserKey: string;
+}
+
+interface LoginResponse {
+	verified: boolean;
+	jwt: string;
 }
 
 interface ChallengeInputOptions extends AuthenticationExtensionsClientInputs {
@@ -64,6 +82,8 @@ class WembatClient {
 			validateStatus: function (status) {
 				return status == 200 || status == 400;
 			},
+			transformResponse: (res) => res,
+			responseType: "text",
 		});
 		this.axiosClient.defaults.headers.common["content-type"] =
 			"Application/Json";
@@ -121,7 +141,7 @@ class WembatClient {
 			if (this.axiosClient == undefined)
 				throw Error("Axiso Client undefined!");
 
-			const requestRegisterResponse = await this.axiosClient.post<any>(
+			const requestRegisterResponse = await this.axiosClient.post<string>(
 				`/request-register`,
 				{
 					userInfo: { userMail: userUId },
@@ -133,19 +153,20 @@ class WembatClient {
 				throw Error(requestRegisterResponse.data);
 			}
 
-			const requestRegisterResponseData = requestRegisterResponse.data;
+			const requestRegisterResponseData: RequestRegisterResponse =
+				JSON.parse(requestRegisterResponse.data);
 			const challengeOptions: PublicKeyCredentialCreationOptionsJSON =
 				requestRegisterResponseData.options;
 
-			const credentials = await startRegistration(challengeOptions).catch(
-				(err: string) => {
-					throw Error(err);
-				}
-			);
+			const credentials: RegistrationResponseJSON = await startRegistration(
+				challengeOptions
+			).catch((err: string) => {
+				throw Error(err);
+			});
 
 			// TODO add check for largeBlob supported
 
-			const registerResponse = await this.axiosClient.post<any>(
+			const registerResponse = await this.axiosClient.post<string>(
 				`/register`,
 				{
 					challengeResponse: {
@@ -161,7 +182,9 @@ class WembatClient {
 				throw Error(registerResponse.data);
 			}
 
-			const registerResponseData = registerResponse.data;
+			const registerResponseData: RegisterResponse = JSON.parse(
+				registerResponse.data
+			);
 
 			const registerResult: RegisterResult = {
 				verifiedStatus: registerResponseData.verified,
@@ -190,7 +213,7 @@ class WembatClient {
 			if (this.axiosClient == undefined)
 				throw Error("Axiso Client undefined!");
 
-			const loginRequestResponse = await this.axiosClient.post<any>(
+			const loginRequestResponse = await this.axiosClient.post<string>(
 				`/request-login`,
 				{
 					userInfo: { userMail: userUId },
@@ -202,8 +225,9 @@ class WembatClient {
 				throw Error(loginRequestResponse.data);
 			}
 
-			const loginRequestResponseData = loginRequestResponse.data;
-
+			const loginRequestResponseData: RequestLoginResponse = JSON.parse(
+				loginRequestResponse.data
+			);
 			const challengeOptions = loginRequestResponseData.options;
 			const pubicUserKey = loginRequestResponseData.publicUserKey;
 
@@ -243,11 +267,10 @@ class WembatClient {
 				throw Error("not reading or writing");
 			}
 
-			const credentials = await startAuthentication(challengeOptions).catch(
-				(err: string) => {
+			const credentials: AuthenticationResponseJSON =
+				await startAuthentication(challengeOptions).catch((err: string) => {
 					throw Error(err);
-				}
-			);
+				});
 
 			console.log(credentials);
 
@@ -308,7 +331,7 @@ class WembatClient {
 					? await this.saveCryptoKeyAsString(publicKey)
 					: "";
 
-			const loginReponse = await this.axiosClient.post<any>(`/login`, {
+			const loginReponse = await this.axiosClient.post<string>(`/login`, {
 				// TODO interfaces for request bodies
 				challengeResponse: {
 					credentials: credentials,
@@ -322,7 +345,7 @@ class WembatClient {
 				throw Error(loginReponse.data);
 			}
 
-			const loginReponseData = loginReponse.data;
+			const loginReponseData: LoginResponse = JSON.parse(loginReponse.data);
 
 			console.log(loginReponseData);
 

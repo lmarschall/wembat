@@ -325,11 +325,9 @@ webauthnRoutes.post("/request-login", async (req, res) => {
 				throw Error("Updating user challenge failed");
 			});
 
-		const string = JSON.stringify({
-			options: options,
-			publicUserKey: publicUserKey,
-		});
-		res.status(200).send(string);
+		res.status(200).send(
+			JSON.stringify({ options: options, publicUserKey: publicUserKey })
+		);
 	} catch (error) {
 		console.log(error);
 		return res.status(400).send(error.message);
