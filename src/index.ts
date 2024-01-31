@@ -61,6 +61,9 @@ class WembatClient {
     this.apiUrl = url;
     this.axiosClient = axios.create({
       baseURL: `${this.apiUrl}/webauthn`,
+      validateStatus: function (status) {
+        return status == 200 || status == 400;
+      },
     });
     this.axiosClient.defaults.headers.common["content-type"] =
       "Application/Json";

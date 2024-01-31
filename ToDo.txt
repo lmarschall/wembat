@@ -6,7 +6,7 @@
 ----------------------------------------------- Release
 - discoverable credentials
 - types for wembat actions correction
-- improve error handling
+- improve error handling x
 - console logs überarbeiten
 - tests schreiben
 - api class structure
