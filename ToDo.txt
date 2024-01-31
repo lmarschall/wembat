@@ -5,11 +5,10 @@
 - only one device per user
 ----------------------------------------------- Release
 - discoverable credentials
-- types for wembat actions correction
+- types for wembat actions correction x
 - improve error handling x
 - console logs überarbeiten
 - tests schreiben
 - api class structure
-- handle error function
 - create error defines
 - encapsulate helper functions

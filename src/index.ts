@@ -234,8 +234,6 @@ class WembatClient {
 			let privateKey: CryptoKey | undefined;
 			let publicKey: CryptoKey | undefined;
 
-			console.log(challengeOptions);
-
 			const inputOptions: ChallengeInputOptions | undefined =
 				challengeOptions.extensions as ChallengeInputOptions;
 
@@ -261,7 +259,6 @@ class WembatClient {
 				inputOptions.largeBlob.write = Uint8Array.from(
 					blob.split("").map((c: string) => c.codePointAt(0)) as number[]
 				);
-				console.log(inputOptions.largeBlob.write);
 			} else {
 				// not reading or writing is not intended
 				throw Error("not reading or writing");
@@ -271,8 +268,6 @@ class WembatClient {
 				await startAuthentication(challengeOptions).catch((err: string) => {
 					throw Error(err);
 				});
-
-			console.log(credentials);
 
 			const outputOptions: ChallengeOutputptions | undefined =
 				credentials.clientExtensionResults as ChallengeOutputptions;
@@ -285,7 +280,6 @@ class WembatClient {
 				const keyBuffer = String.fromCodePoint(
 					...new Uint8Array(outputOptions.largeBlob.blob)
 				);
-				console.log(JSON.parse(keyBuffer));
 
 				privateKey = await this.loadCryptoPrivateKeyFromString(keyBuffer);
 			}
@@ -318,12 +312,7 @@ class WembatClient {
 				// TODO throw error
 				console.error("private key or public key undefined!");
 				throw Error("private key or public key undefined!");
-				// console.log(this.privateKey);
-				// console.log(this.publicKey);
 			}
-
-			// console.log(this.privateKey);
-			// console.log(this.publicKey);
 
 			// send public key to server if we just created one
 			const pubKeyString =
@@ -346,8 +335,6 @@ class WembatClient {
 			}
 
 			const loginReponseData: LoginResponse = JSON.parse(loginReponse.data);
-
-			console.log(loginReponseData);
 
 			const loginResult: LoginResult = {
 				verified: loginReponseData.verified,

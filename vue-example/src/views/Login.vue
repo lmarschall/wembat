@@ -29,7 +29,9 @@
               />
               <label for="floatingInput">Email address</label>
             </div>
-
+            <div class="col-12">
+              <div id="liveAlertPlaceholder"></div>
+            </div>
             <div class="col-12">
               <button
                 class="btn btn-primary"
@@ -80,15 +82,29 @@ const email = ref("" as string);
 const token = ref("" as string);
 const wembatClient: WembatClient = inject('wembatClient') as WembatClient
 
+function appendAlert(message: string, type: string) {
+  const alertPlaceholder = document.getElementById('liveAlertPlaceholder')
+  const wrapper = document.createElement('div')
+  wrapper.innerHTML = [
+    `<div class="alert alert-${type} alert-dismissible" role="alert">`,
+    `   <div>${message}</div>`,
+    '   <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>',
+    '</div>'
+  ].join('')
+
+  alertPlaceholder.append(wrapper)
+}
+
 async function register() {
   loading.value = true;
 
   const registerResponse = await wembatClient.register(email.value);
   if(registerResponse.success) {
     const verified = registerResponse.result;
+    appendAlert("Registration successful", "success");
   } else  {
     const errorResult = registerResponse.result as ErrorResult;
-    alert(errorResult.error);
+    appendAlert(errorResult.error, "danger");
   }
 
   loading.value = false;
@@ -103,13 +119,13 @@ async function login() {
     const loginResult: LoginResult = loginResponse.result as LoginResult;
 
     if (loginResult.verified) {
-      console.log("login verified, save token");
+      appendAlert("Login successful", "success");
       TokenService.setToken(loginResult.jwt);
       router.push("/");
     }
   } else {
     const errorResult = loginResponse.result as ErrorResult;
-    alert(errorResult.error);
+    appendAlert(errorResult.error, "danger");
   }
 
   loading.value = false;

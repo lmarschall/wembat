@@ -28,6 +28,9 @@
               <label for="messageInput">Encrypted Message</label>
             </div>
             <div class="col-12">
+              <div id="liveAlertPlaceholder"></div>
+            </div>
+            <div class="col-12">
               <button
                 class="btn btn-primary"
                 type="submit"
@@ -35,6 +38,16 @@
                 :disabled="loading"
               >
                 Encrypt Message
+              </button>
+            </div>
+            <div class="col-12">
+              <button
+                class="btn btn-link"
+                type="submit"
+                @click="logout()"
+                :disabled="loading"
+              >
+                Logout
               </button>
             </div>
           </div>
@@ -51,7 +64,7 @@
 
 import { useRouter } from "vue-router";
 import { ref, onMounted, inject } from "vue";
-import { WembatClient, WembatMessage } from "@wembat/client";
+import { ErrorResult, WembatClient, WembatMessage } from "@wembat/client";
 
 import TokenService from "../services/token";
 import MessageService from "../services/message";
@@ -62,12 +75,30 @@ const message = ref("" as string);
 const wembatClient: WembatClient = inject('wembatClient') as WembatClient
 
 onMounted(async () => {
-  if(TokenService.getToken()) {
+  if(TokenService.hasToken() && wembatClient.getCryptoPublicKey() !== undefined && wembatClient.getCryptoPrivateKey() !== undefined) {
     await decryptMessage();
   } else {
     router.push("/login");
   }
 })
+
+function appendAlert(message: string, type: string) {
+  const alertPlaceholder = document.getElementById('liveAlertPlaceholder')
+  const wrapper = document.createElement('div')
+  wrapper.innerHTML = [
+    `<div class="alert alert-${type} alert-dismissible" role="alert">`,
+    `   <div>${message}</div>`,
+    '   <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>',
+    '</div>'
+  ].join('')
+
+  alertPlaceholder.append(wrapper)
+}
+
+async function logout() {
+  TokenService.resetToken();
+  router.push("/login");
+}
 
 async function encryptMessage() {
   const encryptMessage : WembatMessage = {
@@ -80,7 +111,10 @@ async function encryptMessage() {
   const encryptionResult = await wembatClient.encrypt(encryptMessage, publicKey);
   if(encryptionResult.success) {
     MessageService.setEncryptedMessage(JSON.stringify(encryptionResult.result));
-    router.push("/login");
+    appendAlert("Message encrypted", "success");
+  } else {
+    const errorResult = encryptionResult.result as ErrorResult;
+    appendAlert(errorResult.error, "danger");
   }
 }
 
@@ -90,7 +124,13 @@ async function decryptMessage() {
   const encryptedMessage = MessageService.getEncryptedMessage() as string;
   if (encryptedMessage != "") {
     const decryptionResult = await wembatClient.decrypt(JSON.parse(encryptedMessage), publicKey);
-    if(decryptionResult.success) message.value = (decryptionResult.result as WembatMessage).message;
+    if(decryptionResult.success) {
+      message.value = (decryptionResult.result as WembatMessage).message;
+      appendAlert("Message decrypted", "success");
+    } else {
+      const errorResult = decryptionResult.result as ErrorResult;
+      appendAlert(errorResult.error, "danger");
+    }
   }
 }
 </script>
