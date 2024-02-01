@@ -7,7 +7,7 @@
 - discoverable credentials
 - types for wembat actions correction x
 - improve error handling x
-- console logs überarbeiten
+- console logs überarbeiten x
 - tests schreiben
 - api class structure
 - create error defines
