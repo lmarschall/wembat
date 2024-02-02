@@ -51,6 +51,9 @@ webauthnRoutes.post("/request-register", async (req, res) => {
 				throw Error("User could not be found or created in database");
 			})) as UserWithDevices;
 
+
+		if (user.devices.length > 0) throw Error("User already registered with one device")
+
 		const opts: any = {
 			rpName: rpName,
 			rpId,
