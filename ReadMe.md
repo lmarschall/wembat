@@ -1,6 +1,8 @@
-# Getting Started
+# Wembat
 
-This page shows the first steps to start the wembat backend and how to use the wembat client on the localhost.
+Based on the awesome work of [SimpleWebAuthn](https://github.com/MasterKale/SimpleWebAuthn)
+
+### This client library can be used to authenticate users and encrypt data locally via the largeBlob extension of webauthn.
 
 <!-- ## Syntax Highlighting
 
@@ -33,7 +35,7 @@ const wembatClient = new WembatClient("http://localhost:8080");
 ## Register User
 
 ::: warning
-The following function must be triggered by a user interaction, a button click for example.
+The following function must be triggered by a user interaction, like a button click for example.
 :::
 
 ```ts{4}
@@ -49,7 +51,7 @@ async function register() {
 ## Login User
 
 ::: warning
-The following function must be triggered by a user interaction, a button click for example.
+The following function must be triggered by a user interaction, like a button click for example.
 :::
 
 ```ts{4}
