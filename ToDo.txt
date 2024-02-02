@@ -2,7 +2,7 @@
 - add public key parameter to encrypt function x
 - prisma db push on server start x
 - fido compliance
-- only one device per user
+- only one device per user x
 ----------------------------------------------- Release
 - discoverable credentials
 - types for wembat actions correction x

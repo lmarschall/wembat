@@ -1,6 +1,6 @@
 {
   "name": "@wembat/client",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": "Lukas Marschall <mail@lmarschall.com>",
   "main": "./dist/wembat-client.umd.js",
   "module": "./dist/wembat-client.mjs",
