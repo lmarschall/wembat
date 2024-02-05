@@ -12,3 +12,4 @@
 - api class structure
 - create error defines
 - encapsulate helper functions
+- function and variables visibility private/public x

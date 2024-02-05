@@ -69,10 +69,10 @@ interface ChallengeOutputptions extends AuthenticationExtensionsClientOutputs {
 
 // class
 class WembatClient {
-	apiUrl = "";
-	axiosClient: AxiosInstance | undefined;
-	publicKey: CryptoKey | undefined;
-	privateKey: CryptoKey | undefined;
+	private readonly apiUrl;
+	private readonly axiosClient: AxiosInstance | undefined;
+	private publicKey: CryptoKey | undefined;
+	private privateKey: CryptoKey | undefined;
 
 	// constructor
 	constructor(url: string) {
@@ -92,24 +92,24 @@ class WembatClient {
 		// this.axiosClient.defaults.headers.common['Authorization'] = AUTH_TOKEN;
 	}
 
-	getCryptoPublicKey() {
+	public getCryptoPublicKey() {
 		return this.publicKey;
 	}
 
-	getCryptoPrivateKey() {
+	private getCryptoPrivateKey() {
 		return this.privateKey;
 	}
 
-	setCryptoPublicKey(key: CryptoKey) {
+	private setCryptoPublicKey(key: CryptoKey) {
 		this.publicKey = key;
 	}
 
-	setCryptoPrivateKey(key: CryptoKey) {
+	private setCryptoPrivateKey(key: CryptoKey) {
 		this.privateKey = key;
 	}
 
 	// helper function
-	str2ab(str: string): ArrayBuffer {
+	private str2ab(str: string): ArrayBuffer {
 		str = atob(str);
 		const buf = new ArrayBuffer(str.length);
 		const bufView = new Uint8Array(buf);
@@ -120,16 +120,12 @@ class WembatClient {
 	}
 
 	// helper function
-	ab2str(buf: ArrayBuffer): string {
+	private ab2str(buf: ArrayBuffer): string {
 		return btoa(String.fromCharCode.apply(null, [...new Uint8Array(buf)]));
 	}
 
-	validateStatus(status: number) {
-		return status == 200 || status == 400; // default
-	}
-
 	// main function
-	async register(userUId: string): Promise<WembatActionResponse> {
+	public async register(userUId: string): Promise<WembatActionResponse> {
 		// TODO maybe check for largeblob not supported
 
 		const actionResponse = {
@@ -203,7 +199,7 @@ class WembatClient {
 	}
 
 	// main function
-	async login(userUId: string): Promise<WembatActionResponse> {
+	public async login(userUId: string): Promise<WembatActionResponse> {
 		const actionResponse = {
 			success: false,
 			result: {},
@@ -353,7 +349,7 @@ class WembatClient {
 		}
 	}
 
-	async encrypt(
+	public async encrypt(
 		wembatMessage: WembatMessage,
 		publicKey: CryptoKey
 	): Promise<WembatActionResponse> {
@@ -395,7 +391,7 @@ class WembatClient {
 		}
 	}
 
-	async decrypt(
+	public async decrypt(
 		wembatMessage: WembatMessage,
 		publicKey: CryptoKey
 	): Promise<WembatActionResponse> {
@@ -436,7 +432,7 @@ class WembatClient {
 		}
 	}
 
-	async deriveEncryptionKey(publicKey: CryptoKey): Promise<CryptoKey> {
+	private async deriveEncryptionKey(publicKey: CryptoKey): Promise<CryptoKey> {
 		if (this.privateKey !== undefined && publicKey !== undefined) {
 			const encryptionKey = await window.crypto.subtle.deriveKey(
 				{
@@ -457,12 +453,12 @@ class WembatClient {
 		}
 	}
 
-	async saveCryptoKeyAsString(cryptoKey: CryptoKey): Promise<string> {
+	private async saveCryptoKeyAsString(cryptoKey: CryptoKey): Promise<string> {
 		const exported = await window.crypto.subtle.exportKey("jwk", cryptoKey);
 		return JSON.stringify(exported);
 	}
 
-	async loadCryptoPublicKeyFromString(
+	private async loadCryptoPublicKeyFromString(
 		pubKeyString: string
 	): Promise<CryptoKey> {
 		if (pubKeyString !== "") {
@@ -481,7 +477,7 @@ class WembatClient {
 		}
 	}
 
-	async loadCryptoPrivateKeyFromString(
+	private async loadCryptoPrivateKeyFromString(
 		privateKeyString: string
 	): Promise<CryptoKey> {
 		if (privateKeyString !== "") {
