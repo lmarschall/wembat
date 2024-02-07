@@ -10,7 +10,7 @@ datasource db {
 model User {
   uid       String    @id @default(cuid())
   challenge String    @unique @default("")
-  mail      String    @unique
+  name      String    @unique
   token     String    @default("")
   publicKey String    @default("")
   devices   Device[]

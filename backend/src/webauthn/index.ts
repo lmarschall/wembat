@@ -30,17 +30,17 @@ webauthnRoutes.post("/request-register", async (req, res) => {
 		if (!req.body.userInfo) throw Error("User Info not present");
 
 		// get parameters from request
-		const { userMail } = req.body.userInfo;
+		const { userName } = req.body.userInfo;
 
 		// search for user if name already exists, else generate new user
 		const user = (await prisma.user
 			.upsert({
 				where: {
-					mail: userMail,
+					name: userName,
 				},
 				update: {},
 				create: {
-					mail: userMail,
+					name: userName,
 				},
 				include: {
 					devices: true,
@@ -58,7 +58,7 @@ webauthnRoutes.post("/request-register", async (req, res) => {
 			rpName: rpName,
 			rpId,
 			userID: user.uid,
-			userName: userMail,
+			userName: user.name,
 			timeout: 60000,
 			attestationType: "none",
 			excludeCredentials: user.devices.map((dev) => ({
@@ -232,13 +232,13 @@ webauthnRoutes.post("/request-login", async (req, res) => {
 	try {
 		if (!req.body.userInfo) throw Error("User info not present");
 
-		const { userMail } = req.body.userInfo;
+		const { userName } = req.body.userInfo;
 
 		// search for user
 		const user = (await prisma.user
 			.findUnique({
 				where: {
-					mail: userMail,
+					name: userName,
 				},
 				include: {
 					devices: true,

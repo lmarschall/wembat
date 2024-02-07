@@ -75,7 +75,7 @@ const message = ref("" as string);
 const wembatClient: WembatClient = inject('wembatClient') as WembatClient
 
 onMounted(async () => {
-  if(TokenService.hasToken() && wembatClient.getCryptoPublicKey() !== undefined && wembatClient.getCryptoPrivateKey() !== undefined) {
+  if(TokenService.hasToken() && wembatClient.getCryptoPublicKey() !== undefined) {
     await decryptMessage();
   } else {
     router.push("/login");

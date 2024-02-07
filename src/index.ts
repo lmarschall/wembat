@@ -69,8 +69,8 @@ interface ChallengeOutputptions extends AuthenticationExtensionsClientOutputs {
 
 // class
 class WembatClient {
-	private readonly apiUrl;
-	private readonly axiosClient: AxiosInstance | undefined;
+	private readonly apiUrl: string;
+	private readonly axiosClient: AxiosInstance;
 	private publicKey: CryptoKey | undefined;
 	private privateKey: CryptoKey | undefined;
 
@@ -140,7 +140,7 @@ class WembatClient {
 			const requestRegisterResponse = await this.axiosClient.post<string>(
 				`/request-register`,
 				{
-					userInfo: { userMail: userUId },
+					userInfo: { userName: userUId },
 				}
 			);
 
@@ -212,7 +212,7 @@ class WembatClient {
 			const loginRequestResponse = await this.axiosClient.post<string>(
 				`/request-login`,
 				{
-					userInfo: { userMail: userUId },
+					userInfo: { userName: userUId },
 				}
 			);
 

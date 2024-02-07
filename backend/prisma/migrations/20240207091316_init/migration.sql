@@ -2,7 +2,7 @@
 CREATE TABLE "User" (
     "uid" TEXT NOT NULL,
     "challenge" TEXT NOT NULL DEFAULT E'',
-    "mail" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
     "token" TEXT NOT NULL DEFAULT E'',
     "publicKey" TEXT NOT NULL DEFAULT E'',
 
@@ -26,7 +26,7 @@ CREATE TABLE "Device" (
 CREATE UNIQUE INDEX "User_challenge_key" ON "User"("challenge");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_mail_key" ON "User"("mail");
+CREATE UNIQUE INDEX "User_name_key" ON "User"("name");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Device_credentialId_key" ON "Device"("credentialId");

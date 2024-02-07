@@ -12,22 +12,22 @@
                 WebAuthn Login
               </h1>
               <p>
-                We are using WebAuthn to login our users. <br />
-                Please provide a valid email address as your username and login
+                We are using WebAuthn to authenticate our users. <br />
+                Please provide a valid username and login
                 via your device credentials.
               </p>
             </div>
 
             <div class="form-floating mb-3">
               <input
-                type="email"
-                class="form-control"
+                type="text"
                 id="floatingInput"
+                v-model="username"
+                class="form-control"
                 autocomplete="username webauthn"
-                placeholder="example@mail.com"
-                v-model="email"
+                placeholder="placeholder_username"
               />
-              <label for="floatingInput">Email address</label>
+              <label for="floatingInput">Username</label>
             </div>
             <div class="col-12">
               <div id="liveAlertPlaceholder"></div>
@@ -78,8 +78,7 @@ import TokenService from "../services/token";
 
 const loading = ref(false);
 const router = useRouter();
-const email = ref("" as string);
-const token = ref("" as string);
+const username = ref("" as string);
 const wembatClient: WembatClient = inject('wembatClient') as WembatClient
 
 function appendAlert(message: string, type: string) {
@@ -98,7 +97,7 @@ function appendAlert(message: string, type: string) {
 async function register() {
   loading.value = true;
 
-  const registerResponse = await wembatClient.register(email.value);
+  const registerResponse = await wembatClient.register(username.value);
   if(registerResponse.success) {
     const verified = registerResponse.result;
     appendAlert("Registration successful", "success");
@@ -113,7 +112,7 @@ async function register() {
 async function login() {
   loading.value = true;
 
-  const loginResponse = await wembatClient.login(email.value);
+  const loginResponse = await wembatClient.login(username.value);
 
   if(loginResponse.success) {
     const loginResult: LoginResult = loginResponse.result as LoginResult;
