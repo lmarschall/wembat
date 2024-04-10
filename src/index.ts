@@ -3,6 +3,8 @@ import axios, { AxiosError, AxiosInstance } from "axios";
 import {
 	startRegistration,
 	startAuthentication,
+	browserSupportsWebAuthn,
+	browserSupportsWebAuthnAutofill,
 } from "@simplewebauthn/browser";
 
 import {
@@ -134,6 +136,9 @@ class WembatClient {
 		} as WembatActionResponse;
 
 		try {
+			if (!browserSupportsWebAuthn())
+				throw Error("WebAuthn is not supported on this browser!");
+
 			if (this.axiosClient == undefined)
 				throw Error("Axiso Client undefined!");
 
@@ -206,8 +211,13 @@ class WembatClient {
 		} as WembatActionResponse;
 
 		try {
+			if (!browserSupportsWebAuthn())
+				throw Error("WebAuthn is not supported on this browser!");
+
 			if (this.axiosClient == undefined)
 				throw Error("Axiso Client undefined!");
+
+			console.log("BLOB");
 
 			const loginRequestResponse = await this.axiosClient.post<string>(
 				`/request-login`,
@@ -260,8 +270,13 @@ class WembatClient {
 				throw Error("not reading or writing");
 			}
 
+			const conditionalUISupported = await browserSupportsWebAuthnAutofill();
+
 			const credentials: AuthenticationResponseJSON =
-				await startAuthentication(challengeOptions).catch((err: string) => {
+				await startAuthentication(
+					challengeOptions,
+					false
+				).catch((err: string) => {
 					throw Error(err);
 				});
 
