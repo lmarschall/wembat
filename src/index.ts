@@ -14,14 +14,16 @@ import {
 	AuthenticationResponseJSON,
 } from "@simplewebauthn/typescript-types";
 
-export interface WembatActionResponse {
+type WembatResult = WembatMessage | WembatRegisterResult | WembatLoginResult;
+
+export interface WembatActionResponse<WR extends WembatResult> {
 	success: boolean;
-	result:
-		| WembatMessage
-		| LoginResult
-		| RegisterResult
-		| LoginResult
-		| ErrorResult;
+	error: WembatError;
+	result: WR;
+}
+
+export interface WembatError {
+	error: string;
 }
 
 export interface WembatMessage {
@@ -30,17 +32,13 @@ export interface WembatMessage {
 	encrypted: string;
 }
 
-export interface RegisterResult {
+export interface WembatRegisterResult {
 	verifiedStatus: boolean;
 }
 
-export interface LoginResult {
+export interface WembatLoginResult {
 	verified: boolean;
 	jwt: string;
-}
-
-export interface ErrorResult {
-	error: string;
 }
 
 interface RequestRegisterResponse {
@@ -127,13 +125,16 @@ class WembatClient {
 	}
 
 	// main function
-	public async register(userUId: string): Promise<WembatActionResponse> {
+	public async register(
+		userUId: string
+	): Promise<WembatActionResponse<WembatRegisterResult>> {
 		// TODO maybe check for largeblob not supported
 
-		const actionResponse = {
+		const actionResponse: WembatActionResponse<WembatRegisterResult> = {
 			success: false,
-			result: {},
-		} as WembatActionResponse;
+			error: {} as WembatError,
+			result: {} as WembatRegisterResult,
+		};
 
 		try {
 			if (!browserSupportsWebAuthn())
@@ -187,16 +188,16 @@ class WembatClient {
 				registerResponse.data
 			);
 
-			const registerResult: RegisterResult = {
+			const registerResult: WembatRegisterResult = {
 				verifiedStatus: registerResponseData.verified,
 			};
-			actionResponse.result = registerResult as RegisterResult;
+			actionResponse.result = registerResult;
 			actionResponse.success = true;
 		} catch (error: any) {
-			const errorMessage: ErrorResult = {
+			const errorMessage: WembatError = {
 				error: error,
 			};
-			actionResponse.result = errorMessage as ErrorResult;
+			actionResponse.error = errorMessage as WembatError;
 			console.error(error);
 		} finally {
 			return actionResponse;
@@ -204,11 +205,14 @@ class WembatClient {
 	}
 
 	// main function
-	public async login(userUId: string): Promise<WembatActionResponse> {
-		const actionResponse = {
+	public async login(
+		userUId: string
+	): Promise<WembatActionResponse<WembatLoginResult>> {
+		const actionResponse: WembatActionResponse<WembatLoginResult> = {
 			success: false,
-			result: {},
-		} as WembatActionResponse;
+			error: {} as WembatError,
+			result: {} as WembatLoginResult,
+		};
 
 		try {
 			if (!browserSupportsWebAuthn())
@@ -273,12 +277,11 @@ class WembatClient {
 			const conditionalUISupported = await browserSupportsWebAuthnAutofill();
 
 			const credentials: AuthenticationResponseJSON =
-				await startAuthentication(
-					challengeOptions,
-					false
-				).catch((err: string) => {
-					throw Error(err);
-				});
+				await startAuthentication(challengeOptions, false).catch(
+					(err: string) => {
+						throw Error(err);
+					}
+				);
 
 			const outputOptions: ChallengeOutputptions | undefined =
 				credentials.clientExtensionResults as ChallengeOutputptions;
@@ -347,17 +350,17 @@ class WembatClient {
 
 			const loginReponseData: LoginResponse = JSON.parse(loginReponse.data);
 
-			const loginResult: LoginResult = {
+			const loginResult: WembatLoginResult = {
 				verified: loginReponseData.verified,
 				jwt: loginReponseData.jwt,
 			};
 			actionResponse.result = loginResult;
 			actionResponse.success = true;
 		} catch (error: any) {
-			const errorMessage: ErrorResult = {
+			const errorMessage: WembatError = {
 				error: error,
 			};
-			actionResponse.result = errorMessage;
+			actionResponse.error = errorMessage;
 			console.error(error);
 		} finally {
 			return actionResponse;
@@ -367,11 +370,12 @@ class WembatClient {
 	public async encrypt(
 		wembatMessage: WembatMessage,
 		publicKey: CryptoKey
-	): Promise<WembatActionResponse> {
+	): Promise<WembatActionResponse<WembatMessage>> {
 		const actionResponse = {
 			success: false,
-			result: {},
-		} as WembatActionResponse;
+			error: {} as WembatError,
+			result: {} as WembatMessage,
+		};
 
 		try {
 			const encryptionKey = await this.deriveEncryptionKey(publicKey);
@@ -396,10 +400,10 @@ class WembatClient {
 			actionResponse.result = message;
 			actionResponse.success = true;
 		} catch (error: any) {
-			const errorMessage: ErrorResult = {
+			const errorMessage: WembatError = {
 				error: error,
 			};
-			actionResponse.result = errorMessage;
+			actionResponse.error = errorMessage;
 			console.error(error);
 		} finally {
 			return actionResponse;
@@ -409,11 +413,12 @@ class WembatClient {
 	public async decrypt(
 		wembatMessage: WembatMessage,
 		publicKey: CryptoKey
-	): Promise<WembatActionResponse> {
+	): Promise<WembatActionResponse<WembatMessage>> {
 		const actionResponse = {
 			success: false,
-			result: {},
-		} as WembatActionResponse;
+			error: {} as WembatError,
+			result: {} as WembatMessage,
+		};
 
 		try {
 			const encryptionKey = await this.deriveEncryptionKey(publicKey);
@@ -437,10 +442,10 @@ class WembatClient {
 			actionResponse.result = message;
 			actionResponse.success = true;
 		} catch (error: any) {
-			const errorMessage: ErrorResult = {
+			const errorMessage: WembatError = {
 				error: error,
 			};
-			actionResponse.result = errorMessage;
+			actionResponse.error = errorMessage;
 			console.error(error);
 		} finally {
 			return actionResponse;

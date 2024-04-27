@@ -64,7 +64,7 @@
 
 import { useRouter } from "vue-router";
 import { ref, onMounted, inject } from "vue";
-import { ErrorResult, WembatClient, WembatMessage } from "@wembat/client";
+import { WembatError, WembatClient, WembatMessage } from "@wembat/client";
 
 import TokenService from "../services/token";
 import MessageService from "../services/message";
@@ -113,7 +113,7 @@ async function encryptMessage() {
     MessageService.setEncryptedMessage(JSON.stringify(encryptionResult.result));
     appendAlert("Message encrypted", "success");
   } else {
-    const errorResult = encryptionResult.result as ErrorResult;
+    const errorResult = encryptionResult.error;
     appendAlert(errorResult.error, "danger");
   }
 }
@@ -121,14 +121,14 @@ async function encryptMessage() {
 async function decryptMessage() {
   // TODO make functions only private accessable
   const publicKey = wembatClient.getCryptoPublicKey();
-  const encryptedMessage = MessageService.getEncryptedMessage() as string;
+  const encryptedMessage = MessageService.getEncryptedMessage();
   if (encryptedMessage != "") {
     const decryptionResult = await wembatClient.decrypt(JSON.parse(encryptedMessage), publicKey);
     if(decryptionResult.success) {
-      message.value = (decryptionResult.result as WembatMessage).message;
+      message.value = decryptionResult.result.message;
       appendAlert("Message decrypted", "success");
     } else {
-      const errorResult = decryptionResult.result as ErrorResult;
+      const errorResult = decryptionResult.error;
       appendAlert(errorResult.error, "danger");
     }
   }

@@ -72,7 +72,7 @@
 
 import { ref, inject } from "vue";
 import { useRouter } from "vue-router";
-import { WembatClient, LoginResult, ErrorResult, RegisterResult } from "@wembat/client";
+import { WembatClient, WembatLoginResult, WembatError, WembatRegisterResult, WembatActionResponse } from "@wembat/client";
 
 import TokenService from "../services/token";
 
@@ -98,11 +98,12 @@ async function register() {
   loading.value = true;
 
   const registerResponse = await wembatClient.register(username.value);
+
   if(registerResponse.success) {
     const verified = registerResponse.result;
     appendAlert("Registration successful", "success");
   } else  {
-    const errorResult = registerResponse.result as ErrorResult;
+    const errorResult = registerResponse.error;
     appendAlert(errorResult.error, "danger");
   }
 
@@ -115,7 +116,7 @@ async function login() {
   const loginResponse = await wembatClient.login(username.value);
 
   if(loginResponse.success) {
-    const loginResult: LoginResult = loginResponse.result as LoginResult;
+    const loginResult = loginResponse.result;
 
     if (loginResult.verified) {
       appendAlert("Login successful", "success");
@@ -123,7 +124,7 @@ async function login() {
       router.push("/");
     }
   } else {
-    const errorResult = loginResponse.result as ErrorResult;
+    const errorResult = loginResponse.error;
     appendAlert(errorResult.error, "danger");
   }
 
