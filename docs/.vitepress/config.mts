@@ -18,7 +18,7 @@ export default defineConfig({
         items: [
           { text: 'Introduction', link: '/introduction' },
           { text: 'Getting Started', link: '/getting-started' },
-          { text: 'Client', link: '/client/index' },
+          { text: 'Client', link: '/client/exports' },
         ]
       }
     ],

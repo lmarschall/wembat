@@ -18,7 +18,7 @@ import {
 /**
  * Represents the types of results that can be returned by a Wembat action.
  */
-type WembatResult = WembatMessage | WembatRegisterResult | WembatLoginResult;
+export type WembatResult = WembatMessage | WembatRegisterResult | WembatLoginResult;
 
 /**
  * Represents the response of a Wembat action.
@@ -134,7 +134,10 @@ class WembatClient {
 	private publicKey: CryptoKey | undefined;
 	private privateKey: CryptoKey | undefined;
 
-	// constructor
+	/**
+	 * Creates an instance of WembatClient.
+	 * @param url - The URL of the Backend API.
+	 */
 	constructor(url: string) {
 		this.apiUrl = url;
 		this.axiosClient = axios.create({

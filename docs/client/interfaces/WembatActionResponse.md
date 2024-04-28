@@ -1,16 +1,38 @@
-[@wembat/client](../index.md) / WembatActionResponse
+[@wembat/client](../exports.md) / WembatActionResponse
 
-# Interface: WembatActionResponse
+# Interface: WembatActionResponse\<WR\>
+
+Represents the response of a Wembat action.
+
+## Type parameters
+
+• **WR** extends [`WembatResult`](../type-aliases/WembatResult.md)
+
+The type of the Wembat result.
 
 ## Properties
 
-### result
+### error
 
-> **result**: `LoginResult` \| `RegisterResult` \| `LoginReadResult` \| `LoginWriteResult` \| `ErrorResult`
+> **error**: [`WembatError`](WembatError.md)
+
+The error that occurred during the action, if any.
 
 #### Source
 
-[index.ts:25](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L25)
+[index.ts:37](https://github.com/lmarschall/wembat/blob/3814d8f/src/index.ts#L37)
+
+***
+
+### result
+
+> **result**: `WR`
+
+The result of the action.
+
+#### Source
+
+[index.ts:42](https://github.com/lmarschall/wembat/blob/3814d8f/src/index.ts#L42)
 
 ***
 
@@ -18,9 +40,11 @@
 
 > **success**: `boolean`
 
+Indicates whether the action was successful.
+
 #### Source
 
-[index.ts:24](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L24)
+[index.ts:32](https://github.com/lmarschall/wembat/blob/3814d8f/src/index.ts#L32)
 
 ***
 

@@ -1,6 +1,8 @@
-[@wembat/client](../index.md) / WembatClient
+[@wembat/client](../exports.md) / WembatClient
 
 # Class: WembatClient
+
+Represents a client for interacting with the Wembat API.
 
 ## Constructors
 
@@ -8,9 +10,13 @@
 
 > **new WembatClient**(`url`): [`WembatClient`](WembatClient.md)
 
+Creates an instance of WembatClient.
+
 #### Parameters
 
 • **url**: `string`
+
+The URL of the Backend API.
 
 #### Returns
 
@@ -18,53 +24,53 @@
 
 #### Source
 
-[index.ts:65](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L65)
+[index.ts:141](https://github.com/lmarschall/wembat/blob/3814d8f/src/index.ts#L141)
 
 ## Properties
 
 ### apiUrl
 
-> **apiUrl**: `string` = `""`
+> **`private`** **`readonly`** **apiUrl**: `string`
 
 #### Source
 
-[index.ts:59](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L59)
+[index.ts:132](https://github.com/lmarschall/wembat/blob/3814d8f/src/index.ts#L132)
 
 ***
 
-### encryptionKey
+### axiosClient
 
-> **encryptionKey**: `undefined` \| `CryptoKey`
+> **`private`** **`readonly`** **axiosClient**: `AxiosInstance`
 
 #### Source
 
-[index.ts:62](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L62)
+[index.ts:133](https://github.com/lmarschall/wembat/blob/3814d8f/src/index.ts#L133)
 
 ***
 
 ### privateKey
 
-> **privateKey**: `undefined` \| `CryptoKey`
+> **`private`** **privateKey**: `undefined` \| `CryptoKey`
 
 #### Source
 
-[index.ts:61](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L61)
+[index.ts:135](https://github.com/lmarschall/wembat/blob/3814d8f/src/index.ts#L135)
 
 ***
 
 ### publicKey
 
-> **publicKey**: `undefined` \| `CryptoKey`
+> **`private`** **publicKey**: `undefined` \| `CryptoKey`
 
 #### Source
 
-[index.ts:60](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L60)
+[index.ts:134](https://github.com/lmarschall/wembat/blob/3814d8f/src/index.ts#L134)
 
 ## Methods
 
 ### ab2str()
 
-> **ab2str**(`buf`): `string`
+> **`private`** **ab2str**(`buf`): `string`
 
 #### Parameters
 
@@ -76,63 +82,87 @@
 
 #### Source
 
-[index.ts:80](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L80)
+[index.ts:186](https://github.com/lmarschall/wembat/blob/3814d8f/src/index.ts#L186)
 
 ***
 
 ### decrypt()
 
-> **decrypt**(`ciphertext`): `Promise`\<`string`\>
+> **decrypt**(`wembatMessage`, `publicKey`): `Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\<[`WembatMessage`](../interfaces/WembatMessage.md)\>\>
+
+Decrypts a WembatMessage using the provided publicKey.
 
 #### Parameters
 
-• **ciphertext**: `string`
+• **wembatMessage**: [`WembatMessage`](../interfaces/WembatMessage.md)
+
+The WembatMessage to decrypt.
+
+• **publicKey**: `CryptoKey`
+
+The CryptoKey used for decryption.
 
 #### Returns
 
-`Promise`\<`string`\>
+`Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\<[`WembatMessage`](../interfaces/WembatMessage.md)\>\>
+
+A Promise that resolves to a WembatActionResponse containing the decrypted message.
 
 #### Source
 
-[index.ts:451](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L451)
+[index.ts:502](https://github.com/lmarschall/wembat/blob/3814d8f/src/index.ts#L502)
 
 ***
 
 ### deriveEncryptionKey()
 
-> **deriveEncryptionKey**(): `Promise`\<`void`\>
+> **`private`** **deriveEncryptionKey**(`publicKey`): `Promise`\<`CryptoKey`\>
+
+#### Parameters
+
+• **publicKey**: `CryptoKey`
 
 #### Returns
 
-`Promise`\<`void`\>
+`Promise`\<`CryptoKey`\>
 
 #### Source
 
-[index.ts:381](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L381)
+[index.ts:544](https://github.com/lmarschall/wembat/blob/3814d8f/src/index.ts#L544)
 
 ***
 
 ### encrypt()
 
-> **encrypt**(`message`): `Promise`\<`string`\>
+> **encrypt**(`wembatMessage`, `publicKey`): `Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\<[`WembatMessage`](../interfaces/WembatMessage.md)\>\>
+
+Encrypts a Wembat message using the provided public key.
 
 #### Parameters
 
-• **message**: `string`
+• **wembatMessage**: [`WembatMessage`](../interfaces/WembatMessage.md)
+
+The Wembat message to be encrypted.
+
+• **publicKey**: `CryptoKey`
+
+The public key used for encryption.
 
 #### Returns
 
-`Promise`\<`string`\>
+`Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\<[`WembatMessage`](../interfaces/WembatMessage.md)\>\>
+
+A promise that resolves to a WembatActionResponse containing the encrypted message.
 
 #### Source
 
-[index.ts:426](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L426)
+[index.ts:452](https://github.com/lmarschall/wembat/blob/3814d8f/src/index.ts#L452)
 
 ***
 
 ### getCryptoPrivateKey()
 
-> **getCryptoPrivateKey**(): `undefined` \| `CryptoKey`
+> **`private`** **getCryptoPrivateKey**(): `undefined` \| `CryptoKey`
 
 #### Returns
 
@@ -140,7 +170,7 @@
 
 #### Source
 
-[index.ts:480](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L480)
+[index.ts:162](https://github.com/lmarschall/wembat/blob/3814d8f/src/index.ts#L162)
 
 ***
 
@@ -154,133 +184,119 @@
 
 #### Source
 
-[index.ts:476](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L476)
+[index.ts:158](https://github.com/lmarschall/wembat/blob/3814d8f/src/index.ts#L158)
 
 ***
 
-### loadCryptoPublicKey()
+### loadCryptoPrivateKeyFromString()
 
-> **loadCryptoPublicKey**(): `Promise`\<`void`\>
+> **`private`** **loadCryptoPrivateKeyFromString**(`privateKeyString`): `Promise`\<`CryptoKey`\>
+
+#### Parameters
+
+• **privateKeyString**: `string`
 
 #### Returns
 
-`Promise`\<`void`\>
+`Promise`\<`CryptoKey`\>
 
 #### Source
 
-[index.ts:407](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L407)
+[index.ts:589](https://github.com/lmarschall/wembat/blob/3814d8f/src/index.ts#L589)
+
+***
+
+### loadCryptoPublicKeyFromString()
+
+> **`private`** **loadCryptoPublicKeyFromString**(`pubKeyString`): `Promise`\<`CryptoKey`\>
+
+#### Parameters
+
+• **pubKeyString**: `string`
+
+#### Returns
+
+`Promise`\<`CryptoKey`\>
+
+#### Source
+
+[index.ts:570](https://github.com/lmarschall/wembat/blob/3814d8f/src/index.ts#L570)
 
 ***
 
 ### login()
 
-> **login**(`challengeOptions`, `credentials`): `Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\>
+> **login**(`userUId`): `Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\<[`WembatLoginResult`](../interfaces/WembatLoginResult.md)\>\>
 
-#### Parameters
-
-• **challengeOptions**: `PublicKeyCredentialRequestOptionsJSON`
-
-• **credentials**: `RegistrationResponseJSON`
-
-#### Returns
-
-`Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\>
-
-#### Source
-
-[index.ts:339](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L339)
-
-***
-
-### loginRead()
-
-> **loginRead**(`userUId`): `Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\>
+Logs in a user with the provided user ID.
 
 #### Parameters
 
 • **userUId**: `string`
 
-#### Returns
-
-`Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\>
-
-#### Source
-
-[index.ts:154](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L154)
-
-***
-
-### loginWrite()
-
-> **loginWrite**(`userUId`): `Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\>
-
-#### Parameters
-
-• **userUId**: `string`
+The user ID.
 
 #### Returns
 
-`Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\>
+`Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\<[`WembatLoginResult`](../interfaces/WembatLoginResult.md)\>\>
+
+A promise that resolves to a `WembatActionResponse` containing the login result.
+
+#### Throws
+
+An error if WebAuthn is not supported on the browser or if the Axios client is undefined.
 
 #### Source
 
-[index.ts:244](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L244)
+[index.ts:282](https://github.com/lmarschall/wembat/blob/3814d8f/src/index.ts#L282)
 
 ***
 
 ### register()
 
-> **register**(`userUId`): `Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\>
+> **register**(`userUId`): `Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\<[`WembatRegisterResult`](../interfaces/WembatRegisterResult.md)\>\>
+
+Registers a user with the specified user ID.
 
 #### Parameters
 
 • **userUId**: `string`
 
-#### Returns
-
-`Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\>
-
-#### Source
-
-[index.ts:85](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L85)
-
-***
-
-### resetCryptoKeys()
-
-> **resetCryptoKeys**(): `void`
+The user ID to register.
 
 #### Returns
 
-`void`
+`Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\<[`WembatRegisterResult`](../interfaces/WembatRegisterResult.md)\>\>
+
+A promise that resolves to a `WembatActionResponse` containing the registration result.
 
 #### Source
 
-[index.ts:471](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L471)
+[index.ts:196](https://github.com/lmarschall/wembat/blob/3814d8f/src/index.ts#L196)
 
 ***
 
-### saveCryptoPublicKey()
+### saveCryptoKeyAsString()
 
-> **saveCryptoPublicKey**(`key`): `Promise`\<`void`\>
+> **`private`** **saveCryptoKeyAsString**(`cryptoKey`): `Promise`\<`string`\>
 
 #### Parameters
 
-• **key**: `CryptoKey`
+• **cryptoKey**: `CryptoKey`
 
 #### Returns
 
-`Promise`\<`void`\>
+`Promise`\<`string`\>
 
 #### Source
 
-[index.ts:399](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L399)
+[index.ts:565](https://github.com/lmarschall/wembat/blob/3814d8f/src/index.ts#L565)
 
 ***
 
 ### setCryptoPrivateKey()
 
-> **setCryptoPrivateKey**(`key`): `void`
+> **`private`** **setCryptoPrivateKey**(`key`): `void`
 
 #### Parameters
 
@@ -292,13 +308,13 @@
 
 #### Source
 
-[index.ts:488](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L488)
+[index.ts:170](https://github.com/lmarschall/wembat/blob/3814d8f/src/index.ts#L170)
 
 ***
 
 ### setCryptoPublicKey()
 
-> **setCryptoPublicKey**(`key`): `void`
+> **`private`** **setCryptoPublicKey**(`key`): `void`
 
 #### Parameters
 
@@ -310,13 +326,13 @@
 
 #### Source
 
-[index.ts:484](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L484)
+[index.ts:166](https://github.com/lmarschall/wembat/blob/3814d8f/src/index.ts#L166)
 
 ***
 
 ### str2ab()
 
-> **str2ab**(`str`): `ArrayBuffer`
+> **`private`** **str2ab**(`str`): `ArrayBuffer`
 
 #### Parameters
 
@@ -328,7 +344,7 @@
 
 #### Source
 
-[index.ts:70](https://github.com/lmarschall/wembat/blob/d3b6875/src/index.ts#L70)
+[index.ts:175](https://github.com/lmarschall/wembat/blob/3814d8f/src/index.ts#L175)
 
 ***
 

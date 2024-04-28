@@ -18,6 +18,37 @@
         "text": "WembatActionResponse",
         "link": "/docs/client/interfaces/WembatActionResponse.md",
         "collapsed": true
+      },
+      {
+        "text": "WembatError",
+        "link": "/docs/client/interfaces/WembatError.md",
+        "collapsed": true
+      },
+      {
+        "text": "WembatLoginResult",
+        "link": "/docs/client/interfaces/WembatLoginResult.md",
+        "collapsed": true
+      },
+      {
+        "text": "WembatMessage",
+        "link": "/docs/client/interfaces/WembatMessage.md",
+        "collapsed": true
+      },
+      {
+        "text": "WembatRegisterResult",
+        "link": "/docs/client/interfaces/WembatRegisterResult.md",
+        "collapsed": true
+      }
+    ]
+  },
+  {
+    "text": "Type Aliases",
+    "collapsed": true,
+    "items": [
+      {
+        "text": "WembatResult",
+        "link": "/docs/client/type-aliases/WembatResult.md",
+        "collapsed": true
       }
     ]
   }

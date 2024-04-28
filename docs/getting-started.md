@@ -13,6 +13,8 @@ git clone https://github.com/lmarschall/wembat.git
 
 cd ./backend
 
+# create .env from .env.template
+
 docker compose up -d --build && docker compose logs -f
 ```
 
@@ -41,7 +43,7 @@ async function register() {
   const registerResponse = await wembatClient.register(uId);
 
   if (registerResponse.success) {
-    const verified = registerResponse.result as RegisterResult;
+    const verified = registerResponse.result;
   }
 }
 ```
@@ -57,7 +59,7 @@ async function login() {
   const loginResponse = await wembatClient.login(uId);
 
   if (loginResponse.success) {
-    const loginResult: LoginResult = loginResponse.result as LoginResult;
+    const loginResult = loginResponse.result;
 
     if (loginResult.verified) {
       const token = loginResult.jwt;
