@@ -7,15 +7,36 @@ import {
 	// Registration
 	generateRegistrationOptions,
 	verifyRegistrationResponse,
+	GenerateRegistrationOptionsOpts,
 	// Authentication
 	generateAuthenticationOptions,
 	verifyAuthenticationResponse,
-	GenerateRegistrationOptionsOpts,
+	GenerateAuthenticationOptionsOpts,
+	VerifyAuthenticationResponseOpts,
+	VerifyRegistrationResponseOpts,
 } from "@simplewebauthn/server";
 
 type UserWithDevices = Prisma.UserGetPayload<{
 	include: { devices: true };
 }>;
+
+interface ExtensionsLargeBlobSupport extends AuthenticationExtensionsClientInputs {
+	largeBlob: {
+		support: string;
+	};
+}
+
+interface ExtensionsLargeBlobWrite extends AuthenticationExtensionsClientInputs {
+	largeBlob: {
+		write: Uint8Array;
+	};
+}
+
+interface ExtensionsLargeBlobRead extends AuthenticationExtensionsClientInputs {
+	largeBlob: {
+		read: boolean,
+	};
+}
 
 export const webauthnRoutes = Router();
 const prisma = new PrismaClient();
@@ -46,7 +67,7 @@ webauthnRoutes.post("/request-register", async (req, res) => {
 					devices: true,
 				},
 			})
-			.catch((err: any) => {
+			.catch((err) => {
 				console.log(err);
 				throw Error("User could not be found or created in database");
 			})) as UserWithDevices;
@@ -54,17 +75,17 @@ webauthnRoutes.post("/request-register", async (req, res) => {
 
 		if (user.devices.length > 0) throw Error("User already registered with one device")
 
-		const opts: any = {
+		const opts: GenerateRegistrationOptionsOpts = {
 			rpName: rpName,
-			rpId,
+			rpID: rpId,
 			userID: user.uid,
 			userName: user.name,
 			timeout: 60000,
 			attestationType: "none",
-			excludeCredentials: user.devices.map((dev) => ({
+			excludeCredentials: user.devices.map<PublicKeyCredentialDescriptor>((dev) => ({
 				id: dev.credentialId,
 				type: "public-key",
-				transports: dev.transports,
+				transports: dev.transports as AuthenticatorTransport[],
 			})),
 			authenticatorSelection: {
 				residentKey: "preferred",
@@ -75,11 +96,11 @@ webauthnRoutes.post("/request-register", async (req, res) => {
 				largeBlob: {
 					support: "required",
 				},
-			},
+			} as ExtensionsLargeBlobSupport,
 		};
 
 		const options = await generateRegistrationOptions(opts).catch(
-			(err: any) => {
+			(err) => {
 				console.log(err);
 				throw Error("Registration Option could not be generated");
 			}
@@ -97,7 +118,7 @@ webauthnRoutes.post("/request-register", async (req, res) => {
 					challenge: options.challenge,
 				},
 			})
-			.catch((err: any) => {
+			.catch((err) => {
 				console.log(err);
 				throw Error("User challenge could not be updated");
 			});
@@ -128,7 +149,7 @@ webauthnRoutes.post("/register", async (req, res) => {
 					devices: true,
 				},
 			})
-			.catch((err: any) => {
+			.catch((err) => {
 				console.log(err);
 				throw Error("Could not find user for given challenge");
 			})) as UserWithDevices;
@@ -136,18 +157,16 @@ webauthnRoutes.post("/register", async (req, res) => {
 		// user with challenge not found, return error
 		if (!user) throw Error("Could not find user for given challenge");
 
-		// credentials.response.id = credentials.id;
-		const opts = {
+		const opts: VerifyRegistrationResponseOpts = {
 			response: credentials,
 			expectedChallenge: `${user.challenge}`,
 			expectedOrigin,
 			expectedRPID: rpId,
 		};
 
-		// opts.credential.response.id = opts.credential.id;
 		console.log(credentials.response.transports);
 		const verification = await verifyRegistrationResponse(opts).catch(
-			(err: any) => {
+			(err) => {
 				console.log(err);
 				throw Error("Registration Response could not be verified");
 			}
@@ -185,7 +204,7 @@ webauthnRoutes.post("/register", async (req, res) => {
 			//             data: {
 			//                 token: token,
 			//             }
-			//         }).catch((err: any) => {
+			//         }).catch((err) => {
 			//             console.log(err);
 			//             return res.status(400).send();
 			//         })
@@ -215,7 +234,7 @@ webauthnRoutes.post("/register", async (req, res) => {
 						transports: credentials.response.transports,
 					},
 				})
-				.catch((err: any) => {
+				.catch((err) => {
 					console.log(err);
 					throw Error("Device Regitration update or create failed");
 				});
@@ -244,7 +263,7 @@ webauthnRoutes.post("/request-login", async (req, res) => {
 					devices: true,
 				},
 			})
-			.catch((err: any) => {
+			.catch((err) => {
 				console.log(err);
 				throw Error("User could not be found in database");
 			})) as UserWithDevices;
@@ -253,61 +272,54 @@ webauthnRoutes.post("/request-login", async (req, res) => {
 
 		console.log(user);
 
-		let opts = {};
-		// const pubKey = user.publicKey;
-
 		const publicUserKey = user.publicKey;
-		// const publicServerKey = getPublicServerSecretKey();
+
+		let opts: GenerateAuthenticationOptionsOpts;
 
 		if (publicUserKey !== "") {
 			opts = {
 				timeout: 60000,
-				allowCredentials: user.devices.map((dev) => ({
+				allowCredentials: user.devices.map<PublicKeyCredentialDescriptor>((dev) => ({
 					id: dev.credentialId,
 					type: "public-key",
-					transports: dev.transports,
+					transports: dev.transports as AuthenticatorTransport[],
 				})),
 				/**
 				 * This optional value controls whether or not the authenticator needs be able to uniquely
 				 * identify the user interacting with it (via built-in PIN pad, fingerprint scanner, etc...)
 				 */
 				userVerification: "preferred",
-				rpId,
+				rpID: rpId,
 				extensions: {
 					largeBlob: {
 						read: true,
-					},
-				},
+					}
+				} as ExtensionsLargeBlobRead,
 			};
-
-			// publicUserKey = await getPublicKeyFromString(user.publicKey);
-			// const sharedSecret = await createSharedSecret(publicUserKey);
-
-			// save secret on redis
-		} else {
+		} else { 
 			opts = {
 				timeout: 60000,
-				allowCredentials: user.devices.map((dev) => ({
+				allowCredentials: user.devices.map<PublicKeyCredentialDescriptor>((dev) => ({
 					id: dev.credentialId,
 					type: "public-key",
-					transports: dev.transports,
+					transports: dev.transports as AuthenticatorTransport[],
 				})),
 				/**
 				 * This optional value controls whether or not the authenticator needs be able to uniquely
 				 * identify the user interacting with it (via built-in PIN pad, fingerprint scanner, etc...)
 				 */
 				userVerification: "preferred",
-				rpId,
+				rpID: rpId,
 				extensions: {
 					largeBlob: {
 						write: new Uint8Array(1),
 					},
-				},
+				} as ExtensionsLargeBlobWrite
 			};
 		}
 
 		const options = await generateAuthenticationOptions(opts).catch(
-			(err: any) => {
+			(err) => {
 				console.log(err);
 				throw Error("Authentication Options could not be generated");
 			}
@@ -323,7 +335,7 @@ webauthnRoutes.post("/request-login", async (req, res) => {
 					challenge: options.challenge,
 				},
 			})
-			.catch((err: any) => {
+			.catch((err) => {
 				console.log(err);
 				throw Error("Updating user challenge failed");
 			});
@@ -357,7 +369,7 @@ webauthnRoutes.post("/login", async (req, res) => {
 					devices: true,
 				},
 			})
-			.catch((err: any) => {
+			.catch((err) => {
 				console.log(err);
 				throw Error("User with given challenge not found");
 			})) as UserWithDevices;
@@ -378,7 +390,7 @@ webauthnRoutes.post("/login", async (req, res) => {
 			throw new Error(`Could not find authenticator matching ${body.id}`);
 		}
 
-		const opts = {
+		const opts: VerifyAuthenticationResponseOpts = {
 			response: credentials,
 			expectedChallenge: `${user.challenge}`,
 			expectedOrigin,
@@ -387,7 +399,7 @@ webauthnRoutes.post("/login", async (req, res) => {
 		};
 
 		const verification = await verifyAuthenticationResponse(opts).catch(
-			(err: any) => {
+			(err) => {
 				console.log(err);
 				throw Error("Authentication Response could not be verified");
 			}
@@ -406,7 +418,7 @@ webauthnRoutes.post("/login", async (req, res) => {
 						publicKey: pubKey,
 					},
 				})
-				.catch((err: any) => {
+				.catch((err) => {
 					console.log(err);
 					throw Error("Could not save publicKey in database");
 				});
@@ -428,7 +440,7 @@ webauthnRoutes.post("/login", async (req, res) => {
 			//             data: {
 			//                 publicKey: pubKey,
 			//             }
-			//         }).catch((err: any) => {
+			//         }).catch((err) => {
 			//             console.log(err);
 			//             return res.status(400).send();
 			//         })
