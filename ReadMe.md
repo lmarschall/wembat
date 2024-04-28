@@ -15,6 +15,8 @@ git clone https://github.com/lmarschall/wembat.git
 
 cd ./backend
 
+# create .env from .env.template
+
 docker compose up -d --build && docker compose logs -f
 ```
 
@@ -34,32 +36,28 @@ const wembatClient = new WembatClient("http://localhost:8080");
 
 ## Register User
 
-::: warning
-The following function must be triggered by a user interaction, like a button click for example.
-:::
+> The following function must be triggered by a user interaction, like a button click for example.
 
 ```ts{4}
 async function register() {
   const registerResponse = await wembatClient.register(uId);
 
   if (registerResponse.success) {
-    const verified = registerResponse.result as RegisterResult;
+    const verified = registerResponse.result;
   }
 }
 ```
 
 ## Login User
 
-::: warning
-The following function must be triggered by a user interaction, like a button click for example.
-:::
+> The following function must be triggered by a user interaction, like a button click for example.
 
 ```ts{4}
 async function login() {
   const loginResponse = await wembatClient.login(uId);
 
   if (loginResponse.success) {
-    const loginResult: LoginResult = loginResponse.result as LoginResult;
+    const loginResult = loginResponse.result;
 
     if (loginResult.verified) {
       const token = loginResult.jwt;

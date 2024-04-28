@@ -64,7 +64,7 @@
 
 import { useRouter } from "vue-router";
 import { ref, onMounted, inject } from "vue";
-import { WembatError, WembatClient, WembatMessage } from "@wembat/client";
+import { WembatClient, WembatMessage } from "@wembat/client";
 
 import TokenService from "../services/token";
 import MessageService from "../services/message";

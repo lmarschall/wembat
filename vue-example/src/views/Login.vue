@@ -72,7 +72,7 @@
 
 import { ref, inject } from "vue";
 import { useRouter } from "vue-router";
-import { WembatClient, WembatLoginResult, WembatError, WembatRegisterResult, WembatActionResponse } from "@wembat/client";
+import { WembatClient } from "@wembat/client";
 
 import TokenService from "../services/token";
 

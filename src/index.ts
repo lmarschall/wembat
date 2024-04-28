@@ -14,30 +14,87 @@ import {
 	AuthenticationResponseJSON,
 } from "@simplewebauthn/typescript-types";
 
+
+/**
+ * Represents the types of results that can be returned by a Wembat action.
+ */
 type WembatResult = WembatMessage | WembatRegisterResult | WembatLoginResult;
 
+/**
+ * Represents the response of a Wembat action.
+ *
+ * @template WR - The type of the Wembat result.
+ */
 export interface WembatActionResponse<WR extends WembatResult> {
+	/**
+	 * Indicates whether the action was successful.
+	 */
 	success: boolean;
+
+	/**
+	 * The error that occurred during the action, if any.
+	 */
 	error: WembatError;
+
+	/**
+	 * The result of the action.
+	 */
 	result: WR;
 }
 
+/**
+ * Represents an error that occurred during a Wembat action.
+ */
 export interface WembatError {
+	/**
+	 * The error message.
+	 */
 	error: string;
 }
 
+
+/**
+ * Represents a Wembat message.
+ */
 export interface WembatMessage {
+	/**
+	 * The initialization vector used for encryption.
+	 */
 	iv: string;
+
+	/**
+	 * The original message before encryption.
+	 */
 	message: string;
+
+	/**
+	 * The encrypted message.
+	 */
 	encrypted: string;
 }
 
+/**
+ * Represents the result of a Wembat registration.
+ */
 export interface WembatRegisterResult {
+	/**
+	 * Indicates whether the registration was successful.
+	 */
 	verifiedStatus: boolean;
 }
 
+/**
+ * Represents the result of a Wembat login.
+ */
 export interface WembatLoginResult {
+	/**
+	 * Indicates whether the login was successful.
+	 */
 	verified: boolean;
+
+	/**
+	 * The JWT token generated during login.
+	 */
 	jwt: string;
 }
 
@@ -67,7 +124,10 @@ interface ChallengeOutputptions extends AuthenticationExtensionsClientOutputs {
 	largeBlob: any;
 }
 
-// class
+
+/**
+ * Represents a client for interacting with the Wembat API.
+ */
 class WembatClient {
 	private readonly apiUrl: string;
 	private readonly axiosClient: AxiosInstance;
@@ -124,7 +184,12 @@ class WembatClient {
 		return btoa(String.fromCharCode.apply(null, [...new Uint8Array(buf)]));
 	}
 
-	// main function
+	/**
+	 * Registers a user with the specified user ID.
+	 * 
+	 * @param userUId - The user ID to register.
+	 * @returns A promise that resolves to a `WembatActionResponse` containing the registration result.
+	 */
 	public async register(
 		userUId: string
 	): Promise<WembatActionResponse<WembatRegisterResult>> {
@@ -204,7 +269,13 @@ class WembatClient {
 		}
 	}
 
-	// main function
+	/**
+	 * Logs in a user with the provided user ID.
+	 * 
+	 * @param userUId - The user ID.
+	 * @returns A promise that resolves to a `WembatActionResponse` containing the login result.
+	 * @throws An error if WebAuthn is not supported on the browser or if the Axios client is undefined.
+	 */
 	public async login(
 		userUId: string
 	): Promise<WembatActionResponse<WembatLoginResult>> {
@@ -367,6 +438,14 @@ class WembatClient {
 		}
 	}
 
+
+	/**
+	 * Encrypts a Wembat message using the provided public key.
+	 *
+	 * @param wembatMessage - The Wembat message to be encrypted.
+	 * @param publicKey - The public key used for encryption.
+	 * @returns A promise that resolves to a WembatActionResponse containing the encrypted message.
+	 */
 	public async encrypt(
 		wembatMessage: WembatMessage,
 		publicKey: CryptoKey
@@ -410,6 +489,13 @@ class WembatClient {
 		}
 	}
 
+	/**
+	 * Decrypts a WembatMessage using the provided publicKey.
+	 * 
+	 * @param wembatMessage - The WembatMessage to decrypt.
+	 * @param publicKey - The CryptoKey used for decryption.
+	 * @returns A Promise that resolves to a WembatActionResponse containing the decrypted message.
+	 */
 	public async decrypt(
 		wembatMessage: WembatMessage,
 		publicKey: CryptoKey
