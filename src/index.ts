@@ -225,14 +225,53 @@ class WembatClient {
 
 			const requestRegisterResponseData: RequestRegisterResponse =
 				JSON.parse(requestRegisterResponse.data);
-			const challengeOptions: PublicKeyCredentialCreationOptionsJSON =
-				requestRegisterResponseData.options;
+			// const challengeOptions: PublicKeyCredentialCreationOptionsJSON =
+			// 	requestRegisterResponseData.options;
 
-			const credentials: RegistrationResponseJSON = await startRegistration(
-				challengeOptions
-			).catch((err: string) => {
-				throw Error(err);
-			});
+			const firstSalt = new Uint8Array(new Array(32).fill(1)).buffer;
+
+			const challengeOptions = {
+				publicKey: {
+					challenge: new Uint8Array([1, 2, 3, 4]), // Example value
+					rp: {
+						name: "SimpleWebAuthn Example",
+						// id: "localhost:3000",
+					},
+					user: {
+						id: new Uint8Array([5, 6, 7, 8]),  // Example value
+						name: "user@dev.dontneeda.pw",
+						displayName: "user@dev.dontneeda.pw",
+					},
+					pubKeyCredParams: [
+						{ alg: -8, type: "public-key" },   // Ed25519
+						{ alg: -7, type: "public-key" },   // ES256
+						{ alg: -257, type: "public-key" }, // RS256
+					],
+					authenticatorSelection: {
+					  	userVerification: "required",
+					},
+					extensions: {prf: {}},
+					// extensions: {
+					// 	prf: {
+					// 		eval: {
+					// 			first: firstSalt,
+					// 		},
+					// 	},
+					// },
+				},
+			} as any
+
+			console.log(challengeOptions);
+
+			const auth1Credential = await navigator.credentials.create(challengeOptions);
+
+			// const credentials: RegistrationResponseJSON = await startRegistration(
+			// 	challengeOptions
+			// ).catch((err: string) => {
+			// 	throw Error(err);
+			// });
+
+			console.log(auth1Credential);
 
 			// TODO add check for largeBlob supported
 
@@ -240,7 +279,8 @@ class WembatClient {
 				`/register`,
 				{
 					challengeResponse: {
-						credentials: credentials,
+						// credentials: credentials,
+						redentials: auth1Credential,
 						challenge: challengeOptions.challenge,
 						deviceToken: "",
 					},
@@ -318,35 +358,63 @@ class WembatClient {
 			let privateKey: CryptoKey | undefined;
 			let publicKey: CryptoKey | undefined;
 
-			const inputOptions: ChallengeInputOptions | undefined =
-				challengeOptions.extensions as ChallengeInputOptions;
+			// const inputOptions: ChallengeInputOptions | undefined =
+			// 	challengeOptions.extensions as ChallengeInputOptions;
+
+			const firstSalt = new Uint8Array(new Array(32).fill(1)).buffer;
+
+			const inputOptions = {
+				publicKey: {
+					challenge: new Uint8Array([9, 0, 1, 2]), // Example value
+					allowCredentials: [
+						// {
+						// 	id: regCredential.rawId,
+						// 	transports: regCredential.response.getTransports(),
+						// 	type: "public-key",
+						// },
+					],
+					rpId: "dev.dontneeda.pw",
+					// This must always be either "discouraged" or "required".
+					// Pick one and stick with it.
+					userVerification: "required",
+					extensions: {
+						prf: {
+							eval: {
+							first: firstSalt,
+							},
+						},
+					},
+				},
+			} as any
+
+			console.log(inputOptions);
 
 			// check if we want to read or write
-			if (inputOptions?.largeBlob.read) {
-				publicKey = await this.loadCryptoPublicKeyFromString(pubicUserKey);
-			} else if (inputOptions.largeBlob.write) {
-				// generate key material to be saved
-				const keyPair = await window.crypto.subtle.generateKey(
-					{
-						name: "ECDH",
-						namedCurve: "P-384",
-					},
-					true,
-					["deriveKey", "deriveBits"]
-				);
+			// if (inputOptions?.largeBlob.read) {
+			// 	publicKey = await this.loadCryptoPublicKeyFromString(pubicUserKey);
+			// } else if (inputOptions.largeBlob.write) {
+			// 	// generate key material to be saved
+			// 	const keyPair = await window.crypto.subtle.generateKey(
+			// 		{
+			// 			name: "ECDH",
+			// 			namedCurve: "P-384",
+			// 		},
+			// 		true,
+			// 		["deriveKey", "deriveBits"]
+			// 	);
 
-				publicKey = keyPair.publicKey;
-				privateKey = keyPair.privateKey;
+			// 	publicKey = keyPair.publicKey;
+			// 	privateKey = keyPair.privateKey;
 
-				// export to jwk format buffer to save private key in large blob
-				const blob = await this.saveCryptoKeyAsString(privateKey);
-				inputOptions.largeBlob.write = Uint8Array.from(
-					blob.split("").map((c: string) => c.codePointAt(0)) as number[]
-				);
-			} else {
-				// not reading or writing is not intended
-				throw Error("not reading or writing");
-			}
+			// 	// export to jwk format buffer to save private key in large blob
+			// 	const blob = await this.saveCryptoKeyAsString(privateKey);
+			// 	inputOptions.largeBlob.write = Uint8Array.from(
+			// 		blob.split("").map((c: string) => c.codePointAt(0)) as number[]
+			// 	);
+			// } else {
+			// 	// not reading or writing is not intended
+			// 	throw Error("not reading or writing");
+			// }
 
 			const conditionalUISupported = await browserSupportsWebAuthnAutofill();
 
@@ -357,20 +425,34 @@ class WembatClient {
 					}
 				);
 
-			const outputOptions: ChallengeOutputptions | undefined =
-				credentials.clientExtensionResults as ChallengeOutputptions;
+			const outputOptions: any | undefined =
+				credentials.clientExtensionResults as any;
+
+			const inputKeyMaterial = new Uint8Array(
+				outputOptions?.prf.results.first,
+			);
+			
+			const keyDerivationKey = await crypto.subtle.importKey(
+				"raw",
+				inputKeyMaterial,
+				"HKDF",
+				false,
+				["deriveKey"],
+			);
+
+			console.log(keyDerivationKey);
 
 			// check if read or write was successful
-			if (outputOptions.largeBlob.written) {
-				console.log("WRITE SUCCESSFUL");
-			} else if (Object.keys(outputOptions.largeBlob).length) {
-				console.log("READ SUCCESSFUL");
-				const keyBuffer = String.fromCodePoint(
-					...new Uint8Array(outputOptions.largeBlob.blob)
-				);
+			// if (outputOptions.largeBlob.written) {
+			// 	console.log("WRITE SUCCESSFUL");
+			// } else if (Object.keys(outputOptions.largeBlob).length) {
+			// 	console.log("READ SUCCESSFUL");
+			// 	const keyBuffer = String.fromCodePoint(
+			// 		...new Uint8Array(outputOptions.largeBlob.blob)
+			// 	);
 
-				privateKey = await this.loadCryptoPrivateKeyFromString(keyBuffer);
-			}
+			// 	privateKey = await this.loadCryptoPrivateKeyFromString(keyBuffer);
+			// }
 
 			// TODO private key public key verification
 			// server generates secret from private server key and public user key if present
@@ -393,14 +475,14 @@ class WembatClient {
 			//   128,
 			// );
 
-			if (privateKey !== undefined && publicKey !== undefined) {
-				this.setCryptoPrivateKey(privateKey);
-				this.setCryptoPublicKey(publicKey);
-			} else {
-				// TODO throw error
-				console.error("private key or public key undefined!");
-				throw Error("private key or public key undefined!");
-			}
+			// if (privateKey !== undefined && publicKey !== undefined) {
+			// 	this.setCryptoPrivateKey(privateKey);
+			// 	this.setCryptoPublicKey(publicKey);
+			// } else {
+			// 	// TODO throw error
+			// 	console.error("private key or public key undefined!");
+			// 	throw Error("private key or public key undefined!");
+			// }
 
 			// send public key to server if we just created one
 			const pubKeyString =

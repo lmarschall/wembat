@@ -5,6 +5,7 @@ CREATE TABLE "User" (
     "name" TEXT NOT NULL,
     "token" TEXT NOT NULL DEFAULT E'',
     "publicKey" TEXT NOT NULL DEFAULT E'',
+    "salt" TEXT NOT NULL DEFAULT E'',
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("uid")
 );

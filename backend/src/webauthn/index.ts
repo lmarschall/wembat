@@ -53,6 +53,8 @@ webauthnRoutes.post("/request-register", async (req, res) => {
 		// get parameters from request
 		const { userName } = req.body.userInfo;
 
+		const firstSalt = new Uint8Array(new Array(32).fill(1)).buffer;
+
 		// search for user if name already exists, else generate new user
 		const user = (await prisma.user
 			.upsert({
@@ -62,6 +64,7 @@ webauthnRoutes.post("/request-register", async (req, res) => {
 				update: {},
 				create: {
 					name: userName,
+					salt: Buffer.from(firstSalt).toString("base64"),
 				},
 				include: {
 					devices: true,
@@ -92,11 +95,21 @@ webauthnRoutes.post("/request-register", async (req, res) => {
 				userVerification: "preferred",
 			},
 			supportedAlgorithmIDs: [-7, -257],
-			extensions: {
-				largeBlob: {
-					support: "required",
-				},
-			} as ExtensionsLargeBlobSupport,
+			extensions: {prf: {}} as any,
+			// extensions: {prf: {eval: {first: new TextEncoder().encode("Foo encryption key") as ArrayBuffer}}} as any,
+			// extensions: {
+			// 	prf: {
+			// 	  eval: {
+			// 		// first: new Uint8Array(Buffer.from(user.salt)),
+			// 		first: firstSalt
+			// 	  },
+			// 	},
+			// } as any
+			// extensions: {
+			// 	largeBlob: {
+			// 		support: "required",
+			// 	},
+			// } as ExtensionsLargeBlobSupport,
 		};
 
 		const options = await generateRegistrationOptions(opts).catch(
@@ -290,11 +303,19 @@ webauthnRoutes.post("/request-login", async (req, res) => {
 				 */
 				userVerification: "preferred",
 				rpID: rpId,
-				extensions: {
-					largeBlob: {
-						read: true,
-					}
-				} as ExtensionsLargeBlobRead,
+				extensions: {prf: {eval: {first: new TextEncoder().encode("Foo encryption key") as ArrayBuffer}}} as any,
+				// extensions: {
+				// 	prf: {
+				// 	  eval: {
+				// 		first: new Uint8Array(Buffer.from(user.salt)),
+				// 	  },
+				// 	},
+				// } as any
+				// extensions: {
+				// 	largeBlob: {
+				// 		read: true,
+				// 	}
+				// } as ExtensionsLargeBlobRead,
 			};
 		} else { 
 			opts = {
@@ -310,11 +331,12 @@ webauthnRoutes.post("/request-login", async (req, res) => {
 				 */
 				userVerification: "preferred",
 				rpID: rpId,
-				extensions: {
-					largeBlob: {
-						write: new Uint8Array(1),
-					},
-				} as ExtensionsLargeBlobWrite
+				extensions: {prf: {eval: {first: new TextEncoder().encode("Foo encryption key") as ArrayBuffer}}} as any,
+				// extensions: {
+				// 	largeBlob: {
+				// 		write: new Uint8Array(1),
+				// 	},
+				// } as ExtensionsLargeBlobWrite
 			};
 		}
 

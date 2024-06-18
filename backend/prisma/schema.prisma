@@ -13,6 +13,7 @@ model User {
   name      String    @unique
   token     String    @default("")
   publicKey String    @default("")
+  salt      String    @default("")
   devices   Device[]
 }
 
