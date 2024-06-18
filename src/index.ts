@@ -373,7 +373,7 @@ class WembatClient {
 						// 	type: "public-key",
 						// },
 					],
-					rpId: "dev.dontneeda.pw",
+					// rpId: "dev.dontneeda.pw",
 					// This must always be either "discouraged" or "required".
 					// Pick one and stick with it.
 					userVerification: "required",
@@ -388,6 +388,10 @@ class WembatClient {
 			} as any
 
 			console.log(inputOptions);
+
+			const auth1Credential = await navigator.credentials.get(inputOptions);
+
+			console.log(auth1Credential);
 
 			// check if we want to read or write
 			// if (inputOptions?.largeBlob.read) {
