@@ -78,41 +78,34 @@ webauthnRoutes.post("/request-register", async (req, res) => {
 
 		if (user.devices.length > 0) throw Error("User already registered with one device")
 
-		const options: any = {
-			publicKey: {
-				challenge: new Uint8Array([1, 2, 3, 4]), // Example value
-				rp: {
-					name: rpName,
-					id: rpId,
-				},
-				user: {
-					id: user.uid,  // Example value
-					name: user.name
-				},
-				timeout: 60000,
-				excludeCredentials: user.devices.map<PublicKeyCredentialDescriptor>((dev) => ({
-					id: dev.credentialId,
-					type: "public-key",
-					transports: dev.transports as AuthenticatorTransport[],
-				})),
-				attestationType: "none",
-				authenticatorSelection: {
-					residentKey: "preferred",
-					userVerification: "preferred",
-				},
-				supportedAlgorithmIDs: [-7, -257],
-				extensions: {
-					prf: {}
-				},
-			}
-		};
+		const opts: GenerateRegistrationOptionsOpts = {
+			rpName: rpName,
+			rpID: rpId,
+			userID: user.uid,
+			userName: user.name,
+			timeout: 60000,
+			attestationType: "none",
+			excludeCredentials: user.devices.map<PublicKeyCredentialDescriptor>((dev) => ({
+				id: dev.credentialId,
+				type: "public-key",
+				transports: dev.transports as AuthenticatorTransport[],
+			})),
+			authenticatorSelection: {
+				residentKey: "preferred",
+				userVerification: "preferred",
+			},
+			supportedAlgorithmIDs: [-7, -257],
+			extensions: {
+				prf: {}
+			} as any,
+		}
 
-		// const options = await generateRegistrationOptions(opts).catch(
-		// 	(err) => {
-		// 		console.log(err);
-		// 		throw Error("Registration Option could not be generated");
-		// 	}
-		// );
+		const options = await generateRegistrationOptions(opts).catch(
+			(err) => {
+				console.log(err);
+				throw Error("Registration Option could not be generated");
+			}
+		);
 
 		console.log("update user challenge");
 
@@ -282,48 +275,34 @@ webauthnRoutes.post("/request-login", async (req, res) => {
 
 		const firstSalt = new Uint8Array(new Array(32).fill(1)).buffer;
 
-		const options = {
-			publicKey: {
-				challenge: new Uint8Array([1, 2, 3, 4]), // Example value
-				rp: {
-					name: rpName,
-					id: rpId,
-				},
-				user: {
-					id: user.uid,
-					name: user.name
-				},
-				pubKeyCredParams: [
-					{ alg: -8, type: "public-key" },   // Ed25519
-					{ alg: -7, type: "public-key" },   // ES256
-					{ alg: -257, type: "public-key" }, // RS256
-				],
-				authenticatorSelection: {
-					userVerification: "required",
-				},
-				timeout: 6000,
-				allowCredentials: user.devices.map<PublicKeyCredentialDescriptor>((dev) => ({
-					id: dev.credentialId,
-					type: "public-key",
-					transports: dev.transports as AuthenticatorTransport[],
-				})),
-				userVerification: "required",
-				extensions: {
-					prf: {
-						eval: {
-							first: firstSalt,
-						},
+		const opts: GenerateAuthenticationOptionsOpts = {
+			timeout: 60000,
+			allowCredentials: user.devices.map<PublicKeyCredentialDescriptor>((dev) => ({
+				id: dev.credentialId,
+				type: "public-key",
+				transports: dev.transports as AuthenticatorTransport[],
+			})),
+			/**
+			 * This optional value controls whether or not the authenticator needs be able to uniquely
+			 * identify the user interacting with it (via built-in PIN pad, fingerprint scanner, etc...)
+			 */
+			userVerification: "preferred",
+			rpID: rpId,
+			extensions: {
+				prf: {
+					eval: {
+						first: firstSalt,
 					},
 				},
-			},
-		} as any
+			} as any,
+		};
 
-		// const options = await generateAuthenticationOptions(opts).catch(
-		// 	(err) => {
-		// 		console.log(err);
-		// 		throw Error("Authentication Options could not be generated");
-		// 	}
-		// );
+		const options = await generateAuthenticationOptions(opts).catch(
+			(err) => {
+				console.log(err);
+				throw Error("Authentication Options could not be generated");
+			}
+		);
 
 		// update the user challenge
 		await prisma.user

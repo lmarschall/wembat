@@ -335,8 +335,9 @@ class WembatClient {
 			const publicUserKeyString = loginReponseData.publicUserKey;
 			const privateUserKeyEncryptedString = loginReponseData.privateUserKeyEncrypted;
 
-			if (credentials instanceof PublicKeyCredential) {
-				const credentialExtensions = credentials.getClientExtensionResults() as any;
+			if (credentials.clientExtensionResults !== undefined) {
+
+				const credentialExtensions = credentials.clientExtensionResults as any;
 
 				const inputKeyMaterial = new Uint8Array(
 					credentialExtensions?.prf.results.first,
