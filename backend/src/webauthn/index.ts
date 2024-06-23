@@ -78,46 +78,41 @@ webauthnRoutes.post("/request-register", async (req, res) => {
 
 		if (user.devices.length > 0) throw Error("User already registered with one device")
 
-		const opts: GenerateRegistrationOptionsOpts = {
-			rpName: rpName,
-			rpID: rpId,
-			userID: user.uid,
-			userName: user.name,
-			timeout: 60000,
-			attestationType: "none",
-			excludeCredentials: user.devices.map<PublicKeyCredentialDescriptor>((dev) => ({
-				id: dev.credentialId,
-				type: "public-key",
-				transports: dev.transports as AuthenticatorTransport[],
-			})),
-			authenticatorSelection: {
-				residentKey: "preferred",
-				userVerification: "preferred",
-			},
-			supportedAlgorithmIDs: [-7, -257],
-			extensions: {prf: {}} as any,
-			// extensions: {prf: {eval: {first: new TextEncoder().encode("Foo encryption key") as ArrayBuffer}}} as any,
-			// extensions: {
-			// 	prf: {
-			// 	  eval: {
-			// 		// first: new Uint8Array(Buffer.from(user.salt)),
-			// 		first: firstSalt
-			// 	  },
-			// 	},
-			// } as any
-			// extensions: {
-			// 	largeBlob: {
-			// 		support: "required",
-			// 	},
-			// } as ExtensionsLargeBlobSupport,
+		const options: any = {
+			publicKey: {
+				challenge: new Uint8Array([1, 2, 3, 4]), // Example value
+				rp: {
+					name: rpName,
+					id: rpId,
+				},
+				user: {
+					id: user.uid,  // Example value
+					name: user.name
+				},
+				timeout: 60000,
+				excludeCredentials: user.devices.map<PublicKeyCredentialDescriptor>((dev) => ({
+					id: dev.credentialId,
+					type: "public-key",
+					transports: dev.transports as AuthenticatorTransport[],
+				})),
+				attestationType: "none",
+				authenticatorSelection: {
+					residentKey: "preferred",
+					userVerification: "preferred",
+				},
+				supportedAlgorithmIDs: [-7, -257],
+				extensions: {
+					prf: {}
+				},
+			}
 		};
 
-		const options = await generateRegistrationOptions(opts).catch(
-			(err) => {
-				console.log(err);
-				throw Error("Registration Option could not be generated");
-			}
-		);
+		// const options = await generateRegistrationOptions(opts).catch(
+		// 	(err) => {
+		// 		console.log(err);
+		// 		throw Error("Registration Option could not be generated");
+		// 	}
+		// );
 
 		console.log("update user challenge");
 
@@ -285,67 +280,50 @@ webauthnRoutes.post("/request-login", async (req, res) => {
 
 		console.log(user);
 
-		const publicUserKey = user.publicKey;
+		const firstSalt = new Uint8Array(new Array(32).fill(1)).buffer;
 
-		let opts: GenerateAuthenticationOptionsOpts;
-
-		if (publicUserKey !== "") {
-			opts = {
-				timeout: 60000,
+		const options = {
+			publicKey: {
+				challenge: new Uint8Array([1, 2, 3, 4]), // Example value
+				rp: {
+					name: rpName,
+					id: rpId,
+				},
+				user: {
+					id: user.uid,
+					name: user.name
+				},
+				pubKeyCredParams: [
+					{ alg: -8, type: "public-key" },   // Ed25519
+					{ alg: -7, type: "public-key" },   // ES256
+					{ alg: -257, type: "public-key" }, // RS256
+				],
+				authenticatorSelection: {
+					userVerification: "required",
+				},
+				timeout: 6000,
 				allowCredentials: user.devices.map<PublicKeyCredentialDescriptor>((dev) => ({
 					id: dev.credentialId,
 					type: "public-key",
 					transports: dev.transports as AuthenticatorTransport[],
 				})),
-				/**
-				 * This optional value controls whether or not the authenticator needs be able to uniquely
-				 * identify the user interacting with it (via built-in PIN pad, fingerprint scanner, etc...)
-				 */
-				userVerification: "preferred",
-				rpID: rpId,
-				extensions: {prf: {eval: {first: new TextEncoder().encode("Foo encryption key") as ArrayBuffer}}} as any,
-				// extensions: {
-				// 	prf: {
-				// 	  eval: {
-				// 		first: new Uint8Array(Buffer.from(user.salt)),
-				// 	  },
-				// 	},
-				// } as any
-				// extensions: {
-				// 	largeBlob: {
-				// 		read: true,
-				// 	}
-				// } as ExtensionsLargeBlobRead,
-			};
-		} else { 
-			opts = {
-				timeout: 60000,
-				allowCredentials: user.devices.map<PublicKeyCredentialDescriptor>((dev) => ({
-					id: dev.credentialId,
-					type: "public-key",
-					transports: dev.transports as AuthenticatorTransport[],
-				})),
-				/**
-				 * This optional value controls whether or not the authenticator needs be able to uniquely
-				 * identify the user interacting with it (via built-in PIN pad, fingerprint scanner, etc...)
-				 */
-				userVerification: "preferred",
-				rpID: rpId,
-				extensions: {prf: {eval: {first: new TextEncoder().encode("Foo encryption key") as ArrayBuffer}}} as any,
-				// extensions: {
-				// 	largeBlob: {
-				// 		write: new Uint8Array(1),
-				// 	},
-				// } as ExtensionsLargeBlobWrite
-			};
-		}
+				userVerification: "required",
+				extensions: {
+					prf: {
+						eval: {
+							first: firstSalt,
+						},
+					},
+				},
+			},
+		} as any
 
-		const options = await generateAuthenticationOptions(opts).catch(
-			(err) => {
-				console.log(err);
-				throw Error("Authentication Options could not be generated");
-			}
-		);
+		// const options = await generateAuthenticationOptions(opts).catch(
+		// 	(err) => {
+		// 		console.log(err);
+		// 		throw Error("Authentication Options could not be generated");
+		// 	}
+		// );
 
 		// update the user challenge
 		await prisma.user
@@ -363,7 +341,7 @@ webauthnRoutes.post("/request-login", async (req, res) => {
 			});
 
 		res.status(200).send(
-			JSON.stringify({ options: options, publicUserKey: publicUserKey })
+			JSON.stringify({ options: options })
 		);
 	} catch (error) {
 		console.log(error);
@@ -378,7 +356,7 @@ webauthnRoutes.post("/login", async (req, res) => {
 		if (!req.body.challengeResponse)
 			throw Error("Challenge Response not present");
 
-		const { challenge, credentials, pubKey, secret } =
+		const { challenge, credentials } =
 			req.body.challengeResponse;
 
 		// search for user by challenge
@@ -430,44 +408,20 @@ webauthnRoutes.post("/login", async (req, res) => {
 		const { verified, authenticationInfo } = verification;
 
 		if (verified) {
-			// save pubKey
-			await prisma.user
-				.update({
-					where: {
-						uid: user.uid,
-					},
-					data: {
-						publicKey: pubKey,
-					},
-				})
-				.catch((err) => {
-					console.log(err);
-					throw Error("Could not save publicKey in database");
-				});
-
-			// if(user.secret !== "" && user.secret == secret) {
-
-			// } else {
-			//     // TODO only compare secret if one is present on user
-			//     const publicUserKey = await getPublicKeyFromString(pubKey)
-			//     const sharedSecret = await createSharedSecret(publicUserKey);
-
-			//     if(sharedSecret !== secret) {
-			//         // TODO throw error
-			//     } else {
-			//         await prisma.user.update({
-			//             where: {
-			//                 uid: user.uid
-			//             },
-			//             data: {
-			//                 publicKey: pubKey,
-			//             }
-			//         }).catch((err) => {
-			//             console.log(err);
-			//             return res.status(400).send();
-			//         })
-			//     }
-			// }
+			// // save pubKey
+			// await prisma.user
+			// 	.update({
+			// 		where: {
+			// 			uid: user.uid,
+			// 		},
+			// 		data: {
+			// 			publicKey: pubKey,
+			// 		},
+			// 	})
+			// 	.catch((err) => {
+			// 		console.log(err);
+			// 		throw Error("Could not save publicKey in database");
+			// 	});
 
 			// Update the authenticator's counter in the DB to the newest count in the authentication
 			dbAuthenticator.counter = authenticationInfo.newCounter;
@@ -480,7 +434,7 @@ webauthnRoutes.post("/login", async (req, res) => {
 
 			return res
 				.status(200)
-				.send(JSON.stringify({ verified: verified, jwt: jwt }));
+				.send(JSON.stringify({ verified: verified, jwt: jwt, publicUserKey: pubKey, privateUserKeyEncrypted: privKey, nonce: nonce}));
 		} else {
 			throw Error("Could not verifiy reponse");
 		}

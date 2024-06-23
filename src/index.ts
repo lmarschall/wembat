@@ -108,12 +108,14 @@ interface RegisterResponse {
 
 interface RequestLoginResponse {
 	options: PublicKeyCredentialRequestOptionsJSON;
-	publicUserKey: string;
 }
 
 interface LoginResponse {
 	verified: boolean;
 	jwt: string;
+	publicUserKey: string;
+	privateUserKeyEncrypted: string;
+	nonce: Uint8Array;
 }
 
 interface ChallengeInputOptions extends AuthenticationExtensionsClientInputs {
@@ -133,6 +135,7 @@ class WembatClient {
 	private readonly axiosClient: AxiosInstance;
 	private publicKey: CryptoKey | undefined;
 	private privateKey: CryptoKey | undefined;
+	private jwt: string | undefined;
 
 	/**
 	 * Creates an instance of WembatClient.
@@ -157,18 +160,6 @@ class WembatClient {
 
 	public getCryptoPublicKey() {
 		return this.publicKey;
-	}
-
-	private getCryptoPrivateKey() {
-		return this.privateKey;
-	}
-
-	private setCryptoPublicKey(key: CryptoKey) {
-		this.publicKey = key;
-	}
-
-	private setCryptoPrivateKey(key: CryptoKey) {
-		this.privateKey = key;
 	}
 
 	// helper function
@@ -225,64 +216,25 @@ class WembatClient {
 
 			const requestRegisterResponseData: RequestRegisterResponse =
 				JSON.parse(requestRegisterResponse.data);
-			// const challengeOptions: PublicKeyCredentialCreationOptionsJSON =
-			// 	requestRegisterResponseData.options;
+			const challengeOptions: PublicKeyCredentialCreationOptionsJSON =
+				requestRegisterResponseData.options;
 
-			const firstSalt = new Uint8Array(new Array(32).fill(1)).buffer;
+			// const auth1Credential = await navigator.credentials.create(challengeOptions);
 
-			const challengeOptions = {
-				publicKey: {
-					challenge: new Uint8Array([1, 2, 3, 4]), // Example value
-					rp: {
-						name: "SimpleWebAuthn Example",
-						// id: "localhost:3000",
-					},
-					user: {
-						id: new Uint8Array([5, 6, 7, 8]),  // Example value
-						name: "user@dev.dontneeda.pw",
-						displayName: "user@dev.dontneeda.pw",
-					},
-					pubKeyCredParams: [
-						{ alg: -8, type: "public-key" },   // Ed25519
-						{ alg: -7, type: "public-key" },   // ES256
-						{ alg: -257, type: "public-key" }, // RS256
-					],
-					authenticatorSelection: {
-					  	userVerification: "required",
-					},
-					extensions: {prf: {}},
-					// extensions: {
-					// 	prf: {
-					// 		eval: {
-					// 			first: firstSalt,
-					// 		},
-					// 	},
-					// },
-				},
-			} as any
+			const credentials: RegistrationResponseJSON = await startRegistration(
+				challengeOptions
+			).catch((err: string) => {
+				throw Error(err);
+			});
 
-			console.log(challengeOptions);
-
-			const auth1Credential = await navigator.credentials.create(challengeOptions);
-
-			// const credentials: RegistrationResponseJSON = await startRegistration(
-			// 	challengeOptions
-			// ).catch((err: string) => {
-			// 	throw Error(err);
-			// });
-
-			console.log(auth1Credential);
-
-			// TODO add check for largeBlob supported
+			// TODO add check for prf extension supported
 
 			const registerResponse = await this.axiosClient.post<string>(
 				`/register`,
 				{
 					challengeResponse: {
-						// credentials: credentials,
-						redentials: auth1Credential,
-						challenge: challengeOptions.challenge,
-						deviceToken: "",
+						credentials: credentials,
+						challenge: challengeOptions.challenge
 					},
 				}
 			);
@@ -335,8 +287,6 @@ class WembatClient {
 			if (this.axiosClient == undefined)
 				throw Error("Axiso Client undefined!");
 
-			console.log("BLOB");
-
 			const loginRequestResponse = await this.axiosClient.post<string>(
 				`/request-login`,
 				{
@@ -353,162 +303,126 @@ class WembatClient {
 				loginRequestResponse.data
 			);
 			const challengeOptions = loginRequestResponseData.options;
-			const pubicUserKey = loginRequestResponseData.publicUserKey;
-
-			let privateKey: CryptoKey | undefined;
-			let publicKey: CryptoKey | undefined;
-
-			// const inputOptions: ChallengeInputOptions | undefined =
-			// 	challengeOptions.extensions as ChallengeInputOptions;
-
-			const firstSalt = new Uint8Array(new Array(32).fill(1)).buffer;
-
-			const inputOptions = {
-				publicKey: {
-					challenge: new Uint8Array([9, 0, 1, 2]), // Example value
-					allowCredentials: [
-						// {
-						// 	id: regCredential.rawId,
-						// 	transports: regCredential.response.getTransports(),
-						// 	type: "public-key",
-						// },
-					],
-					// rpId: "dev.dontneeda.pw",
-					// This must always be either "discouraged" or "required".
-					// Pick one and stick with it.
-					userVerification: "required",
-					extensions: {
-						prf: {
-							eval: {
-							first: firstSalt,
-							},
-						},
-					},
-				},
-			} as any
-
-			console.log(inputOptions);
-
-			const auth1Credential = await navigator.credentials.get(inputOptions);
-
-			console.log(auth1Credential);
-
-			// check if we want to read or write
-			// if (inputOptions?.largeBlob.read) {
-			// 	publicKey = await this.loadCryptoPublicKeyFromString(pubicUserKey);
-			// } else if (inputOptions.largeBlob.write) {
-			// 	// generate key material to be saved
-			// 	const keyPair = await window.crypto.subtle.generateKey(
-			// 		{
-			// 			name: "ECDH",
-			// 			namedCurve: "P-384",
-			// 		},
-			// 		true,
-			// 		["deriveKey", "deriveBits"]
-			// 	);
-
-			// 	publicKey = keyPair.publicKey;
-			// 	privateKey = keyPair.privateKey;
-
-			// 	// export to jwk format buffer to save private key in large blob
-			// 	const blob = await this.saveCryptoKeyAsString(privateKey);
-			// 	inputOptions.largeBlob.write = Uint8Array.from(
-			// 		blob.split("").map((c: string) => c.codePointAt(0)) as number[]
-			// 	);
-			// } else {
-			// 	// not reading or writing is not intended
-			// 	throw Error("not reading or writing");
-			// }
-
 			const conditionalUISupported = await browserSupportsWebAuthnAutofill();
 
 			const credentials: AuthenticationResponseJSON =
-				await startAuthentication(challengeOptions, false).catch(
+				await startAuthentication(challengeOptions, conditionalUISupported).catch(
 					(err: string) => {
 						throw Error(err);
 					}
 				);
 
-			const outputOptions: any | undefined =
-				credentials.clientExtensionResults as any;
-
-			const inputKeyMaterial = new Uint8Array(
-				outputOptions?.prf.results.first,
-			);
-			
-			const keyDerivationKey = await crypto.subtle.importKey(
-				"raw",
-				inputKeyMaterial,
-				"HKDF",
-				false,
-				["deriveKey"],
-			);
-
-			console.log(keyDerivationKey);
-
-			// check if read or write was successful
-			// if (outputOptions.largeBlob.written) {
-			// 	console.log("WRITE SUCCESSFUL");
-			// } else if (Object.keys(outputOptions.largeBlob).length) {
-			// 	console.log("READ SUCCESSFUL");
-			// 	const keyBuffer = String.fromCodePoint(
-			// 		...new Uint8Array(outputOptions.largeBlob.blob)
-			// 	);
-
-			// 	privateKey = await this.loadCryptoPrivateKeyFromString(keyBuffer);
-			// }
-
-			// TODO private key public key verification
-			// server generates secret from private server key and public user key if present
-			// server sends public server key
-			// user generates secret from private user key and public server key
-			// sends secret to server
-			// server checks if secret already present or generates secret and compares for vaildation
-
-			// TODO maybe just save after login challegne successfully completed
-
-			// generate shared secret for key validation
-			// const sharedSecret = await window.crypto.subtle.deriveBits(
-			//   {
-			//     name: "ECDH",
-			//     // @ts-ignore
-			//     namedCurve: "P-384",
-			//     public: publicServerKey,
-			//   },
-			//   privateKey,
-			//   128,
-			// );
-
-			// if (privateKey !== undefined && publicKey !== undefined) {
-			// 	this.setCryptoPrivateKey(privateKey);
-			// 	this.setCryptoPublicKey(publicKey);
-			// } else {
-			// 	// TODO throw error
-			// 	console.error("private key or public key undefined!");
-			// 	throw Error("private key or public key undefined!");
-			// }
-
-			// send public key to server if we just created one
-			const pubKeyString =
-				publicKey !== undefined
-					? await this.saveCryptoKeyAsString(publicKey)
-					: "";
-
 			const loginReponse = await this.axiosClient.post<string>(`/login`, {
 				// TODO interfaces for request bodies
 				challengeResponse: {
 					credentials: credentials,
-					challenge: challengeOptions.challenge,
-					pubKey: pubKeyString,
-					// secret: this.ab2str(sharedSecret)
+					challenge: challengeOptions.challenge
 				},
 			});
 
 			if (loginReponse.status !== 200) {
 				throw Error(loginReponse.data);
 			}
-
+	
 			const loginReponseData: LoginResponse = JSON.parse(loginReponse.data);
+
+			if (loginReponseData.verified) {
+				this.jwt = loginReponseData.jwt;
+			} else {
+				throw Error("Login not verified");
+			}
+
+			const publicUserKeyString = loginReponseData.publicUserKey;
+			const privateUserKeyEncryptedString = loginReponseData.privateUserKeyEncrypted;
+
+			if (credentials instanceof PublicKeyCredential) {
+				const credentialExtensions = credentials.getClientExtensionResults() as any;
+
+				const inputKeyMaterial = new Uint8Array(
+					credentialExtensions?.prf.results.first,
+				);
+				
+				const keyDerivationKey = await crypto.subtle.importKey(
+					"raw",
+					inputKeyMaterial,
+					"HKDF",
+					false,
+					["deriveKey"],
+				);
+
+				const label = "encryption key";
+				const info = new TextEncoder().encode(label);
+				// `salt` is a required argument for `deriveKey()`, but should
+				// be empty
+				const salt = new Uint8Array();
+
+				const encryptionKey = await crypto.subtle.deriveKey(
+					{ name: "HKDF", info, salt, hash: "SHA-256" },
+					keyDerivationKey,
+					{ name: "AES-GCM", length: 256 },
+					// No need for exportability because we can deterministically
+					// recreate this key
+					false,
+					["encrypt", "decrypt"],
+				);
+
+				if (publicUserKeyString !== "" && privateUserKeyEncryptedString !== "") {
+					this.publicKey = await this.loadCryptoPublicKeyFromString(publicUserKeyString);
+
+					const nonce = loginReponseData.nonce;
+
+					const decryptedPrivateUserKey = await crypto.subtle.decrypt(
+						// `nonce` should be the same value from Step 2.3
+						{ name: "AES-GCM", iv: nonce },
+						encryptionKey,
+						this.str2ab(privateUserKeyEncryptedString),
+					);
+
+					this.privateKey = await this.loadCryptoPrivateKeyFromString(
+						this.ab2str(decryptedPrivateUserKey),
+					);
+				} else {
+					const keyPair = await window.crypto.subtle.generateKey(
+						{
+							name: "ECDH",
+							namedCurve: "P-384",
+						},
+						true,
+						["deriveKey", "deriveBits"]
+					);
+
+					this.publicKey = keyPair.publicKey;
+					this.privateKey = keyPair.privateKey;
+
+					const publicKeyString = await this.saveCryptoKeyAsString(this.publicKey);
+					const privateKeyString = await this.saveCryptoKeyAsString(this.privateKey);
+
+					const nonce = window.crypto.getRandomValues(new Uint8Array(12));
+
+					const encryptedPrivateKey = await crypto.subtle.encrypt(
+						{ name: "AES-GCM", iv: nonce },
+						encryptionKey,
+						this.str2ab(privateKeyString),
+					);
+
+					const privateUserKeyEncrypted = this.ab2str(encryptedPrivateKey);
+
+					const saveCredentialsResponse = await this.axiosClient.post<string>(`/save-credentials`, {
+						// TODO interfaces for request bodies
+						// TODO add authentication header with jwt
+						challengeResponse: {
+							credentials: credentials,
+							challenge: challengeOptions.challenge
+						},
+					});
+		
+					if (saveCredentialsResponse.status !== 200) {
+						throw Error(saveCredentialsResponse.data);
+					}
+				}
+			} else {
+				throw Error("Credentials not instance of PublicKeyCredential");
+			}
 
 			const loginResult: WembatLoginResult = {
 				verified: loginReponseData.verified,
