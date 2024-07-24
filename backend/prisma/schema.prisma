@@ -8,22 +8,40 @@ datasource db {
 }
 
 model User {
-  uid       String    @id @default(cuid())
-  challenge String    @unique @default("")
-  name      String    @unique
-  token     String    @default("")
-  publicKey String    @default("")
-  salt      String    @default("")
-  devices   Device[]
+  uid String @id @default(cuid())
+  name String @unique
+  salt Bytes
+  challenge String @unique @default("")
+  sessions Session[]
+  devices Device[]
 }
 
 model Device {
-  id                  Int       @id @default(autoincrement())
-  userUId             String
+  id Int @id @default(autoincrement())
+  userUId String
   credentialPublicKey Bytes
-  credentialId        Bytes     @unique
-  counter             Int
-  written             Boolean   @default(false)
-  transports          String[]
-  user                User      @relation(fields: [userUId], references: [uid])
+  credentialId Bytes @unique
+  counter Int @default(0)
+  transports String[]
+  user User @relation(fields: [userUId], references: [uid])
+}
+
+model Application {
+  uid String @id @default(cuid())
+  url String @unique
+  name String
+  publicKey String @default("")
+  privateKey String @default("")
+  sessions Session[]
+}
+
+// one session per user device
+model Session {
+  uid String @id @default(cuid())
+  appUId String
+  userUId String
+  publicKey String @default("")
+  privateKey String @default("")
+  user User @relation(fields: [userUId], references: [uid])
+  application Application @relation(fields: [appUId], references: [uid])
 }
