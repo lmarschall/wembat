@@ -342,6 +342,8 @@ class WembatClient {
 				throw Error("Login not verified");
 			}
 
+			console.log(loginReponseData);
+
 			const publicUserKeyString = loginReponseData.publicUserKey;
 			const privateUserKeyEncryptedString = loginReponseData.privateUserKeyEncrypted;
 
@@ -378,6 +380,7 @@ class WembatClient {
 					this.publicKey = await this.loadCryptoPublicKeyFromString(publicUserKeyString);
 
 					const nonce = loginReponseData.nonce;
+					const decoder = new TextDecoder();
 
 					const decryptedPrivateUserKey = await crypto.subtle.decrypt(
 						{ name: "AES-GCM", iv: nonce },
@@ -386,9 +389,10 @@ class WembatClient {
 					);
 
 					this.privateKey = await this.loadCryptoPrivateKeyFromString(
-						this.ab2str(decryptedPrivateUserKey),
+						decoder.decode(decryptedPrivateUserKey),
 					);
 				} else {
+					console.log("Generating new keys");
 					const keyPair = await window.crypto.subtle.generateKey(
 						{
 							name: "ECDH",
@@ -405,11 +409,13 @@ class WembatClient {
 					const privateKeyString = await this.saveCryptoKeyAsString(this.privateKey);
 
 					const nonce = window.crypto.getRandomValues(new Uint8Array(12));
+					const encoder = new TextEncoder();
+					const encoded = encoder.encode(privateKeyString);
 
 					const encryptedPrivateKey = await crypto.subtle.encrypt(
 						{ name: "AES-GCM", iv: nonce },
 						encryptionKey,
-						this.str2ab(privateKeyString),
+						encoded,
 					);
 
 					const saveCredentialsResponse = await this.axiosClient.post<string>(`/save-credentials`, {

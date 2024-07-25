@@ -461,7 +461,7 @@ webauthnRoutes.post("/login", async (req, res) => {
 				.create({
 					data: {
 						userUId: user.uid,
-						appUId: user.uid,
+						appUId: "clz1u257h00183etnsbwctvnd",
 						nonce: Buffer.from([1, 2, 3, 4]),
 					},
 			}) as Session
@@ -529,6 +529,8 @@ webauthnRoutes.post("/save-credentials", async (req, res) => {
 
 		const { privKey, pubKey, nonce } =
 			req.body.saveCredentialsRequest;
+
+		console.log(privKey, pubKey, nonce);
 
 		
 		// update the user challenge
