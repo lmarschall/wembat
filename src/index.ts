@@ -302,11 +302,21 @@ class WembatClient {
 			const loginRequestResponseData: RequestLoginResponse = JSON.parse(
 				loginRequestResponse.data
 			);
-			const challengeOptions = loginRequestResponseData.options;
+			const challengeOptions = loginRequestResponseData.options as any;
 			const conditionalUISupported = await browserSupportsWebAuthnAutofill();
 
+			const firstSalt = new Uint8Array([
+				0x4a, 0x18, 0xa1, 0xe7, 0x4b, 0xfb, 0x3d, 0x3f, 0x2a, 0x5d, 0x1f, 0x0c,
+				0xcc, 0xe3, 0x96, 0x5e, 0x00, 0x61, 0xd1, 0x20, 0x82, 0xdc, 0x2a, 0x65,
+				0x8a, 0x18, 0x10, 0xc0, 0x0f, 0x26, 0xbe, 0x1e,
+			  ]).buffer;
+			
+			challengeOptions.extensions.prf.eval.first = new Uint8Array(new Array(32).fill(1)).buffer;
+			challengeOptions.extensions.prf.eval.first = firstSalt
+			console.log(challengeOptions);
+
 			const credentials: AuthenticationResponseJSON =
-				await startAuthentication(challengeOptions, conditionalUISupported).catch(
+				await startAuthentication(challengeOptions, false).catch(
 					(err: string) => {
 						throw Error(err);
 					}
@@ -351,18 +361,15 @@ class WembatClient {
 					["deriveKey"],
 				);
 
+				// wild settings here
 				const label = "encryption key";
 				const info = new TextEncoder().encode(label);
-				// `salt` is a required argument for `deriveKey()`, but should
-				// be empty
 				const salt = new Uint8Array();
 
 				const encryptionKey = await crypto.subtle.deriveKey(
 					{ name: "HKDF", info, salt, hash: "SHA-256" },
 					keyDerivationKey,
 					{ name: "AES-GCM", length: 256 },
-					// No need for exportability because we can deterministically
-					// recreate this key
 					false,
 					["encrypt", "decrypt"],
 				);
@@ -373,7 +380,6 @@ class WembatClient {
 					const nonce = loginReponseData.nonce;
 
 					const decryptedPrivateUserKey = await crypto.subtle.decrypt(
-						// `nonce` should be the same value from Step 2.3
 						{ name: "AES-GCM", iv: nonce },
 						encryptionKey,
 						this.str2ab(privateUserKeyEncryptedString),
@@ -406,14 +412,11 @@ class WembatClient {
 						this.str2ab(privateKeyString),
 					);
 
-					const privateUserKeyEncrypted = this.ab2str(encryptedPrivateKey);
-
 					const saveCredentialsResponse = await this.axiosClient.post<string>(`/save-credentials`, {
-						// TODO interfaces for request bodies
-						// TODO add authentication header with jwt
-						challengeResponse: {
-							credentials: credentials,
-							challenge: challengeOptions.challenge
+						saveCredentialsRequest: {
+							privKey: this.ab2str(encryptedPrivateKey),
+							pubKey: publicKeyString,
+							nonce: nonce
 						},
 					});
 		

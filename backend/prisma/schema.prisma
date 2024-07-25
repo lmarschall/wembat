@@ -42,6 +42,7 @@ model Session {
   userUId String
   publicKey String @default("")
   privateKey String @default("")
+  nonce Bytes @default("")
   user User @relation(fields: [userUId], references: [uid])
   application Application @relation(fields: [appUId], references: [uid])
 }
