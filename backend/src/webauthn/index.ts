@@ -3,7 +3,7 @@ import base64url from "base64url";
 import { randomBytes } from 'crypto'
 import { addToWebAuthnTokens } from "../redis";
 import { createJWT } from "../crypto";
-import { PrismaClient, User, Prisma, Session } from "@prisma/client";
+import { PrismaClient, User, Prisma, Session, Device } from "@prisma/client";
 import {
 	// Registration
 	generateRegistrationOptions,
@@ -19,6 +19,10 @@ import {
 
 type UserWithDevices = Prisma.UserGetPayload<{
 	include: { devices: true };
+}>;
+
+type UserWithDevicesAndSessions = Prisma.UserGetPayload<{
+	include: { devices: true, sessions: true };
 }>;
 
 interface ExtensionsLargeBlobSupport extends AuthenticationExtensionsClientInputs {
@@ -44,6 +48,7 @@ const prisma = new PrismaClient();
 const rpId = process.env.RPID || "localhost:3000";
 const rpName = "Wembat";
 const expectedOrigin = `https://${rpId}:3000`;
+const appUId = "clz2v6xdh0140uctnqfg0edlv";
 
 console.log("server is starting webauthn services");
 
@@ -412,16 +417,17 @@ webauthnRoutes.post("/login", async (req, res) => {
 				},
 				include: {
 					devices: true,
+					sessions: true
 				},
 			})
 			.catch((err) => {
 				console.log(err);
 				throw Error("User with given challenge not found");
-			})) as UserWithDevices;
+			})) as UserWithDevicesAndSessions;
 
 		if (!user) throw Error("User with given challenge not found");
 
-		let dbAuthenticator;
+		let dbAuthenticator: any = null;
 		const bodyCredIDBuffer = base64url.toBuffer(credentials.rawId);
 		// "Query the DB" here for an authenticator matching `credentialID`
 		for (const dev of user.devices) {
@@ -431,7 +437,7 @@ webauthnRoutes.post("/login", async (req, res) => {
 			}
 		}
 
-		if (!dbAuthenticator) {
+		if (dbAuthenticator == null) {
 			throw new Error(`Could not find authenticator matching ${body.id}`);
 		}
 
@@ -455,39 +461,40 @@ webauthnRoutes.post("/login", async (req, res) => {
 		if (verified) {
 
 			// Update the authenticator's counter in the DB to the newest count in the authentication
+			// TODO make this db call not only local parameter
 			dbAuthenticator.counter = authenticationInfo.newCounter;
 
-			const session = await prisma.session
+			// const session = await prisma.session
+			// 	.create({
+			// 		data: {
+			// 			userUId: user.uid,
+			// 			appUId: "clz1u257h00183etnsbwctvnd",
+			// 			nonce: Buffer.from([1, 2, 3, 4]),
+			// 		},
+			// }) as Session
+
+			// search in user sessions for session with app id and deviceid
+			let userSession: Session = null;
+			user.sessions.forEach((session) => {
+				if (session.deviceUId == dbAuthenticator.uid && session.appUId == appUId) {
+					userSession = session;
+				}
+			});
+
+			if (userSession == null) {
+				userSession = await prisma.session
 				.create({
 					data: {
 						userUId: user.uid,
-						appUId: "clz1u257h00183etnsbwctvnd",
-						nonce: Buffer.from([1, 2, 3, 4]),
+						appUId: appUId,
+						deviceUId: dbAuthenticator.uid,
 					},
-			}) as Session
-
-			// user verified lets find or create a session
-			// const session = (await prisma.session
-			// 	.upsert({
-			// 		where: {					
-			// 			user: {
-			// 				some: {
-			// 					uid: user.uid,
-			// 				}
-			// 			},
-			// 			// userUId: user.uid,
-			// 		},
-			// 		update: {},
-			// 		create: {
-			// 			userUId: user.uid,
-			// 			appUId: null,
-			// 			// application: null,
-			// 		}
-			// 	})
-			// 	.catch((err) => {
-			// 		console.log(err);
-			// 		throw Error("User could not be found or created in database");
-			// 	})) as Session;
+				})
+				.catch((err) => {
+					console.log(err);
+					throw Error("User could not be found or created in database");
+				}) as Session;
+			}
 
 			// create new json web token for api calls
 			const jwt = await createJWT(user);
@@ -500,12 +507,9 @@ webauthnRoutes.post("/login", async (req, res) => {
 				.send(JSON.stringify({
 					verified: verified,
 					jwt: jwt,
-					// publicUserKey: session.publicKey,
-					// privateUserKeyEncrypted: session.privateKey,
-					// nonce: session.nonce
-					publicUserKey: "",
-					privateUserKeyEncrypted: "",
-					nonce: null
+					publicUserKey: userSession.publicKey,
+					privateUserKeyEncrypted: userSession.privateKey,
+					nonce: userSession.nonce
 				}));
 		} else {
 			throw Error("Could not verifiy reponse");
@@ -530,27 +534,35 @@ webauthnRoutes.post("/save-credentials", async (req, res) => {
 		const { privKey, pubKey, nonce } =
 			req.body.saveCredentialsRequest;
 
-		console.log(privKey, pubKey, nonce);
+		console.log('privKey');
+		console.log(privKey);
+		console.log('pubKey');
+		console.log(pubKey);
+		console.log('nonce');
+		console.log(nonce);
 
+		// LOGIC ERROR HERE
+		// we need to put device id into session
+		// in order to get a unique session for each device
+		// or use sessionid
 		
 		// update the user challenge
-		// await prisma.session
-		// 	.update({
-		// 		where: {
-		// 			userUId: user.uid,
-		// 		},
-		// 		data: {
-		// 			publicKey: pubKey,
-		// 			privateKey: privKey,
-		// 			nonce: nonce
-		// 		},
-		// 	})
-		// 	.catch((err) => {
-		// 		console.log(err);
-		// 		throw Error("Updating user challenge failed");
-		// 	});
-
-
+		await prisma.session
+			.updateMany({
+				where: {
+					userUId: "clz2v91u300004glip0j0ngwr",
+					appUId: appUId,
+				},
+				data: {
+					publicKey: pubKey,
+					privateKey: privKey,
+					nonce: nonce
+				},
+			})
+			.catch((err) => {
+				console.log(err);
+				throw Error("Updating user challenge failed");
+			});
 
 		return res
 			.status(200)

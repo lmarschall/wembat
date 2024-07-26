@@ -17,13 +17,14 @@ model User {
 }
 
 model Device {
-  id Int @id @default(autoincrement())
+  uid String @id @default(cuid())
   userUId String
   credentialPublicKey Bytes
   credentialId Bytes @unique
   counter Int @default(0)
   transports String[]
   user User @relation(fields: [userUId], references: [uid])
+  sessions Session[]
 }
 
 model Application {
@@ -40,9 +41,11 @@ model Session {
   uid String @id @default(cuid())
   appUId String
   userUId String
+  deviceUId String
   publicKey String @default("")
   privateKey String @default("")
-  nonce Bytes @default("")
+  nonce String @default("")
   user User @relation(fields: [userUId], references: [uid])
+  device Device @relation(fields: [deviceUId], references: [uid])
   application Application @relation(fields: [appUId], references: [uid])
 }

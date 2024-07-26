@@ -10,14 +10,14 @@ CREATE TABLE "User" (
 
 -- CreateTable
 CREATE TABLE "Device" (
-    "id" SERIAL NOT NULL,
+    "uid" TEXT NOT NULL,
     "userUId" TEXT NOT NULL,
     "credentialPublicKey" BYTEA NOT NULL,
     "credentialId" BYTEA NOT NULL,
     "counter" INTEGER NOT NULL DEFAULT 0,
     "transports" TEXT[],
 
-    CONSTRAINT "Device_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Device_pkey" PRIMARY KEY ("uid")
 );
 
 -- CreateTable
@@ -36,9 +36,10 @@ CREATE TABLE "Session" (
     "uid" TEXT NOT NULL,
     "appUId" TEXT NOT NULL,
     "userUId" TEXT NOT NULL,
+    "deviceUId" TEXT NOT NULL,
     "publicKey" TEXT NOT NULL DEFAULT E'',
     "privateKey" TEXT NOT NULL DEFAULT E'',
-    "nonce" BYTEA NOT NULL,
+    "nonce" TEXT NOT NULL DEFAULT E'',
 
     CONSTRAINT "Session_pkey" PRIMARY KEY ("uid")
 );
@@ -60,6 +61,9 @@ ALTER TABLE "Device" ADD CONSTRAINT "Device_userUId_fkey" FOREIGN KEY ("userUId"
 
 -- AddForeignKey
 ALTER TABLE "Session" ADD CONSTRAINT "Session_userUId_fkey" FOREIGN KEY ("userUId") REFERENCES "User"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Session" ADD CONSTRAINT "Session_deviceUId_fkey" FOREIGN KEY ("deviceUId") REFERENCES "Device"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Session" ADD CONSTRAINT "Session_appUId_fkey" FOREIGN KEY ("appUId") REFERENCES "Application"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;

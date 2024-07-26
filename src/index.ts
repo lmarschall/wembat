@@ -115,7 +115,7 @@ interface LoginResponse {
 	jwt: string;
 	publicUserKey: string;
 	privateUserKeyEncrypted: string;
-	nonce: Uint8Array;
+	nonce: string;
 }
 
 interface ChallengeInputOptions extends AuthenticationExtensionsClientInputs {
@@ -311,7 +311,6 @@ class WembatClient {
 				0x8a, 0x18, 0x10, 0xc0, 0x0f, 0x26, 0xbe, 0x1e,
 			  ]).buffer;
 			
-			challengeOptions.extensions.prf.eval.first = new Uint8Array(new Array(32).fill(1)).buffer;
 			challengeOptions.extensions.prf.eval.first = firstSalt
 			console.log(challengeOptions);
 
@@ -377,13 +376,14 @@ class WembatClient {
 				);
 
 				if (publicUserKeyString !== "" && privateUserKeyEncryptedString !== "") {
+					console.log("Loading existing keys");
 					this.publicKey = await this.loadCryptoPublicKeyFromString(publicUserKeyString);
 
 					const nonce = loginReponseData.nonce;
 					const decoder = new TextDecoder();
 
 					const decryptedPrivateUserKey = await crypto.subtle.decrypt(
-						{ name: "AES-GCM", iv: nonce },
+						{ name: "AES-GCM", iv: this.str2ab(nonce) },
 						encryptionKey,
 						this.str2ab(privateUserKeyEncryptedString),
 					);
@@ -422,7 +422,7 @@ class WembatClient {
 						saveCredentialsRequest: {
 							privKey: this.ab2str(encryptedPrivateKey),
 							pubKey: publicKeyString,
-							nonce: nonce
+							nonce: this.ab2str(nonce)
 						},
 					});
 		
