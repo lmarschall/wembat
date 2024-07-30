@@ -98,6 +98,13 @@ export interface WembatLoginResult {
 	jwt: string;
 }
 
+export interface WembatOnboardResult {
+	/**
+	 * Indicates whether the onboarding was successful.
+	 */
+	verifiedStatus: boolean;
+}
+
 interface RequestRegisterResponse {
 	options: PublicKeyCredentialCreationOptionsJSON;
 }
@@ -107,6 +114,10 @@ interface RegisterResponse {
 }
 
 interface RequestLoginResponse {
+	options: PublicKeyCredentialRequestOptionsJSON;
+}
+
+interface RequestOnboardResponse {
 	options: PublicKeyCredentialRequestOptionsJSON;
 }
 
@@ -136,6 +147,7 @@ class WembatClient {
 	private readonly axiosClient: AxiosInstance;
 	private publicKey: CryptoKey | undefined;
 	private privateKey: CryptoKey | undefined;
+	private sessionKey: CryptoKey | undefined;
 	private jwt: string | undefined;
 
 	/**
@@ -274,9 +286,8 @@ class WembatClient {
 	public async onboard(
 		userUId: string
 	): Promise<WembatActionResponse<WembatRegisterResult>> {
-		// TODO maybe check for largeblob not supported
 
-		const actionResponse: WembatActionResponse<WembatRegisterResult> = {
+		const actionResponse: WembatActionResponse<WembatOnboardResult> = {
 			success: false,
 			error: {} as WembatError,
 			result: {} as WembatRegisterResult,
@@ -289,83 +300,104 @@ class WembatClient {
 			if (this.axiosClient == undefined)
 				throw Error("Axiso Client undefined!");
 
-			const requestRegisterResponse = await this.axiosClient.post<string>(
+			const requestOnboardResponse = await this.axiosClient.post<string>(
 				`/request-onboard`,
 				{
 					userInfo: { userJWT: this.jwt },
 				}
 			);
 
-			// if (requestRegisterResponse.status !== 200) {
-			// 	// i guess we need to handle errors here
-			// 	throw Error(requestRegisterResponse.data);
-			// }
+			if (requestOnboardResponse.status !== 200) {
+				// i guess we need to handle errors here
+				throw Error(requestOnboardResponse.data);
+			}
 
-			// const requestRegisterResponseData: RequestRegisterResponse =
-			// 	JSON.parse(requestRegisterResponse.data);
-			// const challengeOptions: PublicKeyCredentialCreationOptionsJSON =
-			// 	requestRegisterResponseData.options;
+			const onboardRequestResponseData: RequestOnboardResponse = JSON.parse(
+				requestOnboardResponse.data
+			);
+			const challengeOptions = onboardRequestResponseData.options as any;
+			const conditionalUISupported = await browserSupportsWebAuthnAutofill();
 
-			// const credentials: RegistrationResponseJSON = await startRegistration(
-			// 	challengeOptions
-			// ).catch((err: string) => {
-			// 	throw Error(err);
-			// });
+			const firstSalt = new Uint8Array([
+				0x4a, 0x18, 0xa1, 0xe7, 0x4b, 0xfb, 0x3d, 0x3f, 0x2a, 0x5d, 0x1f, 0x0c,
+				0xcc, 0xe3, 0x96, 0x5e, 0x00, 0x61, 0xd1, 0x20, 0x82, 0xdc, 0x2a, 0x65,
+				0x8a, 0x18, 0x10, 0xc0, 0x0f, 0x26, 0xbe, 0x1e,
+			  ]).buffer;
+			
+			challengeOptions.extensions.prf.eval.first = firstSalt
+			console.log(challengeOptions);
 
-			// idea
-			// make device registration for user seperate from session stuff
-			// user can add new user devices on login page
-			// throw error if user logs in to session where there is already some stuff present
+			const credentials: AuthenticationResponseJSON =
+				await startAuthentication(challengeOptions, false).catch(
+					(err: string) => {
+						throw Error(err);
+					}
+				);
 
-			// onboard
-			// user can choose on logged in session which device should be onboarded
-			// generate key pair
-			// encrypt private key with prf retrieved encryption key
-			// encrypt session key with user private key
-			// save pubKey encPrivKey and encrypted session key in database
+			const credentialExtensions = credentials.clientExtensionResults as any;
 
-			// user 1
-			// database
-			// publicKey (user 1 public key)
-			// encSessionKey (encrypted with user 1 public key)
-			// encPrivateUserKey (encrypted with user 1 prf retrieved encryption key)
+			const inputKeyMaterial = new Uint8Array(
+				credentialExtensions?.prf.results.first,
+			);
+			
+			const keyDerivationKey = await crypto.subtle.importKey(
+				"raw",
+				inputKeyMaterial,
+				"HKDF",
+				false,
+				["deriveKey"],
+			);
 
-			// local
-			// publicKey (user 1 public key)
-			// sessionKey (decrypted with user 1 private key)
-			// privateUserKey (decrypted with user 1 prf retrieved encryption key)
+			// wild settings here
+			const label = "encryption key";
+			const info = new TextEncoder().encode(label);
+			const salt = new Uint8Array();
 
-			// user 2
+			const encryptionKey = await crypto.subtle.deriveKey(
+				{ name: "HKDF", info, salt, hash: "SHA-256" },
+				keyDerivationKey,
+				{ name: "AES-GCM", length: 256 },
+				false,
+				["encrypt", "decrypt"],
+			);
 
+			const publicKeyString = await this.saveCryptoKeyAsString(this.publicKey as CryptoKey);
+			const privateKeyString = await this.saveCryptoKeyAsString(this.privateKey as CryptoKey);
+			const sessionKeyString = await this.saveCryptoKeyAsString(this.sessionKey as CryptoKey);
 
-			// // TODO add check for prf extension supported
+			const nonce = window.crypto.getRandomValues(new Uint8Array(12));
+			const encoder = new TextEncoder();
 
-			// // TODO create session for device
+			const encryptedPrivateKey = await crypto.subtle.encrypt(
+				{ name: "AES-GCM", iv: nonce },
+				encryptionKey,
+				encoder.encode(privateKeyString),
+			);
 
-			// const registerResponse = await this.axiosClient.post<string>(
-			// 	`/onboard`,
-			// 	{
-			// 		challengeResponse: {
-			// 			credentials: credentials,
-			// 			challenge: challengeOptions.challenge
-			// 		},
-			// 	}
-			// );
+			const encryptedSessionKey = await crypto.subtle.encrypt(
+				{ name: "AES-GCM", iv: nonce },
+				keyPair.privateKey,
+				encoder.encode(sessionKeyString),
+			);
 
-			// if (registerResponse.status !== 200) {
-			// 	// i guess we need to handle errors here
-			// 	throw Error(registerResponse.data);
-			// }
+			const onboardResponse = await this.axiosClient.post<string>(`/onboard`, {
+				onboardRequest: {
+					sessionKey: this.ab2str(encryptedSessionKey),
+					privKey: this.ab2str(encryptedPrivateKey),
+					pubKey: publicKeyString,
+					nonce: this.ab2str(nonce),
+				},
+			});
 
-			// const registerResponseData: RegisterResponse = JSON.parse(
-			// 	registerResponse.data
-			// );
+			if (onboardResponse.status !== 200) {
+				throw Error(onboardResponse.data);
+			}
 
-			// const registerResult: WembatRegisterResult = {
-			// 	verifiedStatus: registerResponseData.verified,
-			// };
-			// actionResponse.result = registerResult;
-			//actionResponse.success = true;
+			const onboardResult: WembatOnboardResult = {
+				verifiedStatus: true,
+			};
+			actionResponse.result = onboardResult;
+			actionResponse.success = true;
 		} catch (error: any) {
 			const errorMessage: WembatError = {
 				error: error,
@@ -520,6 +552,7 @@ class WembatClient {
 
 					const publicKeyString = await this.saveCryptoKeyAsString(this.publicKey);
 					const privateKeyString = await this.saveCryptoKeyAsString(this.privateKey);
+					const sessionKeyString = await this.saveCryptoKeyAsString(this.sessionKey);
 
 					const nonce = window.crypto.getRandomValues(new Uint8Array(12));
 					const encoder = new TextEncoder();
@@ -531,7 +564,13 @@ class WembatClient {
 						encoded,
 					);
 
-					const saveCredentialsResponse = await this.axiosClient.post<string>(`/save-credentials`, {
+					const encryptedSessionKey = await crypto.subtle.encrypt(
+						{ name: "AES-GCM", iv: nonce },
+						keyPair.privateKey,
+						encoder.encode(sessionKeyString),
+					);
+
+					const saveCredentialsResponse = await this.axiosClient.post<string>(`/update-credentials`, {
 						saveCredentialsRequest: {
 							privKey: this.ab2str(encryptedPrivateKey),
 							pubKey: publicKeyString,

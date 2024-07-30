@@ -67,6 +67,8 @@ webauthnRoutes.post("/request-register", async (req, res) => {
 
 		const { userName } = req.body.userInfo;
 
+		// add logic with jwt token check if user has already registered devices
+
 		const user = (await prisma.user
 			.upsert({
 				where: {
@@ -86,7 +88,10 @@ webauthnRoutes.post("/request-register", async (req, res) => {
 				throw Error("User could not be found or created in database");
 			})) as UserWithDevices;
 
-		if (user.devices.length > 0) throw Error("User already registered with one device")
+
+		const validToken = true;
+
+		if (user.devices.length > 0 && !validToken) throw Error("User already registered with one device and no valid token provided for request")
 
 		const opts: GenerateRegistrationOptionsOpts = {
 			rpName: rpName,
@@ -228,6 +233,57 @@ webauthnRoutes.post("/request-onboard", async (req, res) => {
 	}
 });
 
+webauthnRoutes.post("/onboard", async (req, res) => {
+	try {
+
+		// check for jwt token
+		// read user from jwt token
+		// get session for user
+		// update keys in session
+
+		// TODO put sessionid into token
+
+		if (!req.body.saveCredentialsRequest)
+			throw Error("Challenge Response not present");
+
+		const { sessionKey, privKey, pubKey, nonce, sessionId } =
+			req.body.saveCredentialsRequest;
+
+		console.log('sessionKey');
+		console.log(sessionKey);
+		console.log('privKey');
+		console.log(privKey);
+		console.log('pubKey');
+		console.log(pubKey);
+		console.log('nonce');
+		console.log(nonce);
+		
+		// update the user challenge
+		await prisma.session
+			.create({
+				data: {
+					publicKey: pubKey,
+					privateKey: privKey,
+					nonce: nonce,
+					sessionKey: sessionKey
+				},
+			})
+			.catch((err) => {
+				console.log(err);
+				throw Error("Updating user challenge failed");
+			});
+
+		return res
+			.status(200)
+			.send(JSON.stringify({
+				success: true,
+			}));
+	} catch (error) {
+		console.log(error);
+		return res.status(400).send(error.message);
+	}
+});
+
 webauthnRoutes.post("/register", async (req, res) => {
 	try {
 
@@ -335,12 +391,13 @@ webauthnRoutes.post("/request-login", async (req, res) => {
 				},
 				include: {
 					devices: true,
+					sessions: true,
 				},
 			})
 			.catch((err) => {
 				console.log(err);
 				throw Error("User could not be found in database");
-			})) as UserWithDevices;
+			})) as UserWithDevicesAndSessions;
 
 		if (user == null) throw Error("User could not be found in database");
 
@@ -471,13 +528,20 @@ webauthnRoutes.post("/login", async (req, res) => {
 			// TODO make this db call not only local parameter
 			dbAuthenticator.counter = authenticationInfo.newCounter;
 
-			// search in user sessions for session with app id and deviceid
-			let userSession: Session = null;
-			user.sessions.forEach((session) => {
-				if (session.deviceUId == dbAuthenticator.uid && session.appUId == appUId) {
-					userSession = session;
-				}
-			});
+			// search in user sessions for session with app id
+			// if there is already a session with the app id but not for this device id, return error
+			// because we need to onboard the device to the session first
+			const userSessionsForApp = user.sessions.filter((session) => session.appUId == appUId)
+			const userSessionsForAppAndDevice = userSessionsForApp.filter((session) => session.deviceUId == dbAuthenticator.uid)
+
+			let userSession = null;
+
+			// user has sessions but device is not onboarded
+			if (userSessionsForApp.length > 0 && userSessionsForAppAndDevice.length == 0) {
+				throw Error("User device is not onboarded to session");
+			} else {
+				userSession = userSessionsForAppAndDevice[0];
+			}
 
 			if (userSession == null) {
 				userSession = await prisma.session
@@ -490,7 +554,7 @@ webauthnRoutes.post("/login", async (req, res) => {
 				})
 				.catch((err) => {
 					console.log(err);
-					throw Error("User could not be found or created in database");
+					throw Error("Error while creating new session for user");
 				}) as Session;
 			}
 
@@ -519,7 +583,7 @@ webauthnRoutes.post("/login", async (req, res) => {
 	}
 });
 
-webauthnRoutes.post("/save-credentials", async (req, res) => {
+webauthnRoutes.post("/update-credentials", async (req, res) => {
 	try {
 
 		// check for jwt token
@@ -532,9 +596,11 @@ webauthnRoutes.post("/save-credentials", async (req, res) => {
 		if (!req.body.saveCredentialsRequest)
 			throw Error("Challenge Response not present");
 
-		const { privKey, pubKey, nonce, sessionId } =
-			req.body.saveCredentialsRequest;
+		const { sessionKey, privKey, pubKey, nonce, sessionId } =
+			req.body.updateCredentialsRequest;
 
+		console.log('sessionKey');
+		console.log(sessionKey);
 		console.log('privKey');
 		console.log(privKey);
 		console.log('pubKey');
@@ -551,7 +617,8 @@ webauthnRoutes.post("/save-credentials", async (req, res) => {
 				data: {
 					publicKey: pubKey,
 					privateKey: privKey,
-					nonce: nonce
+					nonce: nonce,
+					sessionKey: sessionKey
 				},
 			})
 			.catch((err) => {

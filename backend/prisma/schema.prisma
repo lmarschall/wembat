@@ -42,6 +42,7 @@ model Session {
   appUId String
   userUId String
   deviceUId String
+  sessionKey String @default("")
   publicKey String @default("")
   privateKey String @default("")
   nonce String @default("")
