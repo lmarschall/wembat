@@ -113,6 +113,7 @@ interface RequestLoginResponse {
 interface LoginResponse {
 	verified: boolean;
 	jwt: string;
+	sessionId: string;
 	publicUserKey: string;
 	privateUserKeyEncrypted: string;
 	nonce: string;
@@ -253,6 +254,118 @@ class WembatClient {
 			};
 			actionResponse.result = registerResult;
 			actionResponse.success = true;
+		} catch (error: any) {
+			const errorMessage: WembatError = {
+				error: error,
+			};
+			actionResponse.error = errorMessage as WembatError;
+			console.error(error);
+		} finally {
+			return actionResponse;
+		}
+	}
+
+	/**
+	 * Registers a user with the specified user ID.
+	 * 
+	 * @param userUId - The user ID to register.
+	 * @returns A promise that resolves to a `WembatActionResponse` containing the registration result.
+	 */
+	public async onboard(
+		userUId: string
+	): Promise<WembatActionResponse<WembatRegisterResult>> {
+		// TODO maybe check for largeblob not supported
+
+		const actionResponse: WembatActionResponse<WembatRegisterResult> = {
+			success: false,
+			error: {} as WembatError,
+			result: {} as WembatRegisterResult,
+		};
+
+		try {
+			if (!browserSupportsWebAuthn())
+				throw Error("WebAuthn is not supported on this browser!");
+
+			if (this.axiosClient == undefined)
+				throw Error("Axiso Client undefined!");
+
+			const requestRegisterResponse = await this.axiosClient.post<string>(
+				`/request-onboard`,
+				{
+					userInfo: { userJWT: this.jwt },
+				}
+			);
+
+			// if (requestRegisterResponse.status !== 200) {
+			// 	// i guess we need to handle errors here
+			// 	throw Error(requestRegisterResponse.data);
+			// }
+
+			// const requestRegisterResponseData: RequestRegisterResponse =
+			// 	JSON.parse(requestRegisterResponse.data);
+			// const challengeOptions: PublicKeyCredentialCreationOptionsJSON =
+			// 	requestRegisterResponseData.options;
+
+			// const credentials: RegistrationResponseJSON = await startRegistration(
+			// 	challengeOptions
+			// ).catch((err: string) => {
+			// 	throw Error(err);
+			// });
+
+			// idea
+			// make device registration for user seperate from session stuff
+			// user can add new user devices on login page
+			// throw error if user logs in to session where there is already some stuff present
+
+			// onboard
+			// user can choose on logged in session which device should be onboarded
+			// generate key pair
+			// encrypt private key with prf retrieved encryption key
+			// encrypt session key with user private key
+			// save pubKey encPrivKey and encrypted session key in database
+
+			// user 1
+			// database
+			// publicKey (user 1 public key)
+			// encSessionKey (encrypted with user 1 public key)
+			// encPrivateUserKey (encrypted with user 1 prf retrieved encryption key)
+
+			// local
+			// publicKey (user 1 public key)
+			// sessionKey (decrypted with user 1 private key)
+			// privateUserKey (decrypted with user 1 prf retrieved encryption key)
+
+			// user 2
+
+
+			// // TODO add check for prf extension supported
+
+			// // TODO create session for device
+
+			// const registerResponse = await this.axiosClient.post<string>(
+			// 	`/onboard`,
+			// 	{
+			// 		challengeResponse: {
+			// 			credentials: credentials,
+			// 			challenge: challengeOptions.challenge
+			// 		},
+			// 	}
+			// );
+
+			// if (registerResponse.status !== 200) {
+			// 	// i guess we need to handle errors here
+			// 	throw Error(registerResponse.data);
+			// }
+
+			// const registerResponseData: RegisterResponse = JSON.parse(
+			// 	registerResponse.data
+			// );
+
+			// const registerResult: WembatRegisterResult = {
+			// 	verifiedStatus: registerResponseData.verified,
+			// };
+			// actionResponse.result = registerResult;
+			//actionResponse.success = true;
 		} catch (error: any) {
 			const errorMessage: WembatError = {
 				error: error,
@@ -422,7 +535,8 @@ class WembatClient {
 						saveCredentialsRequest: {
 							privKey: this.ab2str(encryptedPrivateKey),
 							pubKey: publicKeyString,
-							nonce: this.ab2str(nonce)
+							nonce: this.ab2str(nonce),
+							sessionId: loginReponseData.sessionId
 						},
 					});
 		
