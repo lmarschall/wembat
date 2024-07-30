@@ -1,5 +1,12 @@
 import axios, { AxiosError, AxiosInstance } from "axios";
 
+// TODO, maybe
+// we create a new session which holds information about a user application session for multiple devices
+// we create user sessions for each device which are linked to the session
+// we create keypairs for each user session and store them
+// we create a session key for the session and store it encrypted in the user sessions
+// we create a keypair for each session the private key of the session is encrypted with the user session key
+
 import {
 	startRegistration,
 	startAuthentication,
@@ -147,7 +154,6 @@ class WembatClient {
 	private readonly axiosClient: AxiosInstance;
 	private publicKey: CryptoKey | undefined;
 	private privateKey: CryptoKey | undefined;
-	private sessionKey: CryptoKey | undefined;
 	private jwt: string | undefined;
 
 	/**
@@ -363,7 +369,6 @@ class WembatClient {
 
 			const publicKeyString = await this.saveCryptoKeyAsString(this.publicKey as CryptoKey);
 			const privateKeyString = await this.saveCryptoKeyAsString(this.privateKey as CryptoKey);
-			const sessionKeyString = await this.saveCryptoKeyAsString(this.sessionKey as CryptoKey);
 
 			const nonce = window.crypto.getRandomValues(new Uint8Array(12));
 			const encoder = new TextEncoder();
@@ -374,18 +379,13 @@ class WembatClient {
 				encoder.encode(privateKeyString),
 			);
 
-			const encryptedSessionKey = await crypto.subtle.encrypt(
-				{ name: "AES-GCM", iv: nonce },
-				keyPair.privateKey,
-				encoder.encode(sessionKeyString),
-			);
-
 			const onboardResponse = await this.axiosClient.post<string>(`/onboard`, {
 				onboardRequest: {
-					sessionKey: this.ab2str(encryptedSessionKey),
 					privKey: this.ab2str(encryptedPrivateKey),
 					pubKey: publicKeyString,
 					nonce: this.ab2str(nonce),
+					credentials: credentials,
+					challenge: challengeOptions.challenge
 				},
 			});
 
@@ -552,7 +552,6 @@ class WembatClient {
 
 					const publicKeyString = await this.saveCryptoKeyAsString(this.publicKey);
 					const privateKeyString = await this.saveCryptoKeyAsString(this.privateKey);
-					const sessionKeyString = await this.saveCryptoKeyAsString(this.sessionKey);
 
 					const nonce = window.crypto.getRandomValues(new Uint8Array(12));
 					const encoder = new TextEncoder();
@@ -562,12 +561,6 @@ class WembatClient {
 						{ name: "AES-GCM", iv: nonce },
 						encryptionKey,
 						encoded,
-					);
-
-					const encryptedSessionKey = await crypto.subtle.encrypt(
-						{ name: "AES-GCM", iv: nonce },
-						keyPair.privateKey,
-						encoder.encode(sessionKeyString),
 					);
 
 					const saveCredentialsResponse = await this.axiosClient.post<string>(`/update-credentials`, {

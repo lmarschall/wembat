@@ -243,14 +243,63 @@ webauthnRoutes.post("/onboard", async (req, res) => {
 
 		// TODO put sessionid into token
 
-		if (!req.body.saveCredentialsRequest)
+		if (!req.body.onboardRequest)
 			throw Error("Challenge Response not present");
 
-		const { sessionKey, privKey, pubKey, nonce, sessionId } =
+		const { privKey, pubKey, nonce, credentials, challenge } =
 			req.body.saveCredentialsRequest;
 
-		console.log('sessionKey');
-		console.log(sessionKey);
+		// find user with expected challenge
+		const user = (await prisma.user
+			.findUnique({
+				where: {
+					challenge: challenge,
+				},
+				include: {
+					devices: true,
+				},
+			})
+			.catch((err) => {
+				console.log(err);
+				throw Error("Could not find user for given challenge");
+			})) as UserWithDevices;
+
+		// user with challenge not found, return error
+		if (user == null) throw Error("Could not find user for given challenge");
+
+		let dbAuthenticator: any = null;
+		const bodyCredIDBuffer = base64url.toBuffer(credentials.rawId);
+		// "Query the DB" here for an authenticator matching `credentialID`
+		for (const dev of user.devices) {
+			if (dev.credentialId.equals(bodyCredIDBuffer)) {
+				dbAuthenticator = dev;
+				break;
+			}
+		}
+
+		if (dbAuthenticator == null) {
+			throw new Error(`Could not find authenticator matching`);
+		}
+	
+		const opts: VerifyAuthenticationResponseOpts = {
+			response: credentials,
+			expectedChallenge: `${user.challenge}`,
+			expectedOrigin,
+			expectedRPID: rpId,
+			authenticator: dbAuthenticator,
+		};
+	
+		const verification = await verifyAuthenticationResponse(opts).catch(
+			(err) => {
+				console.log(err);
+				throw Error("Authentication Response could not be verified");
+			}
+		);
+
+		const { verified, authenticationInfo } = verification;
+
+		if (!verified) throw Error("Not verified");
+
 		console.log('privKey');
 		console.log(privKey);
 		console.log('pubKey');
@@ -262,10 +311,12 @@ webauthnRoutes.post("/onboard", async (req, res) => {
 		await prisma.session
 			.create({
 				data: {
+					userUId: user.uid,
+					appUId: appUId,
+					deviceUId: dbAuthenticator.uid,
 					publicKey: pubKey,
 					privateKey: privKey,
-					nonce: nonce,
-					sessionKey: sessionKey
+					nonce: nonce
 				},
 			})
 			.catch((err) => {
@@ -596,11 +647,9 @@ webauthnRoutes.post("/update-credentials", async (req, res) => {
 		if (!req.body.saveCredentialsRequest)
 			throw Error("Challenge Response not present");
 
-		const { sessionKey, privKey, pubKey, nonce, sessionId } =
+		const { privKey, pubKey, nonce, sessionId } =
 			req.body.updateCredentialsRequest;
 
-		console.log('sessionKey');
-		console.log(sessionKey);
 		console.log('privKey');
 		console.log(privKey);
 		console.log('pubKey');
@@ -617,8 +666,7 @@ webauthnRoutes.post("/update-credentials", async (req, res) => {
 				data: {
 					publicKey: pubKey,
 					privateKey: privKey,
-					nonce: nonce,
-					sessionKey: sessionKey
+					nonce: nonce
 				},
 			})
 			.catch((err) => {
