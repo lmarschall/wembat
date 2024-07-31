@@ -1,3 +1,6 @@
+import { verifyRegistrationResponse, VerifyRegistrationResponseOpts } from "@simplewebauthn/server";
+import { UserWithDevices } from "../types";
+
 export async function register(req: Request, res: Response) {
     try {
 

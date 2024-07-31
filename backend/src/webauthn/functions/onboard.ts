@@ -1,3 +1,7 @@
+import base64url from "base64url";
+import { UserWithDevices } from "../types";
+import { verifyAuthenticationResponse, VerifyAuthenticationResponseOpts } from "@simplewebauthn/server";
+
 export async function onboard(req: Request, res: Response) {
     try {
 

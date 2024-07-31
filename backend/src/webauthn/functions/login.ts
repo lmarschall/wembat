@@ -1,6 +1,6 @@
 import base64url from "base64url";
-import { createJWT } from "../crypto";
-import { addToWebAuthnTokens } from "../redis";
+import { createJWT } from "../../crypto";
+import { addToWebAuthnTokens } from "../../redis";
 import { verifyAuthenticationResponse } from "@simplewebauthn/server";
 
 export async function login(req: Request, res: Response) {

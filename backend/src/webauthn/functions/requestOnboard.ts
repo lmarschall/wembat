@@ -1,4 +1,7 @@
-export async function requestLogin(req: Request, res: Response) {
+import { generateAuthenticationOptions, GenerateAuthenticationOptionsOpts } from "@simplewebauthn/server";
+import { UserWithDevices } from "../types";
+
+export async function requestOnboard(req: Request, res: Response) {
     try {
 
 		// 1 check for user info
@@ -20,13 +23,12 @@ export async function requestLogin(req: Request, res: Response) {
 				},
 				include: {
 					devices: true,
-					sessions: true,
 				},
 			})
 			.catch((err) => {
 				console.log(err);
 				throw Error("User could not be found in database");
-			})) as UserWithDevicesAndSessions;
+			})) as UserWithDevices;
 
 		if (user == null) throw Error("User could not be found in database");
 
@@ -84,5 +86,5 @@ export async function requestLogin(req: Request, res: Response) {
 	} catch (error) {
 		console.log(error);
 		return res.status(400).send(error.message);
-	}
+	} 
 }
