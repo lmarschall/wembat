@@ -9,7 +9,7 @@ datasource db {
 
 model User {
   uid String @id @default(cuid())
-  name String @unique
+  mail String @unique
   salt Bytes
   challenge String @unique @default("")
   sessions Session[]
