@@ -90,23 +90,23 @@ export interface WembatOnboardResult {
 	verifiedStatus: boolean;
 }
 
-interface RequestRegisterResponse {
+export interface RequestRegisterResponse {
 	options: PublicKeyCredentialCreationOptionsJSON;
 }
 
-interface RegisterResponse {
+export interface RegisterResponse {
 	verified: boolean;
 }
 
-interface RequestLoginResponse {
+export interface RequestLoginResponse {
 	options: PublicKeyCredentialRequestOptionsJSON;
 }
 
-interface RequestOnboardResponse {
+export interface RequestOnboardResponse {
 	options: PublicKeyCredentialRequestOptionsJSON;
 }
 
-interface LoginResponse {
+export interface LoginResponse {
 	verified: boolean;
 	jwt: string;
 	sessionId: string;
@@ -115,10 +115,10 @@ interface LoginResponse {
 	nonce: string;
 }
 
-interface ChallengeInputOptions extends AuthenticationExtensionsClientInputs {
+export interface ChallengeInputOptions extends AuthenticationExtensionsClientInputs {
 	largeBlob: any;
 }
 
-interface ChallengeOutputptions extends AuthenticationExtensionsClientOutputs {
+export interface ChallengeOutputptions extends AuthenticationExtensionsClientOutputs {
 	largeBlob: any;
 }

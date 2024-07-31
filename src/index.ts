@@ -7,20 +7,24 @@ import axios, { AxiosError, AxiosInstance } from "axios";
 // we create a session key for the session and store it encrypted in the user sessions
 // we create a keypair for each session the private key of the session is encrypted with the user session key
 
-import { WembatActionResponse, WembatMessage, WembatRegisterResult } from "./types";
+import { WembatActionResponse, WembatLoginResult, WembatMessage, WembatRegisterResult } from "./types";
 import { register } from "./functions/register";
 import { decrypt } from "./functions/decrypt";
+import { login } from "./functions/login";
+import { encrypt } from "./functions/encrypt";
 
 /**
  * Represents a client for interacting with the Wembat API.
  */
 class WembatClient {
 	private readonly apiUrl: string;
-	private readonly axiosClient: AxiosInstance;
-	private publicKey: CryptoKey | undefined;
-	private privateKey: CryptoKey | undefined;
-	private jwt: string | undefined;
+	protected readonly axiosClient: AxiosInstance;
+	protected publicKey: CryptoKey | undefined;
+	protected privateKey: CryptoKey | undefined;
+	protected jwt: string | undefined;
 	public register: (userMail: string) => Promise<WembatActionResponse<WembatRegisterResult>>;
+	public login: (userUId: string) => Promise<WembatActionResponse<WembatLoginResult>>;
+	public encrypt: (wembatMessage: WembatMessage, publicKey: CryptoKey) => Promise<WembatActionResponse<WembatMessage>>;
 	public decrypt: (wembatMessage: WembatMessage, publicKey: CryptoKey) => Promise<WembatActionResponse<WembatMessage>>;
 
 	/**
@@ -37,10 +41,15 @@ class WembatClient {
 			transformResponse: (res) => res,
 			responseType: "text",
 		});
+
 		this.axiosClient.defaults.headers.common["content-type"] =
 			"Application/Json";
+
 		this.register = register.bind(this);
+		this.login = login.bind(this);
+		this.encrypt = encrypt.bind(this);
 		this.decrypt = decrypt.bind(this);
+		
 		// if(this.axiosClient == undefined) throw Error("Could not create axios client");
 		// TODO add api token
 		// this.axiosClient.defaults.headers.common['Authorization'] = AUTH_TOKEN;

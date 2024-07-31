@@ -12,14 +12,14 @@ export function ab2str(buf: ArrayBuffer): string {
     return btoa(String.fromCharCode.apply(null, [...new Uint8Array(buf)]));
 }
 
-export async function deriveEncryptionKey(publicKey: CryptoKey): Promise<CryptoKey> {
-    if (this.privateKey !== undefined && publicKey !== undefined) {
+export async function deriveEncryptionKey(privateKey: CryptoKey, publicKey: CryptoKey): Promise<CryptoKey> {
+    if (privateKey !== undefined && publicKey !== undefined) {
         const encryptionKey = await window.crypto.subtle.deriveKey(
             {
                 name: "ECDH",
-                public: this.publicKey,
+                public: publicKey,
             },
-            this.privateKey,
+            privateKey,
             {
                 name: "AES-GCM",
                 length: 256,
