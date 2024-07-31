@@ -14,6 +14,7 @@ import {
 	VerifyAuthenticationResponseOpts,
 	VerifyRegistrationResponseOpts,
 } from "@simplewebauthn/server";
+import { Request, Response } from "express";
 
 type UserWithDevices = Prisma.UserGetPayload<{
 	include: { devices: true };

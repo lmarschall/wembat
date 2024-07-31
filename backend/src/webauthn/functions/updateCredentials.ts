@@ -1,3 +1,5 @@
+import { Request, Response } from "express";
+
 export async function updateCredentials(req: Request, res: Response) {
     try {
 

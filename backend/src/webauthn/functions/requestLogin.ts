@@ -1,5 +1,6 @@
 import { generateAuthenticationOptions, GenerateAuthenticationOptionsOpts } from "@simplewebauthn/server";
 import { UserWithDevicesAndSessions } from "../types";
+import { Request, Response } from "express";
 
 export async function requestLogin(req: Request, res: Response) {
     try {
@@ -11,7 +12,7 @@ export async function requestLogin(req: Request, res: Response) {
 
 		if (!req.body.userInfo) throw Error("User info not present");
 
-		const { userName } = req.body.userInfo;
+		const { userName } = req.body.userInfo as UserInfo;
 
 		const firstSalt = new Uint8Array(new Array(32).fill(1)).buffer;
 

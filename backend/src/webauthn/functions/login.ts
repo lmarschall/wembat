@@ -1,7 +1,10 @@
 import base64url from "base64url";
 import { createJWT } from "../../crypto";
 import { addToWebAuthnTokens } from "../../redis";
-import { verifyAuthenticationResponse } from "@simplewebauthn/server";
+import { verifyAuthenticationResponse, VerifyAuthenticationResponseOpts } from "@simplewebauthn/server";
+import { LoginResponse, UserWithDevicesAndSessions } from "../types";
+import { Request, Response } from "express";
+import { Session } from "@prisma/client";
 
 export async function login(req: Request, res: Response) {
     try {
@@ -16,7 +19,7 @@ export async function login(req: Request, res: Response) {
 			throw Error("Challenge Response not present");
 
 		const { challenge, credentials } =
-			req.body.challengeResponse;
+			req.body.challengeResponse as LoginResponse;
 
 		// search for user by challenge
 		const user = (await prisma.user

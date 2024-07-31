@@ -1,5 +1,6 @@
 import { verifyRegistrationResponse, VerifyRegistrationResponseOpts } from "@simplewebauthn/server";
-import { UserWithDevices } from "../types";
+import { RegisterResponse, UserWithDevices } from "../types";
+import { Request, Response } from "express";
 
 export async function register(req: Request, res: Response) {
     try {
@@ -15,7 +16,7 @@ export async function register(req: Request, res: Response) {
 
 		// get the signed credentials and the expected challenge from request
 		const { challenge, credentials } =
-			req.body.challengeResponse;
+			req.body.challengeResponse as RegisterResponse;
 
 		// find user with expected challenge
 		const user = (await prisma.user

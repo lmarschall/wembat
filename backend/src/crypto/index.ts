@@ -3,11 +3,11 @@ import { User } from "@prisma/client";
 
 const keyPairs: any = {};
 
-export const initCrypto = async () => {
+export async function initCrypto() {
 	keyPairs.tokenKeyPair = await generateKeyPair("ES256");
-};
+}
 
-export const createJWT = async (user: User) => {
+export async function createJWT(user: User) {
 	const publicJwk = await exportJWK(keyPairs.tokenKeyPair.publicKey);
 
 	return await new SignJWT({ "urn:example:claim": true, userId: user.uid })
@@ -17,4 +17,4 @@ export const createJWT = async (user: User) => {
 		.setAudience("urn:example:audience")
 		// .setExpirationTime('2h') // no exp time
 		.sign(keyPairs.tokenKeyPair.privateKey);
-};
+}

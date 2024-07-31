@@ -80,7 +80,7 @@ export async function requestOnboard(req: Request, res: Response) {
 				throw Error("Updating user challenge failed");
 			});
 
-		res.status(200).send(
+		res.send(
 			JSON.stringify({ options: options })
 		);
 	} catch (error) {
