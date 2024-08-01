@@ -70,7 +70,7 @@ export async function register(
 		const registerResponse = await this.axiosClient.post<string>(
 			`/register`,
 			{
-				challengeResponse: {
+				registerChallengeResponse: {
 					credentials: credentials,
 					challenge: challengeOptions.challenge,
 				},

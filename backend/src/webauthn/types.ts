@@ -4,12 +4,17 @@ import {
 	RegistrationResponseJSON,
 } from "@simplewebauthn/typescript-types";
 
-export type RegisterResponse = {
+export type UserInfo = {
+	userMail: string
+}
+
+// can be put in the wembat client types
+export type RegisterChallengeResponse = {
 	challenge: string;
 	credentials: RegistrationResponseJSON;
 };
 
-export type LoginResponse = {
+export type LoginChallengeResponse = {
 	challenge: string;
 	credentials: AuthenticationResponseJSON;
 };

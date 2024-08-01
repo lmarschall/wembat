@@ -1,22 +1,30 @@
 import { verifyRegistrationResponse, VerifyRegistrationResponseOpts } from "@simplewebauthn/server";
-import { RegisterResponse, UserWithDevices } from "../types";
+import { RegisterChallengeResponse, UserWithDevices } from "../types";
 import { Request, Response } from "express";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 export async function register(req: Request, res: Response) {
     try {
 
-		// 1 check for challenge response
-		// 2 find user with challenge
-		// 3 check if user with challenge exists
-		// 4 verify registration response
-		// 5 create device for verified user
+		// 1 check for register challenge response
+		// 2 check for rpId
+		// 3 check for expected origin
+		// 4 find user with challenge
+		// 5 verify registration response
+		// 6 create or update device for verified user
 
-		if (!req.body.challengeResponse)
-			throw Error("Challenge Response not present");
-
-		// get the signed credentials and the expected challenge from request
+		if (!req.body.registerChallengeResponse)
+			throw Error("Register Challenge Response not present");
 		const { challenge, credentials } =
-			req.body.challengeResponse as RegisterResponse;
+			req.body.registerChallengeResponse as RegisterChallengeResponse;
+
+		if (!res.locals.rpId) throw Error("RP ID not present");
+		const rpId = res.locals.rpId;
+
+		if (!res.locals.expectedOrigin) throw Error("Expected Origin not present");
+		const expectedOrigin = res.locals.expectedOrigin;
 
 		// find user with expected challenge
 		const user = (await prisma.user

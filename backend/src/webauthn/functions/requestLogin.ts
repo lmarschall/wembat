@@ -1,26 +1,29 @@
 import { generateAuthenticationOptions, GenerateAuthenticationOptionsOpts } from "@simplewebauthn/server";
-import { UserWithDevicesAndSessions } from "../types";
+import { UserInfo, UserWithDevicesAndSessions } from "../types";
 import { Request, Response } from "express";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 export async function requestLogin(req: Request, res: Response) {
     try {
 
 		// 1 check for user info
-		// 2 find user with name
-		// 3 generate authentication options
-		// 4 update user challenge
+		// 2 check for rpId
+		// 3 find user with mail
+		// 4 generate authentication options
+		// 5 update user challenge
 
 		if (!req.body.userInfo) throw Error("User info not present");
+		const { userMail } = req.body.userInfo as UserInfo;
 
-		const { userName } = req.body.userInfo as UserInfo;
+		if (!res.locals.rpId) throw Error("RP ID not present");
+		const rpId = res.locals.rpId;
 
-		const firstSalt = new Uint8Array(new Array(32).fill(1)).buffer;
-
-		// search for user
 		const user = (await prisma.user
 			.findUnique({
 				where: {
-					name: userName,
+					mail: userMail,
 				},
 				include: {
 					devices: true,
@@ -56,16 +59,12 @@ export async function requestLogin(req: Request, res: Response) {
 			} as any,
 		};
 
-		console.log(opts)
-
 		const options = await generateAuthenticationOptions(opts).catch(
 			(err) => {
 				console.log(err);
 				throw Error("Authentication Options could not be generated");
 			}
 		);
-
-		console.log(options);
 
 		// update the user challenge
 		await prisma.user

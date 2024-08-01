@@ -1,4 +1,7 @@
+import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
+
+const prisma = new PrismaClient();
 
 export async function updateCredentials(req: Request, res: Response) {
     try {
@@ -10,7 +13,7 @@ export async function updateCredentials(req: Request, res: Response) {
 
 		// TODO put sessionid into token
 
-		if (!req.body.saveCredentialsRequest)
+		if (!req.body.updateCredentialsRequest)
 			throw Error("Challenge Response not present");
 
 		const { privKey, pubKey, nonce, sessionId } =

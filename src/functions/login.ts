@@ -29,7 +29,7 @@ import { WembatClient } from "..";
  */
 export async function login(
 	this: WembatClient,
-	userUId: string
+	userMail: string
 ): Promise<WembatActionResponse<WembatLoginResult>> {
 	const actionResponse: WembatActionResponse<WembatLoginResult> = {
 		success: false,
@@ -46,7 +46,7 @@ export async function login(
 		const loginRequestResponse = await this.axiosClient.post<string>(
 			`/request-login`,
 			{
-				userInfo: { userName: userUId },
+				userInfo: { userMail: userMail },
 			}
 		);
 
@@ -79,7 +79,7 @@ export async function login(
 
 		const loginReponse = await this.axiosClient.post<string>(`/login`, {
 			// TODO interfaces for request bodies
-			challengeResponse: {
+			loginChallengeResponse: {
 				credentials: credentials,
 				challenge: challengeOptions.challenge,
 			},
@@ -96,6 +96,9 @@ export async function login(
 		} else {
 			throw Error("Login not verified");
 		}
+
+		this.axiosClient.defaults.headers.common['Authorization'] = `Bearer ${loginReponseData.jwt}`;
+		console.log(this.axiosClient.defaults.headers.common);
 
 		console.log(loginReponseData);
 
@@ -184,7 +187,7 @@ export async function login(
 				const saveCredentialsResponse = await this.axiosClient.post<string>(
 					`/update-credentials`,
 					{
-						saveCredentialsRequest: {
+						updateCredentialsRequest: {
 							privKey: ab2str(encryptedPrivateKey),
 							pubKey: publicKeyString,
 							nonce: ab2str(nonce),

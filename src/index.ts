@@ -35,6 +35,11 @@ class WembatClient {
 		this.apiUrl = url;
 		this.axiosClient = axios.create({
 			baseURL: `${this.apiUrl}/webauthn`,
+			// headers: {
+			// 	"content-type": "application/json",
+			// 	"authorization": `Bearer ${this.jwt}`,
+			// 	"wembat-app-token": "Bearer",
+			// },
 			validateStatus: function (status) {
 				return status == 200 || status == 400;
 			},
@@ -42,17 +47,17 @@ class WembatClient {
 			responseType: "text",
 		});
 
-		this.axiosClient.defaults.headers.common["content-type"] =
-			"Application/Json";
+		this.axiosClient.defaults.headers.common["Content-Type"] =
+			"application/json";
+		this.axiosClient.defaults.headers.common["Authorization"] =
+			`Bearer ${this.jwt}`;
+		this.axiosClient.defaults.headers.common["Wembat-App-Token"] =
+			`Bearer ${this.jwt}`;
 
 		this.register = register.bind(this);
 		this.login = login.bind(this);
 		this.encrypt = encrypt.bind(this);
 		this.decrypt = decrypt.bind(this);
-		
-		// if(this.axiosClient == undefined) throw Error("Could not create axios client");
-		// TODO add api token
-		// this.axiosClient.defaults.headers.common['Authorization'] = AUTH_TOKEN;
 	}
 
 	public getCryptoPublicKey() {

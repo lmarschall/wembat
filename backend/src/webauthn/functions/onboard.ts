@@ -1,6 +1,10 @@
 import base64url from "base64url";
 import { UserWithDevices } from "../types";
 import { verifyAuthenticationResponse, VerifyAuthenticationResponseOpts } from "@simplewebauthn/server";
+import { PrismaClient } from "@prisma/client";
+import { Request, Response } from "express";
+
+const prisma = new PrismaClient();
 
 export async function onboard(req: Request, res: Response) {
     // try {

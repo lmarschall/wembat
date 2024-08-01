@@ -1,5 +1,9 @@
 import { generateAuthenticationOptions, GenerateAuthenticationOptionsOpts } from "@simplewebauthn/server";
-import { UserWithDevices } from "../types";
+import { UserInfo, UserWithDevices } from "../types";
+import { Request, Response } from "express";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 export async function requestOnboard(req: Request, res: Response) {
     try {
@@ -10,16 +14,16 @@ export async function requestOnboard(req: Request, res: Response) {
 		// 4 update user challenge
 
 		if (!req.body.userInfo) throw Error("User info not present");
+		const { userMail } = req.body.userInfo as UserInfo;
 
-		const { userName } = req.body.userInfo;
-
-		const firstSalt = new Uint8Array(new Array(32).fill(1)).buffer;
+		if (!res.locals.rpId) throw Error("RP ID not present");
+		const rpId = res.locals.rpId;
 
 		// search for user
 		const user = (await prisma.user
 			.findUnique({
 				where: {
-					name: userName,
+					mail: userMail,
 				},
 				include: {
 					devices: true,

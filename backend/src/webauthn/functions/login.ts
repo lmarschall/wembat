@@ -1,27 +1,40 @@
 import base64url from "base64url";
+import { PrismaClient, Session } from "@prisma/client";
 import { createJWT } from "../../crypto";
 import { addToWebAuthnTokens } from "../../redis";
 import { verifyAuthenticationResponse, VerifyAuthenticationResponseOpts } from "@simplewebauthn/server";
-import { LoginResponse, UserWithDevicesAndSessions } from "../types";
+import { LoginChallengeResponse, UserWithDevicesAndSessions } from "../types";
 import { Request, Response } from "express";
-import { Session } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 export async function login(req: Request, res: Response) {
     try {
 
 		// 1 check for challenge response
-		// 2 find user with challenge
-		// 3 verify authentication response
+		// 2 check for rpId
+		// 3 check for expected origin
+		// 4 find user with challenge
+		// 5 verify authentication response
+		// 6 do stuff
+		// 7 ?????
 
 		const body = req.body;
 
-		if (!req.body.challengeResponse)
-			throw Error("Challenge Response not present");
-
+		if (!req.body.loginChallengeResponse)
+			throw Error("Login Challenge Response not present");
 		const { challenge, credentials } =
-			req.body.challengeResponse as LoginResponse;
+			req.body.loginChallengeResponse as LoginChallengeResponse;
+	
+		if (!res.locals.rpId) throw Error("RP ID not present");
+		const rpId = res.locals.rpId;
 
-		// search for user by challenge
+		if (!res.locals.expectedOrigin) throw Error("Expected Origin not present");
+		const expectedOrigin = res.locals.expectedOrigin;
+
+		if (!res.locals.appUId) throw Error("App UId not present");
+		const appUId = res.locals.appUId;
+
 		const user = (await prisma.user
 			.findUnique({
 				where: {
@@ -70,7 +83,7 @@ export async function login(req: Request, res: Response) {
 
 		const { verified, authenticationInfo } = verification;
 
-		if (verified) {
+		if (verified == true) {
 
 			// Update the authenticator's counter in the DB to the newest count in the authentication
 			// TODO make this db call not only local parameter

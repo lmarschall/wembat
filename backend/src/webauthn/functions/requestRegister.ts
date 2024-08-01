@@ -1,20 +1,12 @@
-import { request } from "http";
 import { randomBytes } from 'crypto'
-import { PrismaClient, User, Prisma, Session, Device } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 
 import {
-	// Registration
 	generateRegistrationOptions,
-	verifyRegistrationResponse,
 	GenerateRegistrationOptionsOpts,
-	// Authentication
-	generateAuthenticationOptions,
-	verifyAuthenticationResponse,
-	GenerateAuthenticationOptionsOpts,
-	VerifyAuthenticationResponseOpts,
-	VerifyRegistrationResponseOpts,
 } from "@simplewebauthn/server";
 import { Request, Response } from "express";
+import { UserInfo } from '../types';
 
 type UserWithDevices = Prisma.UserGetPayload<{
 	include: { devices: true };
@@ -25,9 +17,22 @@ const prisma = new PrismaClient();
 export async function requestRegister(req: Request, res: Response) {
     try {
 
-		if (!req.body.userInfo) throw Error("User Info not present");
+		// 1 check for user info
+		// 2 check for rpId
+		// 3 check for rpName
+		// 3 find user with mail
+		// ?????
+		// 4 generate registration options
+		// 5 update user challenge
 
-		const { userMail } = req.body.userInfo;
+		if (!req.body.userInfo) throw Error("User info not present");
+		const { userMail } = req.body.userInfo as UserInfo;
+
+		if (!res.locals.rpId) throw Error("RP ID not present");
+		const rpId = res.locals.rpId;
+
+		if (!res.locals.rpName) throw Error("RP Name not present");
+		const rpName = res.locals.rpName;
 
 		// add logic with jwt token check if user has already registered devices
 
@@ -50,7 +55,6 @@ export async function requestRegister(req: Request, res: Response) {
 				throw Error("User could not be found or created in database");
 			})) as UserWithDevices;
 
-
 		const validToken = true;
 
 		if (user.devices.length > 0 && !validToken) throw Error("User already registered with one device and no valid token provided for request")
@@ -59,7 +63,7 @@ export async function requestRegister(req: Request, res: Response) {
 			rpName: rpName,
 			rpID: rpId,
 			userID: user.uid,
-			userName: user.name,
+			userName: user.mail,
 			timeout: 60000,
 			attestationType: "none",
 			excludeCredentials: user.devices.map<PublicKeyCredentialDescriptor>((dev) => ({
