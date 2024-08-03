@@ -14,6 +14,7 @@ import {
 	PublicKeyCredentialCreationOptionsJSON,
 	RegistrationResponseJSON,
 } from "@simplewebauthn/typescript-types";
+import { Axios, AxiosInstance } from "axios";
 
 /**
  * Registers a user with the specified user ID.
@@ -22,7 +23,7 @@ import {
  * @returns A promise that resolves to a `WembatActionResponse` containing the registration result.
  */
 export async function register(
-	this: WembatClient,
+	axiosClient: AxiosInstance,
 	userMail: string
 ): Promise<WembatActionResponse<WembatRegisterResult>> {
 	// TODO maybe check for largeblob not supported
@@ -37,9 +38,7 @@ export async function register(
 		if (!browserSupportsWebAuthn())
 			throw Error("WebAuthn is not supported on this browser!");
 
-		if (this.axiosClient == undefined) throw Error("Axiso Client undefined!");
-
-		const requestRegisterResponse = await this.axiosClient.post<string>(
+		const requestRegisterResponse = await axiosClient.post<string>(
 			`/request-register`,
 			{
 				userInfo: { userMail: userMail },
@@ -67,15 +66,12 @@ export async function register(
 
 		// TODO add check for prf extension supported
 
-		const registerResponse = await this.axiosClient.post<string>(
-			`/register`,
-			{
-				registerChallengeResponse: {
-					credentials: credentials,
-					challenge: challengeOptions.challenge,
-				},
-			}
-		);
+		const registerResponse = await axiosClient.post<string>(`/register`, {
+			registerChallengeResponse: {
+				credentials: credentials,
+				challenge: challengeOptions.challenge,
+			},
+		});
 
 		if (registerResponse.status !== 200) {
 			// i guess we need to handle errors here

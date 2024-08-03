@@ -75,6 +75,9 @@ const message = ref("" as string);
 const wembatClient: WembatClient = inject('wembatClient') as WembatClient
 
 onMounted(async () => {
+  console.log("Home");
+  console.log(TokenService.hasToken());
+  console.log(wembatClient.getCryptoPublicKey() !== undefined);
   if(TokenService.hasToken() && wembatClient.getCryptoPublicKey() !== undefined) {
     await decryptMessage();
   } else {

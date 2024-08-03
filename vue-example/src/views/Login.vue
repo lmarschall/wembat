@@ -115,11 +115,14 @@ async function login() {
 
   const loginResponse = await wembatClient.login(username.value);
 
+  console.log(loginResponse);
+
   if(loginResponse.success) {
     const loginResult = loginResponse.result;
 
     if (loginResult.verified) {
       appendAlert("Login successful", "success");
+      wembatClient.blob();
       TokenService.setToken(loginResult.jwt);
       router.push("/");
     }

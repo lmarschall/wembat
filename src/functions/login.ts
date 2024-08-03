@@ -19,6 +19,7 @@ import {
 	str2ab,
 } from "../helper";
 import { WembatClient } from "..";
+import { AxiosInstance } from "axios";
 
 /**
  * Logs in a user with the provided user ID.
@@ -28,7 +29,10 @@ import { WembatClient } from "..";
  * @throws An error if WebAuthn is not supported on the browser or if the Axios client is undefined.
  */
 export async function login(
-	this: WembatClient,
+	axiosClient: AxiosInstance,
+	privateKey: CryptoKey | undefined,
+	publicKey: CryptoKey | undefined,
+	jwt: string | undefined,
 	userMail: string
 ): Promise<WembatActionResponse<WembatLoginResult>> {
 	const actionResponse: WembatActionResponse<WembatLoginResult> = {
@@ -41,9 +45,7 @@ export async function login(
 		if (!browserSupportsWebAuthn())
 			throw Error("WebAuthn is not supported on this browser!");
 
-		if (this.axiosClient == undefined) throw Error("Axiso Client undefined!");
-
-		const loginRequestResponse = await this.axiosClient.post<string>(
+		const loginRequestResponse = await axiosClient.post<string>(
 			`/request-login`,
 			{
 				userInfo: { userMail: userMail },
@@ -68,7 +70,6 @@ export async function login(
 		]).buffer;
 
 		challengeOptions.extensions.prf.eval.first = firstSalt;
-		console.log(challengeOptions);
 
 		const credentials: AuthenticationResponseJSON = await startAuthentication(
 			challengeOptions,
@@ -77,7 +78,7 @@ export async function login(
 			throw Error(err);
 		});
 
-		const loginReponse = await this.axiosClient.post<string>(`/login`, {
+		const loginReponse = await axiosClient.post<string>(`/login`, {
 			// TODO interfaces for request bodies
 			loginChallengeResponse: {
 				credentials: credentials,
@@ -91,16 +92,13 @@ export async function login(
 
 		const loginReponseData: LoginResponse = JSON.parse(loginReponse.data);
 
-		if (loginReponseData.verified) {
-			this.jwt = loginReponseData.jwt;
-		} else {
-			throw Error("Login not verified");
-		}
+		if (!loginReponseData.verified) throw Error("Login not verified");
 
-		this.axiosClient.defaults.headers.common['Authorization'] = `Bearer ${loginReponseData.jwt}`;
-		console.log(this.axiosClient.defaults.headers.common);
+		jwt = loginReponseData.jwt;
 
-		console.log(loginReponseData);
+		axiosClient.defaults.headers.common[
+			"Authorization"
+		] = `Bearer ${loginReponseData.jwt}`;
 
 		const publicUserKeyString = loginReponseData.publicUserKey;
 		const privateUserKeyEncryptedString =
@@ -139,7 +137,7 @@ export async function login(
 				privateUserKeyEncryptedString !== ""
 			) {
 				console.log("Loading existing keys");
-				this.publicKey = await loadCryptoPublicKeyFromString(
+				publicKey = await loadCryptoPublicKeyFromString(
 					publicUserKeyString
 				);
 
@@ -152,7 +150,7 @@ export async function login(
 					str2ab(privateUserKeyEncryptedString)
 				);
 
-				this.privateKey = await loadCryptoPrivateKeyFromString(
+				privateKey = await loadCryptoPrivateKeyFromString(
 					decoder.decode(decryptedPrivateUserKey)
 				);
 			} else {
@@ -166,13 +164,11 @@ export async function login(
 					["deriveKey", "deriveBits"]
 				);
 
-				this.publicKey = keyPair.publicKey;
-				this.privateKey = keyPair.privateKey;
+				publicKey = keyPair.publicKey;
+				privateKey = keyPair.privateKey;
 
-				const publicKeyString = await saveCryptoKeyAsString(this.publicKey);
-				const privateKeyString = await saveCryptoKeyAsString(
-					this.privateKey
-				);
+				const publicKeyString = await saveCryptoKeyAsString(publicKey);
+				const privateKeyString = await saveCryptoKeyAsString(privateKey);
 
 				const nonce = window.crypto.getRandomValues(new Uint8Array(12));
 				const encoder = new TextEncoder();
@@ -184,7 +180,7 @@ export async function login(
 					encoded
 				);
 
-				const saveCredentialsResponse = await this.axiosClient.post<string>(
+				const saveCredentialsResponse = await axiosClient.post<string>(
 					`/update-credentials`,
 					{
 						updateCredentialsRequest: {

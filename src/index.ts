@@ -17,29 +17,20 @@ import { encrypt } from "./functions/encrypt";
  * Represents a client for interacting with the Wembat API.
  */
 class WembatClient {
-	private readonly apiUrl: string;
-	protected readonly axiosClient: AxiosInstance;
-	protected publicKey: CryptoKey | undefined;
-	protected privateKey: CryptoKey | undefined;
-	protected jwt: string | undefined;
-	public register: (userMail: string) => Promise<WembatActionResponse<WembatRegisterResult>>;
-	public login: (userUId: string) => Promise<WembatActionResponse<WembatLoginResult>>;
-	public encrypt: (wembatMessage: WembatMessage, publicKey: CryptoKey) => Promise<WembatActionResponse<WembatMessage>>;
-	public decrypt: (wembatMessage: WembatMessage, publicKey: CryptoKey) => Promise<WembatActionResponse<WembatMessage>>;
+	readonly #apiUrl: string;
+	readonly #axiosClient: AxiosInstance;
+	private publicKey: CryptoKey | undefined;
+	private privateKey: CryptoKey | undefined;
+	private jwt: string | undefined;
 
 	/**
 	 * Creates an instance of WembatClient.
 	 * @param url - The URL of the Backend API.
 	 */
 	constructor(url: string) {
-		this.apiUrl = url;
-		this.axiosClient = axios.create({
-			baseURL: `${this.apiUrl}/webauthn`,
-			// headers: {
-			// 	"content-type": "application/json",
-			// 	"authorization": `Bearer ${this.jwt}`,
-			// 	"wembat-app-token": "Bearer",
-			// },
+		this.#apiUrl = url;
+		this.#axiosClient = axios.create({
+			baseURL: `${this.#apiUrl}/webauthn`,
 			validateStatus: function (status) {
 				return status == 200 || status == 400;
 			},
@@ -47,17 +38,34 @@ class WembatClient {
 			responseType: "text",
 		});
 
-		this.axiosClient.defaults.headers.common["Content-Type"] =
+		this.#axiosClient.defaults.headers.common["Content-Type"] =
 			"application/json";
-		this.axiosClient.defaults.headers.common["Authorization"] =
+		this.#axiosClient.defaults.headers.common["Authorization"] =
 			`Bearer ${this.jwt}`;
-		this.axiosClient.defaults.headers.common["Wembat-App-Token"] =
+		this.#axiosClient.defaults.headers.common["Wembat-App-Token"] =
 			`Bearer ${this.jwt}`;
+	}
 
-		this.register = register.bind(this);
-		this.login = login.bind(this);
-		this.encrypt = encrypt.bind(this);
-		this.decrypt = decrypt.bind(this);
+	public async encrypt (wembatMessage: WembatMessage, publicKey: CryptoKey): Promise<WembatActionResponse<WembatMessage>> {
+		return await encrypt(this.privateKey, wembatMessage, publicKey);
+	}
+
+	public async decrypt (wembatMessage: WembatMessage, publicKey: CryptoKey): Promise<WembatActionResponse<WembatMessage>> {
+		return await decrypt(this.privateKey, wembatMessage, publicKey);
+	}
+
+	public async register (userMail: string): Promise<WembatActionResponse<WembatRegisterResult>> {
+		return await register(this.#axiosClient, userMail);
+	}
+
+	public async login (userMail: string): Promise<WembatActionResponse<WembatLoginResult>> {
+		return await login(this.#axiosClient, this.privateKey, this.publicKey, this.jwt, userMail);
+	}
+
+	public blob() {
+		console.log(this);
+		this.jwt = "CryptoKey";
+		console.log(this);
 	}
 
 	public getCryptoPublicKey() {

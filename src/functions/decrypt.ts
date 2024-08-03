@@ -10,7 +10,7 @@ import { WembatActionResponse, WembatError, WembatMessage } from "../types";
  * @returns A Promise that resolves to a WembatActionResponse containing the decrypted message.
  */
 export async function decrypt(
-	this: WembatClient,
+	privateKey: CryptoKey | undefined,
 	wembatMessage: WembatMessage,
 	publicKey: CryptoKey
 ): Promise<WembatActionResponse<WembatMessage>> {
@@ -21,12 +21,9 @@ export async function decrypt(
 	};
 
 	try {
-		if (this.privateKey == undefined) throw Error("Private Key undefined!");
+		if (privateKey == undefined) throw Error("Private Key undefined!");
 
-		const encryptionKey = await deriveEncryptionKey(
-			this.privateKey,
-			publicKey
-		);
+		const encryptionKey = await deriveEncryptionKey(privateKey, publicKey);
 		const iv = wembatMessage.iv;
 
 		const decrypted = await window.crypto.subtle.decrypt(
