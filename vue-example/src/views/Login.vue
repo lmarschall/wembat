@@ -122,7 +122,6 @@ async function login() {
 
     if (loginResult.verified) {
       appendAlert("Login successful", "success");
-      wembatClient.blob();
       TokenService.setToken(loginResult.jwt);
       router.push("/");
     }

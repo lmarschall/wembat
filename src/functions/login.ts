@@ -29,12 +29,12 @@ import { AxiosInstance } from "axios";
  * @throws An error if WebAuthn is not supported on the browser or if the Axios client is undefined.
  */
 export async function login(
-	axiosClient: AxiosInstance,
-	privateKey: CryptoKey | undefined,
-	publicKey: CryptoKey | undefined,
-	jwt: string | undefined,
+	axiosClient: AxiosInstance ,
+    privateKey: CryptoKey | undefined,
+    publicKey: CryptoKey | undefined ,
+    jwt: string | undefined,
 	userMail: string
-): Promise<WembatActionResponse<WembatLoginResult>> {
+): Promise<any> {
 	const actionResponse: WembatActionResponse<WembatLoginResult> = {
 		success: false,
 		error: {} as WembatError,
@@ -200,6 +200,10 @@ export async function login(
 			throw Error("Credentials not instance of PublicKeyCredential");
 		}
 
+		console.log(privateKey);
+		console.log(publicKey);
+		console.log(jwt);
+
 		const loginResult: WembatLoginResult = {
 			verified: loginReponseData.verified,
 			jwt: loginReponseData.jwt,
@@ -213,6 +217,6 @@ export async function login(
 		actionResponse.error = errorMessage;
 		console.error(error);
 	} finally {
-		return actionResponse;
+		return [actionResponse, privateKey, publicKey, jwt];
 	}
 }

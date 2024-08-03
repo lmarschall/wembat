@@ -19,9 +19,9 @@ import { encrypt } from "./functions/encrypt";
 class WembatClient {
 	readonly #apiUrl: string;
 	readonly #axiosClient: AxiosInstance;
-	private publicKey: CryptoKey | undefined;
-	private privateKey: CryptoKey | undefined;
-	private jwt: string | undefined;
+	#jwt: string | undefined;
+	#publicKey: CryptoKey | undefined;
+	#privateKey: CryptoKey | undefined;
 
 	/**
 	 * Creates an instance of WembatClient.
@@ -41,17 +41,17 @@ class WembatClient {
 		this.#axiosClient.defaults.headers.common["Content-Type"] =
 			"application/json";
 		this.#axiosClient.defaults.headers.common["Authorization"] =
-			`Bearer ${this.jwt}`;
+			`Bearer ${this.#jwt}`;
 		this.#axiosClient.defaults.headers.common["Wembat-App-Token"] =
-			`Bearer ${this.jwt}`;
+			`Bearer ${this.#jwt}`;
 	}
 
 	public async encrypt (wembatMessage: WembatMessage, publicKey: CryptoKey): Promise<WembatActionResponse<WembatMessage>> {
-		return await encrypt(this.privateKey, wembatMessage, publicKey);
+		return await encrypt(this.#privateKey, wembatMessage, publicKey);
 	}
 
 	public async decrypt (wembatMessage: WembatMessage, publicKey: CryptoKey): Promise<WembatActionResponse<WembatMessage>> {
-		return await decrypt(this.privateKey, wembatMessage, publicKey);
+		return await decrypt(this.#privateKey, wembatMessage, publicKey);
 	}
 
 	public async register (userMail: string): Promise<WembatActionResponse<WembatRegisterResult>> {
@@ -59,17 +59,18 @@ class WembatClient {
 	}
 
 	public async login (userMail: string): Promise<WembatActionResponse<WembatLoginResult>> {
-		return await login(this.#axiosClient, this.privateKey, this.publicKey, this.jwt, userMail);
-	}
-
-	public blob() {
-		console.log(this);
-		this.jwt = "CryptoKey";
-		console.log(this);
+		const [loginResult, privateKey, publicKey, jwt] = await login(this.#axiosClient, this.#privateKey, this.#publicKey, this.#jwt, userMail);
+		this.#privateKey = privateKey;
+		this.#publicKey = publicKey;
+		this.#jwt = jwt;
+		return loginResult;
 	}
 
 	public getCryptoPublicKey() {
-		return this.publicKey;
+		console.log(this.#publicKey);
+		console.log(this.#privateKey);
+		console.log(this.#jwt);
+		return this.#publicKey;
 	}
 }
 
