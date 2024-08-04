@@ -25,15 +25,12 @@ export async function login(req: Request, res: Response) {
 			throw Error("Login Challenge Response not present");
 		const { challenge, credentials } =
 			req.body.loginChallengeResponse as LoginChallengeResponse;
-	
-		if (!res.locals.rpId) throw Error("RP ID not present");
-		const rpId = res.locals.rpId;
 
-		if (!res.locals.expectedOrigin) throw Error("Expected Origin not present");
-		const expectedOrigin = res.locals.expectedOrigin;
-
-		if (!res.locals.appUId) throw Error("App UId not present");
-		const appUId = res.locals.appUId;
+		if(!res.locals.payload) throw Error("Payload not present");
+		const rpId = res.locals.payload.aud.split(":")[0];	// remove port from rpId
+		const rpName = "Wembat";
+		const expectedOrigin = `https://${res.locals.payload.aud}`;
+		const appUId = res.locals.payload.appUId;
 
 		const user = (await prisma.user
 			.findUnique({

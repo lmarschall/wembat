@@ -44,17 +44,37 @@ export async function validateApplicationToken(
 	next
 ) {
 	console.log("validate application token");
-	console.log(req.headers);
 
-	const rpId = process.env.RPID || "localhost:3000";
-	const rpName = "Wembat";
-	const expectedOrigin = `https://${rpId}:3000`;
-	const appUId = "clzbsocpw0013t4tnsocijehs";
+	try {
+		if (req.headers["wembat-app-token"] == null) return res.status(401).send();
 
-	res.locals.rpId = rpId;
-	res.locals.rpName = rpName;
-	res.locals.expectedOrigin = expectedOrigin;
-	res.locals.appUId = appUId;
+		const authorization = (req.headers["wembat-app-token"] as string).split(" ");
 
-	return next();
+		if (authorization[0] !== "Bearer") return res.status(401).send();
+
+		const jwt = authorization[1];
+		// check if jwt token was issued by us
+		// if ((await checkForWebAuthnToken(jwt)) === false)
+		// 	return res.status(401).send();
+
+		// extract public key from jwk parameters
+		const header = decodeProtectedHeader(jwt);
+		const algorithm = header.alg;
+		const spki = header.jwk;
+
+		if (algorithm !== "ES256") return res.status(401).send();
+
+		const importedKey = await importJWK(spki, algorithm);
+		const { payload, protectedHeader } = await jwtVerify(jwt, importedKey, {
+			// issuer: "urn:example:issuer",
+			// audience: "urn:example:audience",
+			algorithms: ["ES256"],
+		});
+
+		res.locals.payload = payload;
+		return next();
+	} catch (error) {
+		console.log(error);
+		return res.status(401).send();
+	}
 }

@@ -17,8 +17,8 @@ export async function requestLogin(req: Request, res: Response) {
 		if (!req.body.userInfo) throw Error("User info not present");
 		const { userMail } = req.body.userInfo as UserInfo;
 
-		if (!res.locals.rpId) throw Error("RP ID not present");
-		const rpId = res.locals.rpId;
+		if (!res.locals.payload) throw Error("Payload not present");
+		const rpId = res.locals.payload.aud.split(":")[0];	// remove port from rpId
 
 		const user = (await prisma.user
 			.findUnique({

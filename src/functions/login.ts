@@ -44,6 +44,8 @@ export async function login(
 		if (!browserSupportsWebAuthn())
 			throw Error("WebAuthn is not supported on this browser!");
 
+		console.log(axiosClient.defaults.headers.common);
+
 		const loginRequestResponse = await axiosClient.post<string>(
 			`/request-login`,
 			{

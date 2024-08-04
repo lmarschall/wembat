@@ -10,7 +10,7 @@ import { webauthnRoutes } from "./webauthn";
 import { initApplications } from "./application";
 
 const port = process.env.PORT || 8080;
-const rpId = process.env.RPID || "localhost:3000";
+const rpId = process.env.RPID || "localhost";
 const expectedOrigin = `https://${rpId}:3000`;
 
 initCrypto();

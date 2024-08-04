@@ -29,7 +29,6 @@ services:
             - 8080:8080
             - 5555:5555
         environment:
-            - "RPID=localhost"
             - "PORT=${API_PORT}"
             - "DATABASE_URL=${API_DATABASE_URL}"
             - "REDIS_HOST=redis"
