@@ -3,3 +3,4 @@
 - improve backend redis
 - onboard workflow
 - discoverable credentials / conditional ui
+- token handling
