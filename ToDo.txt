@@ -1,6 +1,7 @@
-- fido compliance
-- improve tests
 - improve backend redis
 - onboard workflow
-- discoverable credentials / conditional ui
 - token handling
+-- release
+- fido compliance
+- improve tests
+- discoverable credentials / conditional ui
