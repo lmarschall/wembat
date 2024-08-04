@@ -18,7 +18,6 @@ import {
 	saveCryptoKeyAsString,
 	str2ab,
 } from "../helper";
-import { WembatClient } from "..";
 import { AxiosInstance } from "axios";
 
 /**

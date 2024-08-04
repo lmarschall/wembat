@@ -1,4 +1,3 @@
-import { WembatClient } from "..";
 import { ab2str, deriveEncryptionKey } from "../helper";
 import { WembatActionResponse, WembatError, WembatMessage } from "../types";
 

@@ -9,12 +9,11 @@ import {
 	WembatError,
 	WembatRegisterResult,
 } from "../types";
-import { WembatClient } from "..";
 import {
 	PublicKeyCredentialCreationOptionsJSON,
 	RegistrationResponseJSON,
 } from "@simplewebauthn/typescript-types";
-import { Axios, AxiosInstance } from "axios";
+import { AxiosInstance } from "axios";
 
 /**
  * Registers a user with the specified user ID.
