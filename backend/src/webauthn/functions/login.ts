@@ -74,70 +74,65 @@ export async function login(req: Request, res: Response) {
 			authenticator: dbAuthenticator,
 		};
 
-		const verification = await verifyAuthenticationResponse(opts).catch(
+		const { verified, authenticationInfo } = await verifyAuthenticationResponse(opts).catch(
 			(err) => {
 				console.log(err);
 				throw Error("Authentication Response could not be verified");
 			}
 		);
 
-		const { verified, authenticationInfo } = verification;
+		if (verified == false) throw Error("Could not verifiy reponse");
 
-		if (verified == true) {
+		// Update the authenticator's counter in the DB to the newest count in the authentication
+		// TODO make this db call not only local parameter
+		dbAuthenticator.counter = authenticationInfo.newCounter;
 
-			// Update the authenticator's counter in the DB to the newest count in the authentication
-			// TODO make this db call not only local parameter
-			dbAuthenticator.counter = authenticationInfo.newCounter;
+		// search in user sessions for session with app id
+		// if there is already a session with the app id but not for this device id, return error
+		// because we need to onboard the device to the session first
+		const userSessionsForApp = user.sessions.filter((session) => session.appUId == appUId)
+		const userSessionsForAppAndDevice = userSessionsForApp.filter((session) => session.deviceUId == dbAuthenticator.uid)
 
-			// search in user sessions for session with app id
-			// if there is already a session with the app id but not for this device id, return error
-			// because we need to onboard the device to the session first
-			const userSessionsForApp = user.sessions.filter((session) => session.appUId == appUId)
-			const userSessionsForAppAndDevice = userSessionsForApp.filter((session) => session.deviceUId == dbAuthenticator.uid)
+		let userSession = null;
 
-			let userSession = null;
-
-			// user has sessions but device is not onboarded
-			if (userSessionsForApp.length > 0 && userSessionsForAppAndDevice.length == 0) {
-				throw Error("User device is not onboarded to session");
-			} else {
-				userSession = userSessionsForAppAndDevice[0];
-			}
-
-			if (userSession == null) {
-				userSession = await prisma.session
-				.create({
-					data: {
-						userUId: user.uid,
-						appUId: appUId,
-						deviceUId: dbAuthenticator.uid,
-					},
-				})
-				.catch((err) => {
-					console.log(err);
-					throw Error("Error while creating new session for user");
-				}) as Session;
-			}
-
-			// create new json web token for api calls
-			const jwt = await createSessionJWT(userSession);
-
-			// add self generated jwt to whitelist
-			await addToWebAuthnTokens(jwt);
-
-			return res
-				.status(200)
-				.send(JSON.stringify({
-					verified: verified,
-					jwt: jwt,
-					sessionId: userSession.uid,
-					publicUserKey: userSession.publicKey,
-					privateUserKeyEncrypted: userSession.privateKey,
-					nonce: userSession.nonce
-				}));
+		// user has sessions but device is not onboarded
+		if (userSessionsForApp.length > 0 && userSessionsForAppAndDevice.length == 0) {
+			throw Error("User device is not onboarded to session");
 		} else {
-			throw Error("Could not verifiy reponse");
+			userSession = userSessionsForAppAndDevice[0];
 		}
+
+		if (userSession == null) {
+			userSession = await prisma.session
+			.create({
+				data: {
+					userUId: user.uid,
+					appUId: appUId,
+					deviceUId: dbAuthenticator.uid,
+				},
+			})
+			.catch((err) => {
+				console.log(err);
+				throw Error("Error while creating new session for user");
+			}) as Session;
+		}
+
+		// create new json web token for api calls
+		const jwt = await createSessionJWT(userSession);
+
+		// add self generated jwt to whitelist
+		await addToWebAuthnTokens(jwt);
+
+		return res
+			.status(200)
+			.send(JSON.stringify({
+				verified: verified,
+				jwt: jwt,
+				sessionId: userSession.uid,
+				publicUserKey: userSession.publicKey,
+				privateUserKeyEncrypted: userSession.privateKey,
+				nonce: userSession.nonce
+			}));
 	} catch (error) {
 		console.log(error);
 		return res.status(400).send(error.message);

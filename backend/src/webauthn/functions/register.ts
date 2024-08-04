@@ -51,42 +51,40 @@ export async function register(req: Request, res: Response) {
 			expectedRPID: rpId,
 		};
 
-		const verification = await verifyRegistrationResponse(opts).catch(
+		const { verified, registrationInfo } = await verifyRegistrationResponse(opts).catch(
 			(err) => {
 				console.log(err);
 				throw Error("Registration Response could not be verified");
 			}
 		);
 
-		const { verified, registrationInfo } = verification;
+		if (verified == false) throw Error("Could not verifiy reponse");
+		
+		const { credentialPublicKey, credentialID, counter } =
+			registrationInfo;
 
-		if (verified && registrationInfo) {
-			const { credentialPublicKey, credentialID, counter } =
-				registrationInfo;
-
-			// check if device is already registered with user, else create device registration for user
-			await prisma.device
-				.upsert({
-					where: {
-						credentialId: Buffer.from(credentialID),
-					},
-					update: {
-						userUId: user.uid,
-						counter: counter,
-					},
-					create: {
-						userUId: user.uid,
-						credentialPublicKey: Buffer.from(credentialPublicKey),
-						credentialId: Buffer.from(credentialID),
-						counter: counter,
-						transports: credentials.response.transports,
-					},
-				})
-				.catch((err) => {
-					console.log(err);
-					throw Error("Device Regitration update or create failed");
-				});
-		}
+		// check if device is already registered with user, else create device registration for user
+		await prisma.device
+			.upsert({
+				where: {
+					credentialId: Buffer.from(credentialID),
+				},
+				update: {
+					userUId: user.uid,
+					counter: counter,
+				},
+				create: {
+					userUId: user.uid,
+					credentialPublicKey: Buffer.from(credentialPublicKey),
+					credentialId: Buffer.from(credentialID),
+					counter: counter,
+					transports: credentials.response.transports,
+				},
+			})
+			.catch((err) => {
+				console.log(err);
+				throw Error("Device Regitration update or create failed");
+			});
 
 		res.status(200).send(JSON.stringify({ verified: verified }));
 	} catch (error) {
