@@ -22,17 +22,13 @@ import { WembatClient } from "..";
 import { AxiosInstance } from "axios";
 
 /**
- * Logs in a user with the provided user ID.
- *
- * @param userUId - The user ID.
- * @returns A promise that resolves to a `WembatActionResponse` containing the login result.
- * @throws An error if WebAuthn is not supported on the browser or if the Axios client is undefined.
+ * Logs in the user using WebAuthn authentication.
+ * @param axiosClient - The Axios instance for making HTTP requests.
+ * @param userMail - The email address of the user.
+ * @returns A Promise that resolves to an array containing the action response, private key, public key, and JWT.
  */
 export async function login(
-	axiosClient: AxiosInstance ,
-    privateKey: CryptoKey | undefined,
-    publicKey: CryptoKey | undefined ,
-    jwt: string | undefined,
+	axiosClient: AxiosInstance,
 	userMail: string
 ): Promise<any> {
 	const actionResponse: WembatActionResponse<WembatLoginResult> = {
@@ -40,6 +36,10 @@ export async function login(
 		error: {} as WembatError,
 		result: {} as WembatLoginResult,
 	};
+
+	let privateKey: CryptoKey | undefined = undefined;
+	let publicKey: CryptoKey | undefined = undefined;
+	let jwt: string | undefined = undefined;
 
 	try {
 		if (!browserSupportsWebAuthn())
@@ -199,10 +199,6 @@ export async function login(
 		} else {
 			throw Error("Credentials not instance of PublicKeyCredential");
 		}
-
-		console.log(privateKey);
-		console.log(publicKey);
-		console.log(jwt);
 
 		const loginResult: WembatLoginResult = {
 			verified: loginReponseData.verified,

@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosInstance } from "axios";
+import axios, { AxiosInstance } from "axios";
 
 // TODO, maybe
 // we create a new session which holds information about a user application session for multiple devices
@@ -46,30 +46,58 @@ class WembatClient {
 			`Bearer ${this.#jwt}`;
 	}
 
+	/**
+	 * Encrypts a Wembat message using the provided public key.
+	 * 
+	 * @param wembatMessage - The Wembat message to encrypt.
+	 * @param publicKey - The public key to use for encryption.
+	 * @returns A promise that resolves to a WembatActionResponse containing the encrypted Wembat message.
+	 */
 	public async encrypt (wembatMessage: WembatMessage, publicKey: CryptoKey): Promise<WembatActionResponse<WembatMessage>> {
 		return await encrypt(this.#privateKey, wembatMessage, publicKey);
 	}
 
+	/**
+	 * Decrypts a Wembat message using the provided public key.
+	 * 
+	 * @param wembatMessage - The Wembat message to decrypt.
+	 * @param publicKey - The public key used for decryption.
+	 * @returns A promise that resolves to a WembatActionResponse containing the decrypted Wembat message.
+	 */
 	public async decrypt (wembatMessage: WembatMessage, publicKey: CryptoKey): Promise<WembatActionResponse<WembatMessage>> {
 		return await decrypt(this.#privateKey, wembatMessage, publicKey);
 	}
 
+	/**
+	 * Registers a user with the provided email address.
+	 * 
+	 * @param userMail - The email address of the user to register.
+	 * @returns A Promise that resolves to a WembatActionResponse containing the registration result.
+	 */
 	public async register (userMail: string): Promise<WembatActionResponse<WembatRegisterResult>> {
 		return await register(this.#axiosClient, userMail);
 	}
 
+	/**
+	 * Logs in the user with the specified email address.
+	 * @param userMail The email address of the user.
+	 * @returns A promise that resolves to a WembatActionResponse containing the login result.
+	 */
 	public async login (userMail: string): Promise<WembatActionResponse<WembatLoginResult>> {
-		const [loginResult, privateKey, publicKey, jwt] = await login(this.#axiosClient, this.#privateKey, this.#publicKey, this.#jwt, userMail);
+		const [loginResult, privateKey, publicKey, jwt] = await login(this.#axiosClient, userMail);
 		this.#privateKey = privateKey;
 		this.#publicKey = publicKey;
 		this.#jwt = jwt;
+		this.#axiosClient.defaults.headers.common["Authorization"] =
+			`Bearer ${this.#jwt}`;
 		return loginResult;
 	}
 
+	/**
+	 * Retrieves the crypto public key.
+	 * @returns The crypto public key.
+	 */
 	public getCryptoPublicKey() {
-		console.log(this.#publicKey);
-		console.log(this.#privateKey);
-		console.log(this.#jwt);
 		return this.#publicKey;
 	}
 }

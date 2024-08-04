@@ -83,42 +83,78 @@ export interface WembatLoginResult {
 	jwt: string;
 }
 
+/**
+ * Represents the result of the Wembat onboarding process.
+ */
 export interface WembatOnboardResult {
 	/**
-	 * Indicates whether the onboarding was successful.
+	 * Indicates whether the onboarding process was successfully verified.
 	 */
 	verifiedStatus: boolean;
 }
 
+/**
+ * Represents the response object for registering a request.
+ */
 export interface RequestRegisterResponse {
 	options: PublicKeyCredentialCreationOptionsJSON;
 }
 
+/**
+ * Represents the response object returned by the register API.
+ */
 export interface RegisterResponse {
+	/**
+	 * Indicates whether the registration is verified or not.
+	 */
 	verified: boolean;
 }
 
+/**
+ * Represents the response object for a login request.
+ */
 export interface RequestLoginResponse {
 	options: PublicKeyCredentialRequestOptionsJSON;
 }
 
+/**
+ * Represents the response object for a request to onboard.
+ */
 export interface RequestOnboardResponse {
 	options: PublicKeyCredentialRequestOptionsJSON;
 }
 
+/**
+ * Represents the response object returned after a successful login.
+ */
 export interface LoginResponse {
+	/**
+	 * Indicates whether the user has been verified.
+	 */
 	verified: boolean;
+
+	/**
+	 * The JSON Web Token (JWT) associated with the user's session.
+	 */
 	jwt: string;
+
+	/**
+	 * The session ID associated with the user's session.
+	 */
 	sessionId: string;
+
+	/**
+	 * The public key of the user.
+	 */
 	publicUserKey: string;
+
+	/**
+	 * The encrypted private key of the user.
+	 */
 	privateUserKeyEncrypted: string;
+
+	/**
+	 * A unique nonce value associated with the login request.
+	 */
 	nonce: string;
-}
-
-export interface ChallengeInputOptions extends AuthenticationExtensionsClientInputs {
-	largeBlob: any;
-}
-
-export interface ChallengeOutputptions extends AuthenticationExtensionsClientOutputs {
-	largeBlob: any;
 }

@@ -5,6 +5,7 @@ import { WembatActionResponse, WembatError, WembatMessage } from "../types";
 /**
  * Decrypts a WembatMessage using the provided publicKey.
  *
+ * @param privateKey - The CryptoKey used for decryption.
  * @param wembatMessage - The WembatMessage to decrypt.
  * @param publicKey - The CryptoKey used for decryption.
  * @returns A Promise that resolves to a WembatActionResponse containing the decrypted message.

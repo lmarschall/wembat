@@ -19,15 +19,14 @@ import { Axios, AxiosInstance } from "axios";
 /**
  * Registers a user with the specified user ID.
  *
- * @param userUId - The user ID to register.
+ * @param axiosClient - The Axios instance for making HTTP requests.
+ * @param userMail - The email address of the user to register.
  * @returns A promise that resolves to a `WembatActionResponse` containing the registration result.
  */
 export async function register(
 	axiosClient: AxiosInstance,
 	userMail: string
 ): Promise<WembatActionResponse<WembatRegisterResult>> {
-	// TODO maybe check for largeblob not supported
-
 	const actionResponse: WembatActionResponse<WembatRegisterResult> = {
 		success: false,
 		error: {} as WembatError,
