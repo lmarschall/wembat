@@ -18,7 +18,7 @@ export async function initRedis() {
 	});
 
 	await client.connect();
-};
+}
 
 export async function checkRedisCache(req, res, next) {
 	console.log("check redis cache.");
@@ -34,17 +34,17 @@ export async function checkRedisCache(req, res, next) {
 		console.log("no data available");
 		return next();
 	}
-};
+}
 
 export async function resetRedisCache(url: string) {
 	console.log("resetting redis cache");
 	await client.del(url);
-};
+}
 
 export async function addToRedisCache(url: string, items: string) {
 	console.log("adding to redis cache");
 	await client.set(url, items);
-};
+}
 
 // export const storeUserSecret = async (userSecret: string) => {
 //     console.log(`adding ${userSecret} to service tokens`);
@@ -64,7 +64,7 @@ export async function addToServiceTokens(token: string) {
 	} else {
 		return false;
 	}
-};
+}
 
 export async function addToWebAuthnTokens(token: string) {
 	console.log(`adding ${token} to webauthn tokens`);
@@ -74,16 +74,16 @@ export async function addToWebAuthnTokens(token: string) {
 	} else {
 		return false;
 	}
-};
+}
 
 export async function checkForServiceToken(token: string) {
 	console.log(`checking if service token ${token} exists`);
 	const result = await client.sIsMember("service_tokens", token);
 	return result;
-};
+}
 
 export async function checkForWebAuthnToken(token: string) {
 	console.log(`checking if webauthn token ${token} exists`);
 	const result = await client.sIsMember("webauthn_tokens", token);
 	return result;
-};
+}

@@ -5,8 +5,8 @@ import {
 } from "@simplewebauthn/typescript-types";
 
 export type UserInfo = {
-	userMail: string
-}
+	userMail: string;
+};
 
 // can be put in the wembat client types
 export type RegisterChallengeResponse = {
