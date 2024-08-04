@@ -11,17 +11,6 @@ import { validateApplicationToken, validateWebAuthnToken } from "./validate";
 
 export const webauthnRoutes = Router();
 
-function logOriginalUrl(req, res, next) {
-	console.log("Request URL:", req.originalUrl);
-	next();
-}
-
-function logMethod(req, res, next) {
-	console.log("Request Type:", req.method);
-	next();
-}
-
-const logStuff = [logOriginalUrl, logMethod];
 const validateAppToken = [validateApplicationToken];
 const validateJWTToken = [validateWebAuthnToken];
 

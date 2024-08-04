@@ -22,7 +22,7 @@ export async function createSessionJWT(session: Session) {
 export async function createApplicationJWT(application: Application) {
 	const publicJwk = await exportJWK(keyPairs.tokenKeyPair.publicKey);
 
-	return await new SignJWT({ appName: application.name })
+	return await new SignJWT({ appUId: application.uid })
 		.setProtectedHeader({ alg: "ES256", jwk: publicJwk })
 		.setIssuedAt()
 		.setIssuer("localhost:8080")
