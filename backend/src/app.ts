@@ -7,13 +7,15 @@ import compression from "compression";
 import { initRedis } from "./redis";
 import { initCrypto } from "./crypto";
 import { webauthnRoutes } from "./webauthn";
+import { initApplications } from "./application";
 
 const port = process.env.PORT || 8080;
 const rpId = process.env.RPID || "localhost:3000";
 const expectedOrigin = `https://${rpId}:3000`;
 
-initRedis();
 initCrypto();
+initRedis();
+initApplications();
 
 const app = express();
 

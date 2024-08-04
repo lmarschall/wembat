@@ -1,6 +1,6 @@
 import base64url from "base64url";
 import { PrismaClient, Session } from "@prisma/client";
-import { createJWT } from "../../crypto";
+import { createSessionJWT } from "../../crypto";
 import { addToWebAuthnTokens } from "../../redis";
 import { verifyAuthenticationResponse, VerifyAuthenticationResponseOpts } from "@simplewebauthn/server";
 import { LoginChallengeResponse, UserWithDevicesAndSessions } from "../types";
@@ -120,7 +120,7 @@ export async function login(req: Request, res: Response) {
 			}
 
 			// create new json web token for api calls
-			const jwt = await createJWT(user);
+			const jwt = await createSessionJWT(userSession);
 
 			// add self generated jwt to whitelist
 			await addToWebAuthnTokens(jwt);

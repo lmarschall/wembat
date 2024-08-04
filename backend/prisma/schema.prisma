@@ -30,7 +30,7 @@ model Device {
 model Application {
   uid String @id @default(cuid())
   url String @unique
-  name String
+  name String @default("")
   publicKey String @default("")
   privateKey String @default("")
   sessions Session[]
