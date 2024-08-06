@@ -27,10 +27,10 @@ export async function login(req: Request, res: Response) {
 			req.body.loginChallengeResponse as LoginChallengeResponse;
 
 		if(!res.locals.payload) throw Error("Payload not present");
-		const url = res.locals.payload.aud;
-		const rpId = url.split(":")[0];	// remove port from rpId
+		const domain = res.locals.payload.appDomain;
+		const rpId = domain.split(":")[0];	// remove port from rpId
 		const rpName = "Wembat";
-		const expectedOrigin = `https://${res.locals.payload.aud}`;
+		const expectedOrigin = res.locals.payload.aud;
 		const appUId = res.locals.payload.appUId;
 
 		const user = (await prisma.user

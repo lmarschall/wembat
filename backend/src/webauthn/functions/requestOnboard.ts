@@ -14,10 +14,13 @@ export async function requestOnboard(req: Request, res: Response) {
 		// 4 update user challenge
 
 		if(!res.locals.payload) throw Error("Payload not present");
-		const url = res.locals.payload.aud;
+		const domain = res.locals.payload.appDomain;
+		const rpId = domain.split(":")[0];	// remove port from rpId
+		const rpName = "Wembat";
+		const expectedOrigin = res.locals.payload.aud;
+		const appUId = res.locals.payload.appUId;	
 		const userMail = res.locals.payload.userMail;
-		const rpId = url.split(":")[0];	// remove port from rpId
-
+		
 		// search for user
 		const user = (await prisma.user
 			.findUnique({

@@ -6,23 +6,23 @@ const prisma = new PrismaClient();
 
 export const applicationTokens = new Map<string, string>();
 
-const apps =
-	process.env.APP_URLS || "localhost:3000, localhost:3001, localhost:3002";
+const registeredDomains =
+	process.env.APP_DOMAINS || "localhost:3000, localhost:3001, localhost:3002";
 
 export async function initApplications() {
-	const urls = apps.split(",").map((url) => url.trim());
-	console.log(`Registering applications: ${urls}`);
+	const domains = registeredDomains.split(",").map((domain) => domain.trim());
+	console.log(`Registering applications: ${domains}`);
 
-	for (const url of urls) {
+	for (const domain of domains) {
 		const app = await prisma.application
 			.upsert({
 				where: {
-					url: url,
+					domain: domain,
 				},
 				update: {},
 				create: {
-					url: url,
-					name: url,
+					domain: domain,
+					name: domain,
 				},
 			})
 			.catch((err) => {
@@ -31,7 +31,8 @@ export async function initApplications() {
 			});
 
 		const token = await createApplicationJWT(app);
-		applicationTokens.set(app.url, token);
-		console.log(`Application ${app.url} registered with token ${token}`);
+		const appUrl = `https://${app.domain}`;
+		applicationTokens.set(appUrl, token);
+		console.log(`Application ${appUrl} registered with token ${token}`);
 	}
 }

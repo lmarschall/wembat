@@ -21,9 +21,10 @@ export async function register(req: Request, res: Response) {
 			req.body.registerChallengeResponse as RegisterChallengeResponse;
 
 		if(!res.locals.payload) throw Error("Payload not present");
-		const rpId = res.locals.payload.aud.split(":")[0];	// remove port from rpId
+		const domain = res.locals.payload.appDomain;
+		const rpId = domain.split(":")[0];	// remove port from rpId
 		const rpName = "Wembat";
-		const expectedOrigin = `https://${res.locals.payload.aud}`;
+		const expectedOrigin = res.locals.payload.aud;
 		const appUId = res.locals.payload.appUId;
 
 		// find user with expected challenge

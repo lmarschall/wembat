@@ -29,8 +29,8 @@ model Device {
 
 model Application {
   uid String @id @default(cuid())
-  url String @unique
   name String @default("")
+  domain String @unique
   publicKey String @default("")
   privateKey String @default("")
   sessions Session[]
