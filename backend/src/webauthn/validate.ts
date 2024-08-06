@@ -26,8 +26,7 @@ export async function validateWebAuthnToken(req: Request, res: Response, next) {
 
 		const importedKey = await importJWK(spki, algorithm);
 		const { payload, protectedHeader } = await jwtVerify(jwt, importedKey, {
-			issuer: "urn:example:issuer",
-			audience: "urn:example:audience",
+			issuer: "localhost:8080",
 			algorithms: ["ES256"],
 		});
 		res.locals.payload = payload;

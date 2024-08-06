@@ -12,6 +12,7 @@ import { register } from "./functions/register";
 import { decrypt } from "./functions/decrypt";
 import { login } from "./functions/login";
 import { encrypt } from "./functions/encrypt";
+import { onboard } from "./functions/onboard";
 
 /**
  * Represents a client for interacting with the Wembat API.
@@ -91,6 +92,10 @@ class WembatClient {
 		this.#axiosClient.defaults.headers.common["Authorization"] =
 			`Bearer ${this.#jwt}`;
 		return loginResult;
+	}
+
+	public async onboard (userUId: string): Promise<WembatActionResponse<WembatRegisterResult>> {
+		return await onboard(this.#axiosClient, this.#publicKey, this.#privateKey);
 	}
 
 	/**

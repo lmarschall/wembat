@@ -50,6 +50,26 @@
                 Logout
               </button>
             </div>
+            <div class="col-12">
+              <button
+                class="btn btn-link"
+                type="submit"
+                @click="register()"
+                :disabled="loading"
+              >
+                Register Device
+              </button>
+            </div>
+            <div class="col-12">
+              <button
+                class="btn btn-link"
+                type="submit"
+                @click="onboard()"
+                :disabled="loading"
+              >
+                Onboard Device
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -101,6 +121,32 @@ function appendAlert(message: string, type: string) {
 async function logout() {
   TokenService.resetToken();
   router.push("/login");
+}
+
+async function register() {
+  loading.value = true;
+
+  const registerResponse = await wembatClient.register("blob");
+
+  if(registerResponse.success) {
+    const verified = registerResponse.result;
+    appendAlert("Registration successful", "success");
+  } else  {
+    const errorResult = registerResponse.error;
+    appendAlert(errorResult.error, "danger");
+  }
+
+  loading.value = false;
+}
+
+async function onboard() {
+  const onboardResponse = await wembatClient.onboard();
+  if(onboardResponse.success) {
+    appendAlert("Onboarding successful", "success");
+  } else {
+    const errorResult = onboardResponse.error;
+    appendAlert(errorResult.error, "danger");
+  }
 }
 
 async function encryptMessage() {

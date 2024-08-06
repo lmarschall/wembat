@@ -104,7 +104,7 @@ export async function loadCryptoPrivateKeyFromString(
                 name: "ECDH",
                 namedCurve: "P-384",
             },
-            false,
+            true,
             ["deriveKey", "deriveBits"]
         );
     } else {

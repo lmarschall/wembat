@@ -13,11 +13,10 @@ export async function requestOnboard(req: Request, res: Response) {
 		// 3 generate authentication options
 		// 4 update user challenge
 
-		if (!req.body.userInfo) throw Error("User info not present");
-		const { userMail } = req.body.userInfo as UserInfo;
-
-		if (!res.locals.rpId) throw Error("RP ID not present");
-		const rpId = res.locals.rpId;
+		if(!res.locals.payload) throw Error("Payload not present");
+		const url = res.locals.payload.aud;
+		const userMail = res.locals.payload.userMail;
+		const rpId = url.split(":")[0];	// remove port from rpId
 
 		// search for user
 		const user = (await prisma.user
@@ -58,16 +57,12 @@ export async function requestOnboard(req: Request, res: Response) {
 			} as any,
 		};
 
-		console.log(opts)
-
 		const options = await generateAuthenticationOptions(opts).catch(
 			(err) => {
 				console.log(err);
 				throw Error("Authentication Options could not be generated");
 			}
 		);
-
-		console.log(options);
 
 		// update the user challenge
 		await prisma.user

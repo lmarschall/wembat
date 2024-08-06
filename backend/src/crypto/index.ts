@@ -7,14 +7,14 @@ export async function initCrypto() {
 	keyPairs.tokenKeyPair = await generateKeyPair("ES256");
 }
 
-export async function createSessionJWT(session: Session) {
+export async function createSessionJWT(session: Session, user: User, url: string) {
 	const publicJwk = await exportJWK(keyPairs.tokenKeyPair.publicKey);
 
-	return await new SignJWT({ userMail: session.userUId })
+	return await new SignJWT({ sessionId: session.uid, userMail: user.mail })
 		.setProtectedHeader({ alg: "ES256", jwk: publicJwk })
 		.setIssuedAt()
 		.setIssuer("localhost:8080")
-		.setAudience("urn:example:audience")
+		.setAudience(url)
 		// .setExpirationTime('2h') // no exp time
 		.sign(keyPairs.tokenKeyPair.privateKey);
 }

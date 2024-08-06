@@ -27,7 +27,8 @@ export async function login(req: Request, res: Response) {
 			req.body.loginChallengeResponse as LoginChallengeResponse;
 
 		if(!res.locals.payload) throw Error("Payload not present");
-		const rpId = res.locals.payload.aud.split(":")[0];	// remove port from rpId
+		const url = res.locals.payload.aud;
+		const rpId = url.split(":")[0];	// remove port from rpId
 		const rpName = "Wembat";
 		const expectedOrigin = `https://${res.locals.payload.aud}`;
 		const appUId = res.locals.payload.appUId;
@@ -90,32 +91,37 @@ export async function login(req: Request, res: Response) {
 		const userSessionsForApp = user.sessions.filter((session) => session.appUId == appUId)
 		const userSessionsForAppAndDevice = userSessionsForApp.filter((session) => session.deviceUId == dbAuthenticator.uid)
 
-		let userSession = null;
-
-		// user has sessions but device is not onboarded
-		if (userSessionsForApp.length > 0 && userSessionsForAppAndDevice.length == 0) {
-			throw Error("User device is not onboarded to session");
-		} else {
-			userSession = userSessionsForAppAndDevice[0];
-		}
-
-		if (userSession == null) {
+		let userSession: Session = null;
+		
+		if (userSessionsForApp.length == 0 && userSessionsForAppAndDevice.length == 0) {
+			// create new user session for this app
+			// keys will be generated locally
 			userSession = await prisma.session
 			.create({
 				data: {
 					userUId: user.uid,
 					appUId: appUId,
 					deviceUId: dbAuthenticator.uid,
-				},
+				}
 			})
 			.catch((err) => {
 				console.log(err);
 				throw Error("Error while creating new session for user");
 			}) as Session;
+		} else if (userSessionsForApp.length > 0 && userSessionsForAppAndDevice.length == 0) {
+			// user has sessions but device is not onboarded to session
+			// keys need to be shared from other session
+			throw Error("User device is not onboarded to session");
+		} 
+		else if (userSessionsForApp.length > 0 && userSessionsForAppAndDevice.length > 0) {
+			// user has session for app and device
+			userSession = userSessionsForAppAndDevice[0];
+		} else {
+			throw Error("Unknown error while creating session");
 		}
 
 		// create new json web token for api calls
-		const jwt = await createSessionJWT(userSession);
+		const jwt = await createSessionJWT(userSession, user, url);
 
 		// add self generated jwt to whitelist
 		await addToWebAuthnTokens(jwt);
