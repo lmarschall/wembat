@@ -1,5 +1,6 @@
 - improve backend redis
-- onboard workflow
+- onboard workflow x
+- onboard private key directly from privatekeystring
 - token handling
 -- release
 - fido compliance
