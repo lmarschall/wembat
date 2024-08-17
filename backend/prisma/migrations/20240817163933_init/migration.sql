@@ -23,8 +23,8 @@ CREATE TABLE "Device" (
 -- CreateTable
 CREATE TABLE "Application" (
     "uid" TEXT NOT NULL,
-    "url" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
+    "name" TEXT NOT NULL DEFAULT E'',
+    "domain" TEXT NOT NULL,
     "publicKey" TEXT NOT NULL DEFAULT E'',
     "privateKey" TEXT NOT NULL DEFAULT E'',
 
@@ -54,7 +54,7 @@ CREATE UNIQUE INDEX "User_challenge_key" ON "User"("challenge");
 CREATE UNIQUE INDEX "Device_credentialId_key" ON "Device"("credentialId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Application_url_key" ON "Application"("url");
+CREATE UNIQUE INDEX "Application_domain_key" ON "Application"("domain");
 
 -- AddForeignKey
 ALTER TABLE "Device" ADD CONSTRAINT "Device_userUId_fkey" FOREIGN KEY ("userUId") REFERENCES "User"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;

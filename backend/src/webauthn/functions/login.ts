@@ -121,7 +121,7 @@ export async function login(req: Request, res: Response) {
 		}
 
 		// create new json web token for api calls
-		const jwt = await createSessionJWT(userSession, user, url);
+		const jwt = await createSessionJWT(userSession, user, domain);
 
 		// add self generated jwt to whitelist
 		await addToWebAuthnTokens(jwt);

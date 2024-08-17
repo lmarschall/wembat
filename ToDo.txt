@@ -6,3 +6,5 @@
 - fido compliance
 - improve tests
 - discoverable credentials / conditional ui
+- http only cookies for session jwt
+- save ip address alongside token in redis

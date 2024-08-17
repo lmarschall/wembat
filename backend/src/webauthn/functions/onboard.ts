@@ -31,7 +31,7 @@ export async function onboard(req: Request, res: Response) {
 		const app = await prisma.application
 			.findUnique({
 				where: {
-					url: res.locals.payload.aud,
+					domain: domain,
 				},
 			})
 
