@@ -13,6 +13,7 @@ import {
 import { AuthenticationResponseJSON } from "@simplewebauthn/typescript-types";
 import {
 	ab2str,
+	bufferToArrayBuffer,
 	loadCryptoPrivateKeyFromString,
 	loadCryptoPublicKeyFromString,
 	saveCryptoKeyAsString,
@@ -44,8 +45,6 @@ export async function login(
 		if (!browserSupportsWebAuthn())
 			throw Error("WebAuthn is not supported on this browser!");
 
-		console.log(axiosClient.defaults.headers.common);
-
 		const loginRequestResponse = await axiosClient.post<string>(
 			`/request-login`,
 			{
@@ -64,13 +63,9 @@ export async function login(
 		const challengeOptions = loginRequestResponseData.options as any;
 		const conditionalUISupported = await browserSupportsWebAuthnAutofill();
 
-		const firstSalt = new Uint8Array([
-			0x4a, 0x18, 0xa1, 0xe7, 0x4b, 0xfb, 0x3d, 0x3f, 0x2a, 0x5d, 0x1f, 0x0c,
-			0xcc, 0xe3, 0x96, 0x5e, 0x00, 0x61, 0xd1, 0x20, 0x82, 0xdc, 0x2a, 0x65,
-			0x8a, 0x18, 0x10, 0xc0, 0x0f, 0x26, 0xbe, 0x1e,
-		]).buffer;
+		console.log(challengeOptions);
 
-		challengeOptions.extensions.prf.eval.first = firstSalt;
+		challengeOptions.extensions.prf.eval.first = bufferToArrayBuffer(challengeOptions.extensions.prf.eval.first);
 
 		const credentials: AuthenticationResponseJSON = await startAuthentication(
 			challengeOptions,
@@ -80,7 +75,6 @@ export async function login(
 		});
 
 		const loginReponse = await axiosClient.post<string>(`/login`, {
-			// TODO interfaces for request bodies
 			loginChallengeResponse: {
 				credentials: credentials,
 				challenge: challengeOptions.challenge,
@@ -156,6 +150,9 @@ export async function login(
 				);
 			} else {
 				console.log("Generating new keys");
+
+
+
 				const keyPair = await window.crypto.subtle.generateKey(
 					{
 						name: "ECDH",

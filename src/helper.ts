@@ -25,6 +25,36 @@ export function ab2str(buf: ArrayBuffer): string {
 }
 
 /**
+ * Decodes a JSON Web Token (JWT) and returns the decoded payload.
+ * @param jwt The JWT to decode.
+ * @returns The decoded payload as an object.
+ */
+export function jwtDecode(jwt: string): any {
+    const base64Url = jwt.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+
+    return JSON.parse(jsonPayload);
+}
+
+/**
+ * Converts a Node.js Buffer to an ArrayBuffer.
+ *
+ * @param buffer - The Node.js Buffer to convert.
+ * @returns The converted ArrayBuffer.
+ */
+export function bufferToArrayBuffer(buffer: Buffer): ArrayBuffer {
+    const arrayBuffer = new ArrayBuffer(buffer.length);
+    const view = new Uint8Array(arrayBuffer);
+    for (let i = 0; i < buffer.length; ++i) {
+      view[i] = buffer[i];
+    }
+    return arrayBuffer;
+}
+
+/**
  * Derives an encryption key using the provided private and public keys.
  * @param privateKey - The private key used for key derivation.
  * @param publicKey - The public key used for key derivation.

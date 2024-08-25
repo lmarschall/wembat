@@ -13,6 +13,7 @@ import { decrypt } from "./functions/decrypt";
 import { login } from "./functions/login";
 import { encrypt } from "./functions/encrypt";
 import { onboard } from "./functions/onboard";
+import { jwtDecode } from "./helper";
 
 /**
  * Represents a client for interacting with the Wembat API.
@@ -28,8 +29,12 @@ class WembatClient {
 	 * Creates an instance of WembatClient.
 	 * @param url - The URL of the Backend API.
 	 */
-	constructor(url: string) {
-		this.#apiUrl = url;
+	constructor(applicationToken: string) {
+		// parse jwt token and get application information
+		const tokenPayload = jwtDecode(applicationToken);
+		console.log(tokenPayload);
+
+		this.#apiUrl = tokenPayload.iss;
 		this.#axiosClient = axios.create({
 			baseURL: `${this.#apiUrl}/webauthn`,
 			validateStatus: function (status) {
@@ -44,7 +49,7 @@ class WembatClient {
 		this.#axiosClient.defaults.headers.common["Authorization"] =
 			`Bearer ${this.#jwt}`;
 		this.#axiosClient.defaults.headers.common["Wembat-App-Token"] =
-			`Bearer eyJhbGciOiJFUzI1NiIsImp3ayI6eyJrdHkiOiJFQyIsIngiOiJNd3hHTXpWbEJXcGFwZDZ2cWVUVkw5Qml2WlpKY2ZVUXJFMWRVdHlKSENFIiwieSI6IndPX2NXWHZ5bXk4cTdnVXNsM1hxa0JRSEVKRHB5cG82d1pYQWQyWmtkeXMiLCJjcnYiOiJQLTI1NiJ9fQ.eyJhcHBVSWQiOiJjbHpic29jcHcwMDEzdDR0bnNvY2lqZWhzIiwiaWF0IjoxNzIyODA5NDU3LCJpc3MiOiJsb2NhbGhvc3Q6ODA4MCIsImF1ZCI6ImxvY2FsaG9zdDozMDAwIn0.TjzamKgeHUcZjM_77O7ZiSKm4fjbprOdCfVajwNmQv8SKu67DX3yX4errWCT5E93NAnfQD2xMr4hRj_OW76Vqg`;
+			`Bearer ${applicationToken}`;
 	}
 
 	/**

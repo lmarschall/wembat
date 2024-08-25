@@ -7,7 +7,7 @@ import compression from "compression";
 import { initRedis } from "./redis";
 import { initCrypto } from "./crypto";
 import { webauthnRoutes } from "./webauthn";
-import { applicationTokens, initApplications } from "./application";
+import { applicationKeys, initApplications } from "./application";
 
 const port = process.env.PORT || 8080;
 
@@ -22,7 +22,9 @@ const corsOptionsDelegate = (req, callback) => {
 
   const origin = req.header("Origin");
 
-  const isDomainAllowed = Object.keys(applicationTokens).indexOf(origin) !== -1;
+  const isDomainAllowed = applicationKeys.indexOf(origin) !== -1;
+
+  console.log(`Request from ${origin} is allowed: ${isDomainAllowed}`);
 
   if (isDomainAllowed) {
     // Enable CORS for this request

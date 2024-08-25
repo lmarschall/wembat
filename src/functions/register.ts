@@ -62,7 +62,13 @@ export async function register(
 			throw Error(err);
 		});
 
-		// TODO add check for prf extension supported
+		if (credentials.clientExtensionResults !== undefined) {
+			const credentialExtensions = credentials.clientExtensionResults as any;
+
+			if (credentialExtensions.prf?.enabled == false) {
+				throw Error("PRF extension disabled");
+			}
+		}
 
 		const registerResponse = await axiosClient.post<string>(`/register`, {
 			registerChallengeResponse: {
@@ -81,7 +87,7 @@ export async function register(
 		);
 
 		const registerResult: WembatRegisterResult = {
-			verifiedStatus: registerResponseData.verified,
+			verified: registerResponseData.verified,
 		};
 		actionResponse.result = registerResult;
 		actionResponse.success = true;

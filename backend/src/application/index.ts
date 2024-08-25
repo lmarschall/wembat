@@ -5,6 +5,7 @@ import { createApplicationJWT } from "../crypto";
 const prisma = new PrismaClient();
 
 export const applicationTokens = new Map<string, string>();
+export const applicationKeys = new Array<string>();
 
 const registeredDomains =
 	process.env.APP_DOMAINS || "localhost:3000, localhost:3001, localhost:3002";
@@ -33,6 +34,7 @@ export async function initApplications() {
 		const token = await createApplicationJWT(app);
 		const appUrl = `https://${app.domain}`;
 		applicationTokens.set(appUrl, token);
+		applicationKeys.push(appUrl);
 		console.log(`Application ${appUrl} registered with token ${token}`);
 	}
 }

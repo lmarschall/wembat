@@ -137,7 +137,7 @@ export async function onboard(
 		}
 
 		const onboardResult: WembatOnboardResult = {
-			verifiedStatus: true,
+			verified: true,
 		};
 		actionResponse.result = onboardResult;
 		actionResponse.success = true;

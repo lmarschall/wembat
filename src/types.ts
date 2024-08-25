@@ -3,7 +3,7 @@ import { PublicKeyCredentialCreationOptionsJSON, PublicKeyCredentialRequestOptio
 /**
  * Represents the types of results that can be returned by a Wembat action.
  */
-export type WembatResult = WembatMessage | WembatRegisterResult | WembatLoginResult;
+export type WembatResult = WembatMessage | WembatRegisterResult | WembatLoginResult | WembatOnboardResult;
 
 /**
  * Represents the response of a Wembat action.
@@ -65,7 +65,7 @@ export interface WembatRegisterResult {
 	/**
 	 * Indicates whether the registration was successful.
 	 */
-	verifiedStatus: boolean;
+	verified: boolean;
 }
 
 /**
@@ -90,7 +90,7 @@ export interface WembatOnboardResult {
 	/**
 	 * Indicates whether the onboarding process was successfully verified.
 	 */
-	verifiedStatus: boolean;
+	verified: boolean;
 }
 
 /**
@@ -114,13 +114,6 @@ export interface RegisterResponse {
  * Represents the response object for a login request.
  */
 export interface RequestLoginResponse {
-	options: PublicKeyCredentialRequestOptionsJSON;
-}
-
-/**
- * Represents the response object for a request to onboard.
- */
-export interface RequestOnboardResponse {
 	options: PublicKeyCredentialRequestOptionsJSON;
 }
 
@@ -157,4 +150,11 @@ export interface LoginResponse {
 	 * A unique nonce value associated with the login request.
 	 */
 	nonce: string;
+}
+
+/**
+ * Represents the response object for a request to onboard.
+ */
+export interface RequestOnboardResponse {
+	options: PublicKeyCredentialRequestOptionsJSON;
 }
