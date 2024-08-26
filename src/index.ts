@@ -99,7 +99,7 @@ class WembatClient {
 		return loginResult;
 	}
 
-	public async onboard (userUId: string): Promise<WembatActionResponse<WembatRegisterResult>> {
+	public async onboard (): Promise<WembatActionResponse<WembatRegisterResult>> {
 		return await onboard(this.#axiosClient, this.#publicKey, this.#privateKey);
 	}
 

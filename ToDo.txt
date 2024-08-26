@@ -1,7 +1,9 @@
 - improve backend redis
 - onboard workflow x
 - onboard private key directly from privatekeystring
-- token handling
+- token handling x
+- improve installation workflow
+- improve documentation
 -- release
 - fido compliance
 - improve tests

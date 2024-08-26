@@ -5,31 +5,28 @@ volumes:
 
 services:
     postgres:
-        image: postgres
-        hostname: postgres
-        ports:
-        - 5432:5432
+        image: postgres:13-alpine
         environment:
-            POSTGRES_USER: postgres
-            POSTGRES_PASSWORD: postgres
-            POSTGRES_DB: testdb
+            POSTGRES_USER: PLACEHOLDER_POSTGRES_USER
+            POSTGRES_PASSWORD: PLACEHOLDER_POSTGRES_PASSWORD
+            POSTGRES_DB: PLACEHOLDER_POSTGRES_DB
         volumes:
           - postgres-data:/var/lib/postgresql/data
         restart: unless-stopped
     redis:
         image: redis:6.2-alpine
-        ports:
-            - 6379:6379    
+        restart: unless-stopped
     api:
         image: wembat-api
         build: "./"
-        restart: always
-        command: ""
+        restart: unless-stopped
         ports:
             - 8080:8080
             - 5555:5555
         environment:
-            - "PORT=${API_PORT}"
+            - "API_PORT=${API_PORT}"
+            - "API_URL=${API_URL}"
             - "DATABASE_URL=${API_DATABASE_URL}"
             - "REDIS_HOST=redis"
             - "REDIS_PORT=6379"
+            - "APP_DOMAINS=${APP_DOMAINS}"

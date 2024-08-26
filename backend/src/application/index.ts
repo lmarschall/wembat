@@ -1,5 +1,4 @@
-import { generateKeyPair, exportJWK, SignJWT } from "jose";
-import { Application, PrismaClient, User } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { createApplicationJWT } from "../crypto";
 
 const prisma = new PrismaClient();
