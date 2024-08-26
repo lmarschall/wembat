@@ -10,17 +10,10 @@ import {
 	WembatOnboardResult,
 	WembatRegisterResult,
 } from "../types";
-import { WembatClient } from "..";
 import { AuthenticationResponseJSON } from "@simplewebauthn/typescript-types";
-import { ab2str, saveCryptoKeyAsString } from "../helper";
-import { Axios, AxiosInstance } from "axios";
+import { ab2str, bufferToArrayBuffer, saveCryptoKeyAsString } from "../helper";
+import { AxiosInstance } from "axios";
 
-/**
- * Registers a user with the specified user ID.
- *
- * @param userUId - The user ID to register.
- * @returns A promise that resolves to a `WembatActionResponse` containing the registration result.
- */
 export async function onboard(
 	axiosClient: AxiosInstance,
 	publicKey: CryptoKey | undefined,
@@ -37,12 +30,12 @@ export async function onboard(
 			throw Error("WebAuthn is not supported on this browser!");
 
 		if (axiosClient == undefined) throw Error("Axiso Client undefined!");
+		if (publicKey == undefined) throw Error("Public Key undefined!");
+		if (privateKey == undefined) throw Error("Private Key undefined!");
 
 		const requestOnboardResponse = await axiosClient.post<string>(
 			`/request-onboard`,
-			{
-				userInfo: { userJWT: "this.#jwt" },
-			}
+			{}
 		);
 
 		if (requestOnboardResponse.status !== 200) {
@@ -56,14 +49,9 @@ export async function onboard(
 		const challengeOptions = onboardRequestResponseData.options as any;
 		const conditionalUISupported = await browserSupportsWebAuthnAutofill();
 
-		const firstSalt = new Uint8Array([
-			0x4a, 0x18, 0xa1, 0xe7, 0x4b, 0xfb, 0x3d, 0x3f, 0x2a, 0x5d, 0x1f, 0x0c,
-			0xcc, 0xe3, 0x96, 0x5e, 0x00, 0x61, 0xd1, 0x20, 0x82, 0xdc, 0x2a, 0x65,
-			0x8a, 0x18, 0x10, 0xc0, 0x0f, 0x26, 0xbe, 0x1e,
-		]).buffer;
-
-		challengeOptions.extensions.prf.eval.first = firstSalt;
-		console.log(challengeOptions);
+		challengeOptions.extensions.prf.eval.first = bufferToArrayBuffer(
+			challengeOptions.extensions.prf.eval.first
+		);
 
 		const credentials: AuthenticationResponseJSON = await startAuthentication(
 			challengeOptions,
@@ -124,8 +112,8 @@ export async function onboard(
 
 		const onboardResponse = await axiosClient.post<string>(`/onboard`, {
 			onboardRequest: {
-				privKey: ab2str(encryptedPrivateKey),
-				pubKey: publicKeyString,
+				privateKey: ab2str(encryptedPrivateKey),
+				publicKey: publicKeyString,
 				nonce: ab2str(nonce),
 				credentials: credentials,
 				challenge: challengeOptions.challenge,

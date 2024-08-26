@@ -18,13 +18,6 @@ export async function updateCredentials(req: Request, res: Response) {
 
 		const { privKey, pubKey, nonce, sessionId } =
 			req.body.updateCredentialsRequest;
-
-		console.log('privKey');
-		console.log(privKey);
-		console.log('pubKey');
-		console.log(pubKey);
-		console.log('nonce');
-		console.log(nonce);
 		
 		// update the user challenge
 		await prisma.session

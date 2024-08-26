@@ -115,8 +115,6 @@ async function login() {
 
   const loginResponse = await wembatClient.login(username.value);
 
-  console.log(loginResponse);
-
   if(loginResponse.success) {
     const loginResult = loginResponse.result;
 

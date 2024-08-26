@@ -63,9 +63,9 @@ export async function login(
 		const challengeOptions = loginRequestResponseData.options as any;
 		const conditionalUISupported = await browserSupportsWebAuthnAutofill();
 
-		console.log(challengeOptions);
-
-		challengeOptions.extensions.prf.eval.first = bufferToArrayBuffer(challengeOptions.extensions.prf.eval.first);
+		challengeOptions.extensions.prf.eval.first = bufferToArrayBuffer(
+			challengeOptions.extensions.prf.eval.first
+		);
 
 		const credentials: AuthenticationResponseJSON = await startAuthentication(
 			challengeOptions,
@@ -150,8 +150,6 @@ export async function login(
 				);
 			} else {
 				console.log("Generating new keys");
-
-
 
 				const keyPair = await window.crypto.subtle.generateKey(
 					{

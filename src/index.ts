@@ -7,7 +7,7 @@ import axios, { AxiosInstance } from "axios";
 // we create a session key for the session and store it encrypted in the user sessions
 // we create a keypair for each session the private key of the session is encrypted with the user session key
 
-import { WembatActionResponse, WembatLoginResult, WembatMessage, WembatRegisterResult } from "./types";
+import { WembatActionResponse, WembatClientToken, WembatLoginResult, WembatMessage, WembatRegisterResult } from "./types";
 import { register } from "./functions/register";
 import { decrypt } from "./functions/decrypt";
 import { login } from "./functions/login";
@@ -31,7 +31,7 @@ class WembatClient {
 	 */
 	constructor(applicationToken: string) {
 		// parse jwt token and get application information
-		const tokenPayload = jwtDecode(applicationToken);
+		const tokenPayload: WembatClientToken = jwtDecode(applicationToken);
 		console.log(tokenPayload);
 
 		this.#apiUrl = tokenPayload.iss;

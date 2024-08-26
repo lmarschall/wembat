@@ -1,6 +1,36 @@
 import { PublicKeyCredentialCreationOptionsJSON, PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/typescript-types";
 
 /**
+ * Represents a Wembat client token.
+ */
+export interface WembatClientToken {
+	/**
+	 * The domain of the Wembat application.
+	 */
+	appDomain: string;
+
+	/**
+	 * The unique identifier of the Wembat application.
+	 */
+	appUId: string;
+
+	/**
+	 * The audience of the token.
+	 */
+	aud: string;
+
+	/**
+	 * The issued at timestamp of the token.
+	 */
+	iat: number;
+
+	/**
+	 * The issuer of the token.
+	 */
+	iss: string;
+}
+
+/**
  * Represents the types of results that can be returned by a Wembat action.
  */
 export type WembatResult = WembatMessage | WembatRegisterResult | WembatLoginResult | WembatOnboardResult;
@@ -157,4 +187,7 @@ export interface LoginResponse {
  */
 export interface RequestOnboardResponse {
 	options: PublicKeyCredentialRequestOptionsJSON;
+}
+
+export interface OnboardResponse {
 }

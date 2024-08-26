@@ -19,7 +19,7 @@ export async function onboard(req: Request, res: Response) {
 		if (!req.body.onboardRequest)
 			throw Error("Challenge Response not present");
 
-		const { privKey, pubKey, nonce, credentials, challenge } =
+		const { privateKey, publicKey, nonce, credentials, challenge } =
 			req.body.onboardRequest;
 
 		if(!res.locals.payload) throw Error("Payload not present");
@@ -87,13 +87,6 @@ export async function onboard(req: Request, res: Response) {
 		const { verified, authenticationInfo } = verification;
 
 		if (!verified) throw Error("Not verified");
-
-		console.log('privKey');
-		console.log(privKey);
-		console.log('pubKey');
-		console.log(pubKey);
-		console.log('nonce');
-		console.log(nonce);
 		
 		// update the user challenge
 		await prisma.session
@@ -102,8 +95,8 @@ export async function onboard(req: Request, res: Response) {
 					userUId: user.uid,
 					appUId: appUId,
 					deviceUId: dbAuthenticator.uid,
-					publicKey: pubKey,
-					privateKey: privKey,
+					publicKey: publicKey,
+					privateKey: privateKey,
 					nonce: nonce
 				},
 			})
