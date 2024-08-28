@@ -46,16 +46,6 @@ export async function addToRedisCache(url: string, items: string) {
 	await client.set(url, items);
 }
 
-// export const storeUserSecret = async (userSecret: string) => {
-//     console.log(`adding ${userSecret} to service tokens`);
-//     const result = await client.('service_tokens', token);
-//     if(result === 1) {
-//         return true;
-//     } else {
-//         return false;
-//     }
-// }
-
 export async function addToServiceTokens(token: string) {
 	console.log(`adding ${token} to service tokens`);
 	const result = await client.sAdd("service_tokens", token);
