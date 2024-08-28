@@ -9,7 +9,7 @@ import { initCrypto } from "./crypto";
 import { webauthnRoutes } from "./webauthn";
 import { applicationKeys, initApplications } from "./application";
 
-const port = process.env.API_PORT || 8080;
+const port = 8080;
 
 initCrypto();
 initRedis();
