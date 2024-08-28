@@ -10,7 +10,7 @@ const host = process.env.REDIS_HOST || "127.0.0.1";
 const redisurl = `redis://${host}:${port}`;
 const client = redis.createClient({ url: redisurl });
 
-export const initRedis = async () => {
+export async function initRedis() {
 	console.log(`connecting to redis cache ${redisurl}`);
 
 	client.on("connect", () => {
@@ -18,9 +18,9 @@ export const initRedis = async () => {
 	});
 
 	await client.connect();
-};
+}
 
-export const checkRedisCache = async (req, res, next) => {
+export async function checkRedisCache(req, res, next) {
 	console.log("check redis cache.");
 	const requestUrl = req.originalUrl;
 
@@ -34,29 +34,19 @@ export const checkRedisCache = async (req, res, next) => {
 		console.log("no data available");
 		return next();
 	}
-};
+}
 
-export const resetRedisCache = async (url: string) => {
+export async function resetRedisCache(url: string) {
 	console.log("resetting redis cache");
 	await client.del(url);
-};
+}
 
-export const addToRedisCache = async (url: string, items: string) => {
+export async function addToRedisCache(url: string, items: string) {
 	console.log("adding to redis cache");
 	await client.set(url, items);
-};
+}
 
-// export const storeUserSecret = async (userSecret: string) => {
-//     console.log(`adding ${userSecret} to service tokens`);
-//     const result = await client.('service_tokens', token);
-//     if(result === 1) {
-//         return true;
-//     } else {
-//         return false;
-//     }
-// }
-
-export const addToServiceTokens = async (token: string) => {
+export async function addToServiceTokens(token: string) {
 	console.log(`adding ${token} to service tokens`);
 	const result = await client.sAdd("service_tokens", token);
 	if (result === 1) {
@@ -64,9 +54,9 @@ export const addToServiceTokens = async (token: string) => {
 	} else {
 		return false;
 	}
-};
+}
 
-export const addToWebAuthnTokens = async (token: string) => {
+export async function addToWebAuthnTokens(token: string) {
 	console.log(`adding ${token} to webauthn tokens`);
 	const result = await client.sAdd("webauthn_tokens", token);
 	if (result === 1) {
@@ -74,16 +64,16 @@ export const addToWebAuthnTokens = async (token: string) => {
 	} else {
 		return false;
 	}
-};
+}
 
-export const checkForServiceToken = async (token: string) => {
+export async function checkForServiceToken(token: string) {
 	console.log(`checking if service token ${token} exists`);
 	const result = await client.sIsMember("service_tokens", token);
 	return result;
-};
+}
 
-export const checkForWebAuthnToken = async (token: string) => {
+export async function checkForWebAuthnToken(token: string) {
 	console.log(`checking if webauthn token ${token} exists`);
 	const result = await client.sIsMember("webauthn_tokens", token);
 	return result;
-};
+}

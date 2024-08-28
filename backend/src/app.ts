@@ -7,24 +7,24 @@ import compression from "compression";
 import { initRedis } from "./redis";
 import { initCrypto } from "./crypto";
 import { webauthnRoutes } from "./webauthn";
+import { applicationKeys, initApplications } from "./application";
 
-const port = process.env.PORT || 8080;
-const rpId = process.env.RPID || "localhost:3000";
-const expectedOrigin = `https://${rpId}:3000`;
+const port = 8080;
 
-initRedis();
 initCrypto();
+initRedis();
+initApplications();
 
 const app = express();
-
-const whitelist = [expectedOrigin];
 
 const corsOptionsDelegate = (req, callback) => {
   let corsOptions;
 
   const origin = req.header("Origin");
 
-  const isDomainAllowed = whitelist.indexOf(origin) !== -1;
+  const isDomainAllowed = applicationKeys.indexOf(origin) !== -1;
+
+  console.log(`Request from ${origin} is allowed: ${isDomainAllowed}`);
 
   if (isDomainAllowed) {
     // Enable CORS for this request
