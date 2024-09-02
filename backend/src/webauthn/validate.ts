@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { checkForWebAuthnToken } from "../redis";
 import { decodeProtectedHeader, importJWK, jwtVerify } from "jose";
 
-export async function validateWebAuthnToken(req: Request, res: Response, next) {
+export async function validateWebAuthnToken(req: Request, res: Response, next: any) {
 	console.log("validate webauthn token");
 
 	try {
@@ -22,7 +22,7 @@ export async function validateWebAuthnToken(req: Request, res: Response, next) {
 		const algorithm = header.alg;
 		const spki = header.jwk;
 
-		if (algorithm !== "ES256") return res.status(401).send();
+		if (algorithm !== "ES256" || spki == undefined) return res.status(401).send();
 
 		const importedKey = await importJWK(spki, algorithm);
 		const { payload, protectedHeader } = await jwtVerify(jwt, importedKey, {
@@ -40,7 +40,7 @@ export async function validateWebAuthnToken(req: Request, res: Response, next) {
 export async function validateApplicationToken(
 	req: Request,
 	res: Response,
-	next
+	next: any
 ) {
 	console.log("validate application token");
 
@@ -61,7 +61,7 @@ export async function validateApplicationToken(
 		const algorithm = header.alg;
 		const spki = header.jwk;
 
-		if (algorithm !== "ES256") return res.status(401).send();
+		if (algorithm !== "ES256" || spki == undefined) return res.status(401).send();
 
 		const importedKey = await importJWK(spki, algorithm);
 		const { payload, protectedHeader } = await jwtVerify(jwt, importedKey, {

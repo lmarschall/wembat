@@ -35,6 +35,8 @@ export async function onboard(req: Request, res: Response) {
 				},
 			})
 
+		if (app == undefined) throw Error("Application not found");
+
 		const appUId = app.uid;
 
 		// find user with expected challenge
@@ -110,7 +112,7 @@ export async function onboard(req: Request, res: Response) {
 			.send(JSON.stringify({
 				success: true,
 			}));
-	} catch (error) {
+	} catch (error: any) {
 		console.log(error);
 		return res.status(400).send(error.message);
 	}

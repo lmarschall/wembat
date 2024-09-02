@@ -85,7 +85,7 @@ export async function requestOnboard(req: Request, res: Response) {
 		res.send(
 			JSON.stringify({ options: options })
 		);
-	} catch (error) {
+	} catch (error: any) {
 		console.log(error);
 		return res.status(400).send(error.message);
 	} 

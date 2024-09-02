@@ -1,11 +1,26 @@
-import { generateKeyPair, exportJWK, SignJWT } from "jose";
+import { exportJWK, importPKCS8, importSPKI, SignJWT } from "jose";
 import { Application, Session, User } from "@prisma/client";
+import { readFileSync } from "fs";
 
 const keyPairs: any = {};
 const apiUrl = process.env.SERVER_URL || "http://localhost:8080";
 
-export async function initCrypto() {
-	keyPairs.tokenKeyPair = await generateKeyPair("ES256");
+export async function initCrypto(): Promise<boolean> {
+	
+	try {
+		const algorithm = 'ES256';
+		const pkcs8 = readFileSync('/usr/src/app/keys/privateKey.pem', 'utf8');
+		const ecPrivateKey = await importPKCS8(pkcs8, algorithm);
+		const spki = readFileSync('/usr/src/app/keys/publicKey.pem', 'utf8');
+		const ecPublicKey = await importSPKI(spki, algorithm);
+	
+		keyPairs.tokenKeyPair = { privateKey: ecPrivateKey, publicKey: ecPublicKey };
+		return true;
+	}
+	catch (err) {
+		console.error(err);
+		return false;
+	}
 }
 
 export async function createSessionJWT(session: Session, user: User, url: string) {

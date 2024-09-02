@@ -1,9 +1,11 @@
-- improve backend redis
+- improve backend redis x
 - onboard workflow x
 - onboard private key directly from privatekeystring
 - token handling x
-- improve installation workflow
+- improve installation workflow x
 - improve documentation
+- refresh token workflow
+- application rest interface
 -- release
 - fido compliance
 - improve tests

@@ -41,7 +41,7 @@ export async function updateCredentials(req: Request, res: Response) {
 			.send(JSON.stringify({
 				success: true,
 			}));
-	} catch (error) {
+	} catch (error: any) {
 		console.log(error);
 		return res.status(400).send(error.message);
 	}

@@ -1,4 +1,4 @@
-import redis = require("redis");
+import { createClient } from "redis";
 
 // redis set for storing issued json web tokens
 // aims to whitelist all self generated json web tokens
@@ -8,31 +8,22 @@ const port = process.env.REDIS_PORT || 6379;
 const host = process.env.REDIS_HOST || "127.0.0.1";
 
 const redisurl = `redis://${host}:${port}`;
-const client = redis.createClient({ url: redisurl });
+const client = createClient({ url: redisurl });
 
-export async function initRedis() {
-	console.log(`connecting to redis cache ${redisurl}`);
+export async function initRedis(): Promise<boolean> {
 
-	client.on("connect", () => {
-		console.log("connected to redis cache!");
-	});
+	try {
+		console.log(`connecting to redis cache ${redisurl}`);
 
-	await client.connect();
-}
+		client.on("connect", () => {
+			console.log("connected to redis cache!");
+		});
 
-export async function checkRedisCache(req, res, next) {
-	console.log("check redis cache.");
-	const requestUrl = req.originalUrl;
-
-	const exist = await client.exists(requestUrl);
-
-	if (exist === 1) {
-		console.log("loading data from cache");
-		const data = await client.get(requestUrl);
-		return res.status(200).send(JSON.parse(data));
-	} else {
-		console.log("no data available");
-		return next();
+		await client.connect();
+		return true;
+	} catch (err) {
+		console.error(err);
+		return false;
 	}
 }
 

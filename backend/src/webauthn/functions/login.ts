@@ -91,7 +91,7 @@ export async function login(req: Request, res: Response) {
 		const userSessionsForApp = user.sessions.filter((session) => session.appUId == appUId)
 		const userSessionsForAppAndDevice = userSessionsForApp.filter((session) => session.deviceUId == dbAuthenticator.uid)
 
-		let userSession: Session = null;
+		let userSession: Session;
 		
 		if (userSessionsForApp.length == 0 && userSessionsForAppAndDevice.length == 0) {
 			// create new user session for this app
@@ -136,7 +136,7 @@ export async function login(req: Request, res: Response) {
 				privateUserKeyEncrypted: userSession.privateKey,
 				nonce: userSession.nonce
 			}));
-	} catch (error) {
+	} catch (error: any) {
 		console.log(error);
 		return res.status(400).send(error.message);
 	}
