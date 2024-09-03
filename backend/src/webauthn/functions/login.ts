@@ -61,7 +61,7 @@ export async function login(req: Request, res: Response) {
 		}
 
 		if (dbAuthenticator == null) {
-			throw new Error(`Could not find authenticator matching ${body.id}`);
+			throw new Error("Could not find matching authenticator matching");
 		}
 
 		const opts: VerifyAuthenticationResponseOpts = {

@@ -2,7 +2,11 @@ import { Request, Response } from "express";
 import { checkForWebAuthnToken } from "../redis";
 import { decodeProtectedHeader, importJWK, jwtVerify } from "jose";
 
-export async function validateWebAuthnToken(req: Request, res: Response, next: any) {
+export async function validateWebAuthnToken(
+	req: Request,
+	res: Response,
+	next: any
+) {
 	console.log("validate webauthn token");
 
 	try {
@@ -22,7 +26,8 @@ export async function validateWebAuthnToken(req: Request, res: Response, next: a
 		const algorithm = header.alg;
 		const spki = header.jwk;
 
-		if (algorithm !== "ES256" || spki == undefined) return res.status(401).send();
+		if (algorithm !== "ES256" || spki == undefined)
+			return res.status(401).send();
 
 		const importedKey = await importJWK(spki, algorithm);
 		const { payload, protectedHeader } = await jwtVerify(jwt, importedKey, {
@@ -45,9 +50,12 @@ export async function validateApplicationToken(
 	console.log("validate application token");
 
 	try {
-		if (req.headers["wembat-app-token"] == null) return res.status(401).send();
+		if (req.headers["wembat-app-token"] == null)
+			return res.status(401).send();
 
-		const authorization = (req.headers["wembat-app-token"] as string).split(" ");
+		const authorization = (req.headers["wembat-app-token"] as string).split(
+			" "
+		);
 
 		if (authorization[0] !== "Bearer") return res.status(401).send();
 
@@ -61,7 +69,8 @@ export async function validateApplicationToken(
 		const algorithm = header.alg;
 		const spki = header.jwk;
 
-		if (algorithm !== "ES256" || spki == undefined) return res.status(401).send();
+		if (algorithm !== "ES256" || spki == undefined)
+			return res.status(401).send();
 
 		const importedKey = await importJWK(spki, algorithm);
 		const { payload, protectedHeader } = await jwtVerify(jwt, importedKey, {

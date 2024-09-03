@@ -10,9 +10,10 @@ const registeredDomains =
 	process.env.APP_DOMAINS || "localhost:3000, localhost:3001, localhost:3002";
 
 export async function initApplications(): Promise<boolean> {
-
 	try {
-		const domains = registeredDomains.split(",").map((domain) => domain.trim());
+		const domains = registeredDomains
+			.split(",")
+			.map((domain) => domain.trim());
 		console.log(`Registering applications: ${domains}`);
 
 		for (const domain of domains) {

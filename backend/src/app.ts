@@ -4,12 +4,19 @@ import express from "express";
 import bodyParser from "body-parser";
 import compression from "compression";
 
+import { rateLimit} from "express-rate-limit";
 import { initRedis } from "./redis";
 import { initCrypto } from "./crypto";
 import { webauthnRoutes } from "./webauthn";
+import { adminRoutes } from "./admin";
 import { applicationKeys, initApplications } from "./application";
 
 const port = 8080;
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // max 100 requests per windowMs
+});
 
 async function init() {
 
@@ -49,11 +56,13 @@ async function init() {
     callback(null, corsOptions);
   };
   
+  app.use(limiter);
   app.use(cors(corsOptionsDelegate));
   app.use(helmet());
   app.use(compression()); // COMPRESSION
   app.use(bodyParser.json({ limit: "1mb" }));
   app.use("/webauthn", webauthnRoutes);
+  app.use("/admin", adminRoutes);
   
   app.listen(port, () => {
     return console.log(`server is listening on ${port}`);

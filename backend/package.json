@@ -29,6 +29,7 @@
     "compression": "^1.7.4",
     "cors": "^2.8.5",
     "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
     "helmet": "^5.0.2",
     "jose": "^4.15.5",
     "redis": "^4.0.6"

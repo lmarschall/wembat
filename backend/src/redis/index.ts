@@ -11,7 +11,6 @@ const redisurl = `redis://${host}:${port}`;
 const client = createClient({ url: redisurl });
 
 export async function initRedis(): Promise<boolean> {
-
 	try {
 		console.log(`connecting to redis cache ${redisurl}`);
 
