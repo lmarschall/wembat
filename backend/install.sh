@@ -4,14 +4,19 @@
 curl -o .env.template https://raw.githubusercontent.com/lmarschall/wembat/main/backend/.env.template
 curl -o docker-compose.yml https://raw.githubusercontent.com/lmarschall/wembat/main/backend/docker-compose.yml
 
-# Define the template file and output file
+# create keys for api server
+mkdir ./keys
+openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 -out ./keys/privateKey.pem -outform PEM
+openssl ec -in ./keys/privateKey.pem -pubout -out ./keys/publicKey.pem
+
+# define the template file and output file
 TEMPLATE_FILE=".env.template"
 OUTPUT_FILE=".env"
 
 # generate random password
 postgresPassword=$(openssl rand -base64 12)
 
-# Define the placeholders and their corresponding values
+# define the placeholders and their corresponding values
 PLACEHOLDERS=(
     "PLACEHOLDER_DATABASE_POSTGRES_USER"
     "PLACEHOLDER_DATABASE_POSTGRES_PASSWORD"
@@ -33,16 +38,16 @@ VALUES=(
     "postgres://postgresUser:postgres@postgres:5432/postgresDatabase?connect_timeout=300"
 )
 
-# Check if template file exists
+# check if template file exists
 if [ ! -f "$TEMPLATE_FILE" ]; then
     echo "Template file $TEMPLATE_FILE does not exist."
     exit 1
 fi
 
-# Create a copy of the template to the output file
+# create a copy of the template to the output file
 cp "$TEMPLATE_FILE" "$OUTPUT_FILE"
 
-# Loop through placeholders and replace them with values in the output file
+# loop through placeholders and replace them with values in the output file
 for i in "${!PLACEHOLDERS[@]}"; do
     sed -i "s/${PLACEHOLDERS[$i]}/${VALUES[$i]}/g" "$OUTPUT_FILE"
 done

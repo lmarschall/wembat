@@ -1,5 +1,5 @@
 # build stage
-FROM node:20.10 AS build
+FROM node:20 AS build
 
 # make the 'build' folder the current working directory
 WORKDIR /usr/src/build
@@ -21,7 +21,7 @@ RUN npm run build
 
 
 # run stage
-FROM node:20.10
+FROM node:20-bullseye-slim AS run
 
 # set environment variables
 ENV NODE_ENV production

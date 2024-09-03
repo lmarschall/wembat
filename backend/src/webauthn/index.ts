@@ -7,12 +7,9 @@ import { login } from "./functions/login";
 import { updateCredentials } from "./functions/updateCredentials";
 import { requestOnboard } from "./functions/requestOnboard";
 import { onboard } from "./functions/onboard";
-import { validateApplicationToken, validateWebAuthnToken } from "./validate";
+import { validateAppToken, validateJWTToken } from "../validate";
 
 export const webauthnRoutes = Router();
-
-const validateAppToken = [validateApplicationToken];
-const validateJWTToken = [validateWebAuthnToken];
 
 webauthnRoutes.post(
 	"/request-register",

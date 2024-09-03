@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 
 const prisma = new PrismaClient();
 
-export async function listApplications(req: Request, res: Response) {
+export async function applicationList(req: Request, res: Response) {
     try {
 
         // const appUId = res.locals.payload.appUId;
