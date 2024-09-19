@@ -27,9 +27,9 @@ export async function login(req: Request, res: Response) {
 			req.body.loginChallengeResponse as LoginChallengeResponse;
 
 		if(!res.locals.payload) throw Error("Payload not present");
-		const domain = res.locals.payload.appDomain;
-		const rpId = domain.split(":")[0];	// remove port from rpId
-		const rpName = "Wembat";
+		const audience = res.locals.payload.aud;
+		const domain = audience.split("://")[1];
+		const rpId = domain.split(":")[0];
 		const expectedOrigin = res.locals.payload.aud;
 		const appUId = res.locals.payload.appUId;
 
@@ -121,7 +121,7 @@ export async function login(req: Request, res: Response) {
 		}
 
 		// create new json web token for api calls
-		const jwt = await createSessionJWT(userSession, user, domain);
+		const jwt = await createSessionJWT(userSession, user, expectedOrigin);
 
 		// add self generated jwt to whitelist
 		await addToWebAuthnTokens(jwt);

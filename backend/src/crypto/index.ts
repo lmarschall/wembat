@@ -58,8 +58,7 @@ export async function createApplicationJWT(application: Application) {
 	const publicJwk = await exportJWK(keyPairs.tokenKeyPair.publicKey);
 
 	return await new SignJWT({
-		appUId: application.uid,
-		appDomain: application.domain,
+		appUId: application.uid
 	})
 		.setProtectedHeader({ alg: "ES256", jwk: publicJwk })
 		.setIssuedAt()

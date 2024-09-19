@@ -29,11 +29,10 @@ export async function requestRegister(req: Request, res: Response) {
 		const { userMail } = req.body.userInfo as UserInfo;
 
 		if(!res.locals.payload) throw Error("Payload not present");
-		const domain = res.locals.payload.appDomain;
-		const rpId = domain.split(":")[0];	// remove port from rpId
+		const audience = res.locals.payload.aud;
+		const domain = audience.split("://")[1];
+		const rpId = domain.split(":")[0];
 		const rpName = "Wembat";
-		const expectedOrigin = res.locals.payload.aud;
-		const appUId = res.locals.payload.appUId;
 
 		// add logic with jwt token check if user has already registered devices
 

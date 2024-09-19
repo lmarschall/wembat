@@ -21,11 +21,10 @@ export async function register(req: Request, res: Response) {
 			req.body.registerChallengeResponse as RegisterChallengeResponse;
 
 		if(!res.locals.payload) throw Error("Payload not present");
-		const domain = res.locals.payload.appDomain;
-		const rpId = domain.split(":")[0];	// remove port from rpId
-		const rpName = "Wembat";
+		const audience = res.locals.payload.aud;
+		const domain = audience.split("://")[1];
+		const rpId = domain.split(":")[0];
 		const expectedOrigin = res.locals.payload.aud;
-		const appUId = res.locals.payload.appUId;
 
 		// find user with expected challenge
 		const user = (await prisma.user

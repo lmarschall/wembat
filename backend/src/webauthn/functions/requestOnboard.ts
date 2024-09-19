@@ -14,12 +14,9 @@ export async function requestOnboard(req: Request, res: Response) {
 		// 4 update user challenge
 
 		if(!res.locals.payload) throw Error("Payload not present");
-		console.log(res.locals.payload);
-		const domain = res.locals.payload.aud;
-		const rpId = domain.split(":")[0];	// remove port from rpId
-		const rpName = "Wembat";
-		const expectedOrigin = res.locals.payload.aud;
-		const appUId = res.locals.payload.appUId;	
+		const audience = res.locals.payload.aud;
+		const domain = audience.split("://")[1];
+		const rpId = domain.split(":")[0];
 		const userMail = res.locals.payload.userMail;
 		
 		// search for user

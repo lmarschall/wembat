@@ -23,10 +23,10 @@ export async function onboard(req: Request, res: Response) {
 			req.body.onboardRequest;
 
 		if(!res.locals.payload) throw Error("Payload not present");
-		const domain = res.locals.payload.aud;
-		const rpId = domain.split(":")[0];	// remove port from rpId
-		const rpName = "Wembat";
-		const expectedOrigin = 'https://' + res.locals.payload.aud;
+		const audience = res.locals.payload.aud;
+		const domain = audience.split("://")[1];
+		const rpId = domain.split(":")[0];
+		const expectedOrigin = res.locals.payload.aud;
 
 		const app = await prisma.application
 			.findUnique({
