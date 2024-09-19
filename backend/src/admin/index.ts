@@ -3,6 +3,7 @@ import { applicationList } from "./functions/applicationList";
 import { applicationCreate } from "./functions/applicationCreate";
 import { applicationToken } from "./functions/applicationToken";
 import { validateJWTToken } from "../validate";
+import { createAdminJWT } from "../crypto";
 
 export const adminRoutes = Router();
 
@@ -23,3 +24,14 @@ adminRoutes.post(
 	validateJWTToken,
 	async (req, res) => applicationCreate(req, res)
 );
+
+export async function initAdmin(): Promise<boolean> {
+	try {
+		const token = await createAdminJWT();
+		console.log(`Admin token: ${token}`);
+		return true;
+	} catch (err) {
+		console.error(err);
+		return false;
+	}
+}

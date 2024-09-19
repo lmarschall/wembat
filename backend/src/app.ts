@@ -8,7 +8,7 @@ import { rateLimit} from "express-rate-limit";
 import { initRedis } from "./redis";
 import { initCrypto } from "./crypto";
 import { webauthnRoutes } from "./webauthn";
-import { adminRoutes } from "./admin";
+import { adminRoutes, initAdmin } from "./admin";
 import { applicationKeys, initApplications } from "./application";
 
 const port = 8080;
@@ -27,6 +27,11 @@ async function init() {
 
   if (!await initRedis()) {
     console.error("Failed to initialize redis");
+    return;
+  }
+
+  if (!await initAdmin()) {
+    console.error("Failed to initialize admin");
     return;
   }
   

@@ -10,7 +10,7 @@ import router from "./router";
 const applicationToken = import.meta.env.VITE_APP_TOKEN || "";
 
 const app = createApp(App);
-const wembatClient = new WembatClient(applicationToken);
+const wembatClient = new WembatClient(applicationToken.trim());
 app.provide('wembatClient', wembatClient)
 app.use(router);
 app.mount("#app");

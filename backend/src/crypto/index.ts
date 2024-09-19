@@ -68,3 +68,17 @@ export async function createApplicationJWT(application: Application) {
 		// .setExpirationTime('2h') // no exp time
 		.sign(keyPairs.tokenKeyPair.privateKey);
 }
+
+export async function createAdminJWT() {
+	const publicJwk = await exportJWK(keyPairs.tokenKeyPair.publicKey);
+
+	return await new SignJWT({
+		admin: true
+	})
+		.setProtectedHeader({ alg: "ES256", jwk: publicJwk })
+		.setIssuedAt()
+		.setIssuer(apiUrl)
+		.setAudience("")
+		// .setExpirationTime('2h') // no exp time
+		.sign(keyPairs.tokenKeyPair.privateKey);
+}

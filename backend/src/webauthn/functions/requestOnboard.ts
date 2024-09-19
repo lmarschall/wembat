@@ -14,7 +14,8 @@ export async function requestOnboard(req: Request, res: Response) {
 		// 4 update user challenge
 
 		if(!res.locals.payload) throw Error("Payload not present");
-		const domain = res.locals.payload.appDomain;
+		console.log(res.locals.payload);
+		const domain = res.locals.payload.aud;
 		const rpId = domain.split(":")[0];	// remove port from rpId
 		const rpName = "Wembat";
 		const expectedOrigin = res.locals.payload.aud;
