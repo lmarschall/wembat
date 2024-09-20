@@ -19,7 +19,7 @@ import {
 	saveCryptoKeyAsString,
 	str2ab,
 } from "../helper";
-import { AxiosInstance } from "axios";
+import axios, { AxiosInstance } from "axios";
 
 /**
  * Logs in the user using WebAuthn authentication.
@@ -39,7 +39,8 @@ export async function login(
 
 	let privateKey: CryptoKey | undefined = undefined;
 	let publicKey: CryptoKey | undefined = undefined;
-	let jwt: string | undefined = undefined;
+	let token: string | undefined = undefined;
+	let refreshToken: string | undefined = undefined;
 
 	try {
 		if (!browserSupportsWebAuthn())
@@ -74,12 +75,20 @@ export async function login(
 			throw Error(err);
 		});
 
-		const loginReponse = await axiosClient.post<string>(`/login`, {
-			loginChallengeResponse: {
-				credentials: credentials,
-				challenge: challengeOptions.challenge,
+		const loginReponse = await axiosClient.post<string>(
+			`/login`,
+			{
+				loginChallengeResponse: {
+					credentials: credentials,
+					challenge: challengeOptions.challenge,
+				},
 			},
-		});
+			{
+				withCredentials: true
+			}
+		);
+
+		console.log(axiosClient.defaults.headers);
 
 		if (loginReponse.status !== 200) {
 			throw Error(loginReponse.data);
@@ -89,11 +98,7 @@ export async function login(
 
 		if (!loginReponseData.verified) throw Error("Login not verified");
 
-		jwt = loginReponseData.jwt;
-
-		axiosClient.defaults.headers.common[
-			"Authorization"
-		] = `Bearer ${loginReponseData.jwt}`;
+		token = loginReponseData.token;
 
 		const publicUserKeyString = loginReponseData.publicUserKey;
 		const privateUserKeyEncryptedString =
@@ -198,7 +203,7 @@ export async function login(
 
 		const loginResult: WembatLoginResult = {
 			verified: loginReponseData.verified,
-			jwt: loginReponseData.jwt,
+			token: token,
 		};
 		actionResponse.result = loginResult;
 		actionResponse.success = true;
@@ -209,6 +214,6 @@ export async function login(
 		actionResponse.error = errorMessage;
 		console.error(error);
 	} finally {
-		return [actionResponse, privateKey, publicKey, jwt];
+		return [actionResponse, privateKey, publicKey, token, refreshToken];
 	}
 }

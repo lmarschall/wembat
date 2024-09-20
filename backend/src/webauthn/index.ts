@@ -7,6 +7,7 @@ import { login } from "./functions/login";
 import { updateCredentials } from "./functions/updateCredentials";
 import { requestOnboard } from "./functions/requestOnboard";
 import { onboard } from "./functions/onboard";
+import { refresh } from "./functions/refresh";
 import { validateAppToken, validateJWTToken } from "../validate";
 
 export const webauthnRoutes = Router();
@@ -46,5 +47,10 @@ webauthnRoutes.post(
 	validateJWTToken,
 	async (req: Request, res: Response) => onboard(req, res)
 );
+webauthnRoutes.post(
+	"/refresh-token",
+	validateAppToken,
+	async (req: Request, res: Response) => refresh(req, res)
+)
 
 console.log("server is starting webauthn services");

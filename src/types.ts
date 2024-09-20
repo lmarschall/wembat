@@ -33,7 +33,7 @@ export interface WembatClientToken {
 /**
  * Represents the types of results that can be returned by a Wembat action.
  */
-export type WembatResult = WembatMessage | WembatRegisterResult | WembatLoginResult | WembatOnboardResult;
+export type WembatResult = WembatMessage | WembatToken | WembatRegisterResult | WembatLoginResult | WembatOnboardResult;
 
 /**
  * Represents the response of a Wembat action.
@@ -88,6 +88,13 @@ export interface WembatMessage {
 	encrypted: string;
 }
 
+export interface WembatToken {
+	/**
+	 * The JWT token.
+	 */
+	token: string;
+}
+
 /**
  * Represents the result of a Wembat registration.
  */
@@ -108,9 +115,9 @@ export interface WembatLoginResult {
 	verified: boolean;
 
 	/**
-	 * The JWT token generated during login.
+	 * The JSON Web Token (JWT) associated with the user's session.
 	 */
-	jwt: string;
+	token: string;
 }
 
 /**
@@ -159,7 +166,7 @@ export interface LoginResponse {
 	/**
 	 * The JSON Web Token (JWT) associated with the user's session.
 	 */
-	jwt: string;
+	token: string;
 
 	/**
 	 * The session ID associated with the user's session.
@@ -187,6 +194,10 @@ export interface LoginResponse {
  */
 export interface RequestOnboardResponse {
 	options: PublicKeyCredentialRequestOptionsJSON;
+}
+
+export interface TokenResponse {
+	token: string;
 }
 
 export interface OnboardResponse {

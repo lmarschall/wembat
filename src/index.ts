@@ -1,19 +1,13 @@
 import axios, { AxiosInstance } from "axios";
 
-// TODO, maybe
-// we create a new session which holds information about a user application session for multiple devices
-// we create user sessions for each device which are linked to the session
-// we create keypairs for each user session and store them
-// we create a session key for the session and store it encrypted in the user sessions
-// we create a keypair for each session the private key of the session is encrypted with the user session key
-
-import { WembatActionResponse, WembatClientToken, WembatLoginResult, WembatMessage, WembatRegisterResult } from "./types";
+import { WembatActionResponse, WembatClientToken, WembatLoginResult, WembatMessage, WembatRegisterResult, WembatToken } from "./types";
 import { register } from "./functions/register";
 import { decrypt } from "./functions/decrypt";
 import { login } from "./functions/login";
 import { encrypt } from "./functions/encrypt";
 import { onboard } from "./functions/onboard";
 import { jwtDecode } from "./helper";
+import { token } from "./functions/token";
 
 /**
  * Represents a client for interacting with the Wembat API.
@@ -101,6 +95,10 @@ class WembatClient {
 
 	public async onboard (): Promise<WembatActionResponse<WembatRegisterResult>> {
 		return await onboard(this.#axiosClient, this.#publicKey, this.#privateKey);
+	}
+
+	public async token (): Promise<WembatActionResponse<WembatToken>> {
+		return await token(this.#axiosClient, this.#jwt);
 	}
 
 	/**

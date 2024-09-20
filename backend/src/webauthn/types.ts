@@ -8,6 +8,11 @@ export type UserInfo = {
 	userMail: string;
 };
 
+export type SessionInfo = {
+	userMail: string;
+	sessionId: string;
+};
+
 // can be put in the wembat client types
 export type RegisterChallengeResponse = {
 	challenge: string;

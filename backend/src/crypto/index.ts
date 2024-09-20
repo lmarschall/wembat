@@ -38,7 +38,7 @@ export async function initCrypto(): Promise<boolean> {
 	}
 }
 
-export async function createSessionJWT(
+export async function createSessionToken(
 	session: Session,
 	user: User,
 	url: string
@@ -50,7 +50,23 @@ export async function createSessionJWT(
 		.setIssuedAt()
 		.setIssuer(apiUrl)
 		.setAudience(url)
-		// .setExpirationTime('2h') // no exp time
+		.setExpirationTime('10s')
+		.sign(keyPairs.tokenKeyPair.privateKey);
+}
+
+export async function createSessionRefreshToken(
+	session: Session,
+	user: User,
+	url: string
+) {
+	const publicJwk = await exportJWK(keyPairs.tokenKeyPair.publicKey);
+
+	return await new SignJWT({ sessionId: session.uid, userMail: user.mail })
+		.setProtectedHeader({ alg: "ES256", jwk: publicJwk })
+		.setIssuedAt()
+		.setIssuer(apiUrl)
+		.setAudience(url)
+		.setExpirationTime('7d')
 		.sign(keyPairs.tokenKeyPair.privateKey);
 }
 

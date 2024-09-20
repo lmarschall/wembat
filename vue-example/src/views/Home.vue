@@ -70,6 +70,16 @@
                 Onboard Device
               </button>
             </div>
+            <div class="col-12">
+              <button
+                class="btn btn-link"
+                type="submit"
+                @click="token()"
+                :disabled="loading"
+              >
+                Get Token
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -142,6 +152,16 @@ async function onboard() {
     appendAlert("Onboarding successful", "success");
   } else {
     const errorResult = onboardResponse.error;
+    appendAlert(errorResult.error, "danger");
+  }
+}
+async function token() {
+  const tokenResponse = await wembatClient.token();
+  console.log("tokenResponse", tokenResponse);
+  if(tokenResponse.success) {
+    appendAlert("Token received", "success");
+  } else {
+    const errorResult = tokenResponse.error;
     appendAlert(errorResult.error, "danger");
   }
 }

@@ -120,7 +120,7 @@ async function login() {
 
     if (loginResult.verified) {
       appendAlert("Login successful", "success");
-      TokenService.setToken(loginResult.jwt);
+      TokenService.setToken(loginResult.token);
       router.push("/");
     }
   } else {

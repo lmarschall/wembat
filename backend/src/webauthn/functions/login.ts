@@ -1,6 +1,6 @@
 import base64url from "base64url";
 import { PrismaClient, Session } from "@prisma/client";
-import { createSessionJWT } from "../../crypto";
+import { createSessionToken, createSessionRefreshToken } from "../../crypto";
 import { addToWebAuthnTokens } from "../../redis";
 import { verifyAuthenticationResponse, VerifyAuthenticationResponseOpts } from "@simplewebauthn/server";
 import { LoginChallengeResponse, UserWithDevicesAndSessions } from "../types";
@@ -121,16 +121,25 @@ export async function login(req: Request, res: Response) {
 		}
 
 		// create new json web token for api calls
-		const jwt = await createSessionJWT(userSession, user, expectedOrigin);
+		const token = await createSessionToken(userSession, user, expectedOrigin);
+		const refreshToken = await createSessionRefreshToken(userSession, user, expectedOrigin);
 
 		// add self generated jwt to whitelist
-		await addToWebAuthnTokens(jwt);
+		await addToWebAuthnTokens(token);
 
 		return res
 			.status(200)
+			.cookie('refreshToken', refreshToken, {
+				httpOnly: true,        // Prevents JavaScript access to the cookie
+				secure: true,          // Ensures the cookie is only sent over HTTPS
+				// sameSite: 'Strict',    // Helps prevent CSRF
+				sameSite: 'none',
+				path: '/',
+				maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+			})
 			.send(JSON.stringify({
 				verified: verified,
-				jwt: jwt,
+				token: token,
 				sessionId: userSession.uid,
 				publicUserKey: userSession.publicKey,
 				privateUserKeyEncrypted: userSession.privateKey,

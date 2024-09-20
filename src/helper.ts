@@ -31,7 +31,7 @@ export function ab2str(buf: ArrayBuffer): string {
  * @param jwt The JWT to decode.
  * @returns The decoded payload as an object.
  */
-export function jwtDecode(jwt: string): WembatClientToken {
+export function jwtDecode(jwt: string): any {
     const base64Url = jwt.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
