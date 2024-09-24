@@ -29,13 +29,14 @@ PLACEHOLDERS=(
 )
 VALUES=(
     "postgresUser"
-    "$postgresPassword"
+    "postgresPassword"
     "postgresDatabase"
     "5432"
-    "postgresql://postgresUser:postgres@localhost:5432/postgresDatabase"
+    "postgresql://postgresUser:postgresPassword@localhost:5432/postgresDatabase"
     "http://localhost:8080"
+    "8080"
     "localhost:3000, localhost:3001, localhost:3002"
-    "postgres://postgresUser:postgres@postgres:5432/postgresDatabase?connect_timeout=300"
+    "postgres://postgresUser:postgres@postgresPassword:5432/postgresDatabase?connect_timeout=300"
 )
 
 # check if template file exists
