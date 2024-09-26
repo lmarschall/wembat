@@ -17,7 +17,17 @@ services:
             POSTGRES_DB: ${DATABASE_POSTGRES_DB}
     redis:
         image: redis:6.2-alpine
-        restart: unless-stopped 
+        restart: unless-stopped
+    dashboard:
+        image: wembat-dashboard
+        build:
+            context: ./dashboard
+            dockerfile: Dockerfile
+        restart: unless-stopped
+        logging:
+          driver: none
+        ports:
+            - ${DASHBOARD_SERVER_PORT}:8080
     api:
         image: wembat-api
         build: "./"
@@ -31,5 +41,6 @@ services:
             SERVER_URL: ${API_SERVER_URL}
             APP_DOMAINS: ${API_APP_DOMAINS}
             DATABASE_URL: ${API_DATABASE_URL}
+            DASHBOARD_URL: ${DASHBOARD_SERVER_URL}
             REDIS_HOST: redis
             REDIS_PORT: 6379

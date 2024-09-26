@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import TheWelcome from '../components/TheWelcome.vue'
+
+defineProps({
+  token: String
+})
 </script>
 
 <template>
+  <div>
+    Token {{ token }}
+  </div>
   <div class="d-flex flex-column flex-lg-row h-100">
     <div class="flex-shrink-1">
       <nav class="navbar navbar-expand-lg bg-body-tertiary h-100 d-flex flex-row flex-lg-column">

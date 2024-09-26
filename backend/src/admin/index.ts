@@ -7,6 +7,8 @@ import { createAdminJWT } from "../crypto";
 
 export const adminRoutes = Router();
 
+const dashboardUrl = process.env.DASHBOARD_URL || "http://localhost:9090";
+
 adminRoutes.get(
 	"/application/list",
 	validateJWTToken,
@@ -28,7 +30,7 @@ adminRoutes.post(
 export async function initAdmin(): Promise<boolean> {
 	try {
 		const token = await createAdminJWT();
-		console.log(`Admin token: ${token}`);
+		console.log(`Dashboard Url: ${dashboardUrl}/dashboard/${token}`);
 		return true;
 	} catch (err) {
 		console.error(err);

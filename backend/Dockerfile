@@ -44,8 +44,6 @@ COPY --chown=node:node --from=build /usr/src/build/prisma /usr/src/app/prisma
 COPY --chown=node:node --from=build /usr/src/build/node_modules/.prisma /usr/src/app/node_modules/.prisma
 COPY --chown=node:node --from=build /usr/src/build/entrypoint.sh /usr/src/app/entrypoint.sh
 
-COPY ./dashboard/dist /usr/src/app/dashboard/dist
-
 # expose api port
 EXPOSE 8080
 

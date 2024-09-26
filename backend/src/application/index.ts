@@ -37,7 +37,6 @@ export async function initApplications(): Promise<boolean> {
 			const appUrl = `https://${app.domain}`;
 			applicationTokens.set(appUrl, token);
 			applicationKeys.push(appUrl);
-			console.log(`Application ${appUrl} registered with token ${token}`);
 		}
 		return true;
 	} catch (err) {
