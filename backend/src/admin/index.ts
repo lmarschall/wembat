@@ -30,7 +30,7 @@ adminRoutes.post(
 export async function initAdmin(): Promise<boolean> {
 	try {
 		const token = await createAdminJWT();
-		console.log(`Dashboard Url: ${dashboardUrl}/dashboard/${token}`);
+		console.log(`Dashboard Url: ${dashboardUrl}/${token}`);
 		return true;
 	} catch (err) {
 		console.error(err);
