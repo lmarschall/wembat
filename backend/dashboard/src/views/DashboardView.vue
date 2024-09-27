@@ -63,7 +63,6 @@ defineProps({
     <div class="flex-grow-1">
       <div>
         Token {{ token }}
-        Current Tab {{ currentTab }}
       </div>
       <div class="tab-content" id="pills-tabContent">
         <div class="tab-pane fade show active" id="pills-applications" role="tabpanel" aria-labelledby="pills-application-tab" tabindex="0">
