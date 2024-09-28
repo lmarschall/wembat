@@ -13,7 +13,7 @@ export async function applicationToken(req: Request, res: Response) {
 
         // const appUId = res.locals.payload.appUId;
         if (!req.body.applicationInfo) throw Error("Application Info not present");
-		const { appUId } = req.body.userInfo as ApplicationInfo;
+		const { appUId } = req.body.applicationInfo as ApplicationInfo;
         const app = await prisma.application.findUnique({
             where: {
                 uid: appUId

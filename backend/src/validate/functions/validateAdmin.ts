@@ -7,7 +7,7 @@ export async function validateAdminToken(
 	res: Response,
 	next: any
 ) {
-	console.log("validate webauthn token");
+	console.log("validate admin token");
 
 	try {
 		if (req.headers.authorization == null) return res.status(401).send();
@@ -17,9 +17,10 @@ export async function validateAdminToken(
 		if (authorization[0] !== "Bearer") return res.status(401).send();
 
 		const jwt = authorization[1];
+		
 		// check if jwt token was issued by us
-		if ((await checkForWebAuthnToken(jwt)) === false)
-			return res.status(401).send();
+		// if ((await checkForWebAuthnToken(jwt)) === false)
+		// 	return res.status(401).send();
 
 		// extract public key from jwk parameters
 		const header = decodeProtectedHeader(jwt);

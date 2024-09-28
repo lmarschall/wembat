@@ -4,6 +4,7 @@ import { Request, Response } from "express";
 const prisma = new PrismaClient();
 
 type ApplicationInfo = {
+	appName: string;
     appDomain: string;
 };
 
@@ -11,11 +12,12 @@ export async function applicationCreate(req: Request, res: Response) {
     try {
 
         if (!req.body.applicationInfo) throw Error("Application Info not present");
-		const { appDomain } = req.body.userInfo as ApplicationInfo;
+		const { appName, appDomain } = req.body.userInfo as ApplicationInfo;
         
         const app = await prisma.application
 			.create({
 				data: {
+					name: appName,
 					domain: appDomain,
 				}
 			})

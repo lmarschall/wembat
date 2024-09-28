@@ -9,6 +9,8 @@ export const applicationKeys = new Array<string>();
 const registeredDomains =
 	process.env.APP_DOMAINS || "localhost:3000, localhost:3001, localhost:3002";
 
+const dashboardUrl = process.env.DASHBOARD_URL || "http://localhost:9090";
+
 export async function initApplications(): Promise<boolean> {
 	try {
 		const domains = registeredDomains
@@ -38,6 +40,7 @@ export async function initApplications(): Promise<boolean> {
 			applicationTokens.set(appUrl, token);
 			applicationKeys.push(appUrl);
 		}
+		applicationKeys.push(dashboardUrl);
 		return true;
 	} catch (err) {
 		console.error(err);

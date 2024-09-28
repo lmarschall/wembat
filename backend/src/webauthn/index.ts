@@ -8,48 +8,48 @@ import { updateCredentials } from "./functions/updateCredentials";
 import { requestOnboard } from "./functions/requestOnboard";
 import { onboard } from "./functions/onboard";
 import { refresh } from "./functions/refresh";
-import { validateAppToken, validateJWTToken } from "../validate";
+import { validateAppFunctions, validateWebAuthnFunctions } from "../validate";
 
 export const webauthnRoutes = Router();
 
 webauthnRoutes.post(
 	"/request-register",
-	validateAppToken,
+	validateAppFunctions,
 	async (req: Request, res: Response) => requestRegister(req, res)
 );
 webauthnRoutes.post(
 	"/register",
-	validateAppToken,
+	validateAppFunctions,
 	async (req: Request, res: Response) => register(req, res)
 );
 webauthnRoutes.post(
 	"/request-login",
-	validateAppToken,
+	validateAppFunctions,
 	async (req: Request, res: Response) => requestLogin(req, res)
 );
 webauthnRoutes.post(
 	"/login",
-	validateAppToken,
+	validateAppFunctions,
 	async (req: Request, res: Response) => login(req, res)
 );
 webauthnRoutes.post(
 	"/update-credentials",
-	validateJWTToken,
+	validateWebAuthnFunctions,
 	async (req: Request, res: Response) => updateCredentials(req, res)
 );
 webauthnRoutes.post(
 	"/request-onboard",
-	validateJWTToken,
+	validateWebAuthnFunctions,
 	async (req: Request, res: Response) => requestOnboard(req, res)
 );
 webauthnRoutes.post(
 	"/onboard",
-	validateJWTToken,
+	validateWebAuthnFunctions,
 	async (req: Request, res: Response) => onboard(req, res)
 );
 webauthnRoutes.post(
 	"/refresh-token",
-	validateAppToken,
+	validateAppFunctions,
 	async (req: Request, res: Response) => refresh(req, res)
 )
 
