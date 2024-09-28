@@ -1,16 +1,15 @@
 <script setup lang="ts">
 
 import axios from 'axios';
+import DataTable from 'datatables.net-dt';
 
 import { onMounted, defineProps, ref } from 'vue';
 
-import DataTable from 'datatables.net-dt';
-
-async function fetchApplications(token: string): Promise<boolean> {
+async function fetchApplications(): Promise<boolean> {
   try {
     let appList = await axios.get("http://localhost:8080/admin/application/list", {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${props.token}`,
       },
     });
     apps.value = appList.data;
@@ -59,7 +58,7 @@ onMounted(async () => {
   console.log('mounted');
 
   if (props.token !== undefined) {
-    await fetchApplications(props.token);
+    await fetchApplications();
   }
 
   let table = new DataTable('#myTable', {
@@ -72,14 +71,7 @@ onMounted(async () => {
 })
 
 const props = defineProps<{
-  msg: string,
   token: string | undefined,
-  applicationModel: {
-    name: string,
-    description: string,
-    status: string,
-    date: string,
-  },
 }>()
 </script>
 

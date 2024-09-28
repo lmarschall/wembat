@@ -63,7 +63,7 @@ defineProps({
     <div class="flex-grow-1">
       <div class="tab-content" id="pills-tabContent">
         <div class="tab-pane fade show active" id="pills-applications" role="tabpanel" aria-labelledby="pills-application-tab" tabindex="0">
-          <ApplicationsItem :applicationModel="applicationModel" :msg="msg" :token="token" />
+          <ApplicationsItem :token="token" />
         </div>
         <div class="tab-pane fade" id="pills-users" role="tabpanel" aria-labelledby="pills-users-tab" tabindex="1">
           <UsersItem :userModel="userModel" :msg="msg" />
