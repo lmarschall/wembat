@@ -1,28 +1,29 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 
 import ApplicationsItem from '../components/ApplicationsItem.vue'
 import UsersItem from '../components/UsersItem.vue'
 
-const applicationModel = ref({
-  name: 'Application Name',
-  description: 'Application Description',
-  status: 'Application Status',
-  date: 'Application Date',
-})
+import { useTokenStore } from '@/stores/token';
 
-const userModel = ref({
-  name: 'User Name',
-  description: 'User Description',
-  status: 'User Status',
-  date: 'User Date',
-})
+const tokenStore = useTokenStore();
 
-const msg = ref('Hello World')
-
-defineProps({
+const props = defineProps({
   token: String
 })
+
+function saveToken() {
+  if (props.token !== undefined)
+  {
+    tokenStore.token = props.token;
+  }
+}
+
+saveToken();
+
+onMounted(async () => {
+  console.log("dashboard view mounted");
+});
 </script>
 
 <template>
@@ -38,24 +39,24 @@ defineProps({
           <ul class="nav nav-pills d-flex flex-column h-100">
             <li class="nav-item" role="presentation">
               <button class="nav-link active" id="pills-application-tab" data-bs-toggle="pill" data-bs-target="#pills-applications" type="button" role="tab" aria-controls="pills-applications" aria-selected="true">
-                <i class="bi bi-0-circle"></i>
+                <i class="bi bi-laptop-fill"></i>
                 Applications
               </button>
             </li>
             <li class="nav-item" role="presentation">
               <button class="nav-link" id="pills-users-tab" data-bs-toggle="pill" data-bs-target="#pills-users" type="button" role="tab" aria-controls="pills-users" aria-selected="true">
-                <i class="bi bi-1-circle"></i>
+                <i class="bi bi-people-fill"></i>
                 Users
               </button>
             </li>
             <li class="flex-grow-1">
             </li>
-            <li class="nav-item">
+            <!-- <li class="nav-item">
               <a class="nav-link" href="#">Link</a>
             </li>
             <li class="nav-item">
               <a class="nav-link disabled" aria-disabled="true">Disabled</a>
-            </li>
+            </li> -->
           </ul>
         </div>
       </nav>
@@ -63,11 +64,11 @@ defineProps({
     <div class="flex-grow-1">
       <div class="tab-content" id="pills-tabContent">
         <div class="tab-pane fade show active" id="pills-applications" role="tabpanel" aria-labelledby="pills-application-tab" tabindex="0">
-          <ApplicationsItem :token="token" />
+          <ApplicationsItem />
         </div>
-        <div class="tab-pane fade" id="pills-users" role="tabpanel" aria-labelledby="pills-users-tab" tabindex="1">
+        <!-- <div class="tab-pane fade" id="pills-users" role="tabpanel" aria-labelledby="pills-users-tab" tabindex="1">
           <UsersItem :userModel="userModel" :msg="msg" />
-        </div>
+        </div> -->
       </div>
     </div>
   </div>
