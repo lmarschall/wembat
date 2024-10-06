@@ -4,22 +4,21 @@ import { ApplicationInfo } from "..";
 
 const prisma = new PrismaClient();
 
-export async function applicationCreate(req: Request, res: Response) {
+export async function applicationDelete(req: Request, res: Response) {
     try {
 
         if (!req.body.applicationInfo) throw Error("Application Info not present");
 		const { appUId, appName, appDomain } = req.body.applicationInfo as ApplicationInfo;
         
         const app = await prisma.application
-			.create({
-				data: {
-					name: appName,
-					domain: appDomain,
+			.delete({
+				where: {
+					uid: appUId,
 				}
 			})
 			.catch((err) => {
 				console.log(err);
-				throw Error("Error while creating application");
+				throw Error("Error while deleting application");
 			}) as Application;
 
         res.json(app);

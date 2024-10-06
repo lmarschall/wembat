@@ -4,8 +4,16 @@ import { applicationCreate } from "./functions/applicationCreate";
 import { applicationToken } from "./functions/applicationToken";
 import { validateAdminFunctions } from "../validate";
 import { createAdminJWT } from "../crypto";
+import { applicationUpdate } from "./functions/applicationUpdate";
+import { applicationDelete } from "./functions/applicationDelete";
 
 export const adminRoutes = Router();
+
+export type ApplicationInfo = {
+	appUId: string;
+	appName: string;
+    appDomain: string;
+};
 
 const dashboardUrl = process.env.DASHBOARD_URL || "http://localhost:9090";
 
@@ -25,6 +33,18 @@ adminRoutes.post(
 	"/application/create",
 	validateAdminFunctions,
 	async (req, res) => applicationCreate(req, res)
+);
+
+adminRoutes.post(
+	"/application/update",
+	validateAdminFunctions,
+	async (req, res) => applicationUpdate(req, res)
+);
+
+adminRoutes.post(
+	"/application/delete",
+	validateAdminFunctions,
+	async (req, res) => applicationDelete(req, res)
 );
 
 export async function initAdmin(): Promise<boolean> {

@@ -11,7 +11,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            <button type="button" class="btn btn-primary">Delete Application</button>
+            <button type="button" class="btn btn-primary" @click="deleteApp()" :disabled="buttonDisabled">Delete Application</button>
           </div>
         </div>
       </div>
@@ -23,29 +23,55 @@
   
   <script setup lang="ts">
     import { onMounted, ref } from "vue";
+    import { useTokenStore } from "@/stores/token";
+    import { useApplicationStore } from "@/stores/application";
     
     import axios from "axios";
 
-    const buttonEnabled = ref(false);
+    const buttonDisabled = ref(false);
     const status = ref(0);
+    const tokenStore = useTokenStore();
+    const applicationStore = useApplicationStore();
     
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-    
-    const props = defineProps({
-      // products: { type: Array as () => Product[], required: true },
-    });
     
     onMounted(() => {
       // show modal
       const modalElement = document.getElementById("createApplicationForm") as HTMLElement;
     });
+
+    async function deleteApp() {
+      buttonDisabled.value = true;
+      const app = applicationStore.selectedApplication.value;
+
+      const postData = {
+        applicationInfo: {
+          appUId: app.uid,
+          appName: app.name,
+          appDomain: app.domain,
+        },
+      };
+
+      await sleep(1000);
+
+      if (await post(postData)) {
+        console.log("Application deleted");
+      } else {
+        console.log("Application not deleted");
+      }
+      buttonDisabled.value = false;
+    }
     
     async function post(data: any): Promise<boolean> {
       try {
-        await axios.post("https://api.brennholz-marschall.de/mail/send", data);
+        await axios.post("http://localhost:8080/admin/application/delete", data, {
+          headers: {
+              Authorization: `Bearer ${tokenStore.token}`,
+          },
+        });
         return true;
       } catch (error) {
-        // console.log(error);
+        console.log(error);
         return false;
       }
     }

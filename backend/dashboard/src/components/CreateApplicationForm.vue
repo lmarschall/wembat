@@ -42,7 +42,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary">Create Application</button>
+                    <button type="button" class="btn btn-primary" @click="createApp()" :disabled="buttonDisabled">Create Application</button>
                 </div>
             </div>
         </div>
@@ -54,24 +54,20 @@
   
 <script setup lang="ts">
     import { onMounted, ref } from "vue";
+    import { useTokenStore } from "@/stores/token";
 
     import axios from "axios";
 
-    const buttonEnabled = ref(false);
+    const tokenStore = useTokenStore();
     const status = ref(0);
+    const buttonDisabled = ref(false);
 
     const inputName = ref<HTMLInputElement | null>(null);
     const inputDomain = ref<HTMLInputElement | null>(null);
 
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-    const props = defineProps({
-    // products: { type: Array as () => Product[], required: true },
-    });
-
     onMounted(() => {
-        // show modal
-        const modalElement = document.getElementById("createApplicationForm") as HTMLElement;
     });
 
     function testInputName(): boolean {
@@ -100,63 +96,53 @@
         }
     }
 
-    async function create() {
+    async function createApp() {
 
-    let validCount = 0;
+        buttonDisabled.value = true;
+        let validCount = 0;
 
-    // check if inputs are valid
-    if (testInputName()) {
-        validCount++;
-    }
-
-    if (testInputDomain()) {
-        validCount++;
-    }
-
-    // only do sth if everything is valid
-    if (validCount == 2) {
-        status.value = 1;
-
-        // const orderItems = [] as OrderItem[];
-
-    //   orderList.value.forEach((element) => {
-    //     const orderItem = {
-    //       name: element.product.unit + " " + element.product.name,
-    //       amount: element.amount,
-    //     } as OrderItem;
-
-    //     if (element.amount > 0) {
-    //       orderItems.push(orderItem);
-    //     }
-    //   });
-
-        const postData = {
-        // token: cfToken.value,
-        mailParams: {
-            name: inputName.value?.value,
-        //   address: inputAddress.value?.value,
-        //   city: inputCity.value?.value,
-        //   phone: inputPhone.value?.value,
-            // orders: orderItems,
-        },
-        };
-
-        await sleep(2000);
-
-        if (await post(postData)) {
-        status.value = 2;
-        } else {
-        status.value = 3;
+        // check if inputs are valid
+        if (testInputName()) {
+            validCount++;
         }
-    }
+
+        if (testInputDomain()) {
+            validCount++;
+        }
+
+        // only do sth if everything is valid
+        if (validCount == 2) {
+            status.value = 1;
+
+            const postData = {
+                applicationInfo: {
+                    appUId: "",
+                    appName: inputName.value?.value,
+                    appDomain: inputDomain.value?.value,
+                },
+            };
+
+            await sleep(1000);
+
+            if (await post(postData)) {
+                status.value = 2;
+            } else {
+                status.value = 3;
+            }
+        }
+        buttonDisabled.value = false;
     }
 
     async function post(data: any): Promise<boolean> {
         try {
-            await axios.post("https://api.brennholz-marschall.de/mail/send", data);
+            await axios.post("http://localhost:8080/admin/application/create", data, {
+            headers: {
+                Authorization: `Bearer ${tokenStore.token}`,
+            },
+            });
             return true;
         } catch (error) {
-            // console.log(error);
+            console.log(error);
             return false;
         }
     }

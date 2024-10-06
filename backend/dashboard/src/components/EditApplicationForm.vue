@@ -7,11 +7,42 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            ...
+            <div class="row">
+                        <div class="col">
+                            <div class="form-floating mb-3">
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="floatingInputName"
+                                    ref="inputName"
+                                    placeholder="Name"
+                                    v-on:change="testInputName"
+                                />
+                                <label for="floatingInputName" class="form-label">Name</label>
+                                <div class="invalid-feedback">
+                                    Please enter a valid name!
+                                </div>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="floatingInputDomain"
+                                    ref="inputDomain"
+                                    placeholder="Adresse"
+                                    v-on:change="testInputDomain"
+                                />
+                                <label for="floatingInputAddress">Domain</label>
+                                <div class="invalid-feedback">
+                                    Please enter a valid domain!
+                                </div>
+                            </div>
+                        </div>
+                    </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            <button type="button" class="btn btn-primary">Edit Application</button>
+            <button type="button" class="btn btn-primary" @click="updateApp()" :disabled="buttonDisabled">Update Application</button>
           </div>
         </div>
       </div>
@@ -23,11 +54,15 @@
   
   <script setup lang="ts">
   import { onMounted, ref } from "vue";
+  import { useTokenStore } from "@/stores/token";
+  import { useApplicationStore } from "@/stores/application";
   
   import axios from "axios";
 
-  const buttonEnabled = ref(false);
+  const buttonDisabled = ref(false);
   const status = ref(0);
+  const tokenStore = useTokenStore();
+  const applicationStore = useApplicationStore();
 
 
   const inputName = ref<HTMLInputElement | null>(null);
@@ -40,77 +75,95 @@
   });
   
   onMounted(() => {
-    // show modal
-    const modalElement = document.getElementById("createApplicationForm") as HTMLElement;
+    const modalElement = document.getElementById("editApplicationForm") as HTMLElement;
+
+      // modalElement.addEventListener("hidden.bs.modal", (event) => {
+      //   router.go(0);
+      // });
+
+      modalElement.addEventListener("shown.bs.modal", async (event) => {
+        console.log(applicationStore.selectedApplication.value);
+        if (inputName.value !== null && inputDomain.value !== null) {
+          inputName.value.value = applicationStore.selectedApplication.value.name;
+          inputDomain.value.value = applicationStore.selectedApplication.value.domain;
+        }
+      });
   });
   
   function testInputName(): boolean {
-    const regName = RegExp("^([a-zA-ZÄÜÖäüöß \-]{5,})$");
-    inputName.value?.classList.remove("is-invalid", "is-valid");
-  
-    if (inputName !== null && inputName.value !== null && regName.test(inputName.value.value)) {
-      inputName.value.classList.add("is-valid");
-      return true;
-    } else {
-      inputName.value?.classList.add("is-invalid");
-      return false;
+        const regName = RegExp("^([a-zA-ZÄÜÖäüöß \-]{5,})$");
+        inputName.value?.classList.remove("is-invalid", "is-valid");
+
+        if (inputName !== null && inputName.value !== null && regName.test(inputName.value.value)) {
+            inputName.value.classList.add("is-valid");
+            return true;
+        } else {
+            inputName.value?.classList.add("is-invalid");
+            return false;
+        }
     }
-  }
-  
-  async function create() {
-  
-    let validCount = 0;
-  
-    // check if inputs are valid
-    if (testInputName()) {
-      validCount++;
+
+    function testInputDomain(): boolean {
+        const regName = RegExp("^([a-zA-ZÄÜÖäüöß \-]{5,})$");
+        inputDomain.value?.classList.remove("is-invalid", "is-valid");
+
+        if (inputDomain !== null && inputDomain.value !== null && regName.test(inputDomain.value.value)) {
+            inputDomain.value.classList.add("is-valid");
+            return true;
+        } else {
+            inputDomain.value?.classList.add("is-invalid");
+            return false;
+        }
     }
-  
-    // only do sth if everything is valid
-    if (validCount == 1) {
-      status.value = 1;
-  
-      // const orderItems = [] as OrderItem[];
-  
-    //   orderList.value.forEach((element) => {
-    //     const orderItem = {
-    //       name: element.product.unit + " " + element.product.name,
-    //       amount: element.amount,
-    //     } as OrderItem;
-  
-    //     if (element.amount > 0) {
-    //       orderItems.push(orderItem);
-    //     }
-    //   });
-  
-      const postData = {
-        // token: cfToken.value,
-        mailParams: {
-          name: inputName.value?.value,
-        //   address: inputAddress.value?.value,
-        //   city: inputCity.value?.value,
-        //   phone: inputPhone.value?.value,
-          // orders: orderItems,
-        },
-      };
-  
-      await sleep(2000);
-  
-      if (await post(postData)) {
-        status.value = 2;
-      } else {
-        status.value = 3;
-      }
+
+    async function updateApp() {
+
+        buttonDisabled.value = true;
+        let validCount = 0;
+
+        // check if inputs are valid
+        if (testInputName()) {
+            validCount++;
+        }
+
+        if (testInputDomain()) {
+            validCount++;
+        }
+
+        // only do sth if everything is valid
+        if (validCount == 2) {
+            status.value = 1;
+
+            const postData = {
+                applicationInfo: {
+                    appUId: applicationStore.selectedApplication.value.uid,
+                    appName: inputName.value?.value,
+                    appDomain: inputDomain.value?.value,
+                },
+            };
+
+            await sleep(1000);
+
+            if (await post(postData)) {
+                status.value = 2;
+            } else {
+                status.value = 3;
+            }
+        }
+        buttonDisabled.value = false;
     }
-  }
-  
-  async function post(data: any): Promise<boolean> {
-    try {
-      await axios.post("https://api.brennholz-marschall.de/mail/send", data);
-      return true;
-    } catch (error) {
-      // console.log(error);
-      return false;
+
+    async function post(data: any): Promise<boolean> {
+        try {
+            await axios.post("http://localhost:8080/admin/application/update", data, {
+            headers: {
+                Authorization: `Bearer ${tokenStore.token}`,
+            },
+            });
+            return true;
+        } catch (error) {
+            console.log(error);
+            return false;
+        }
     }
-  }
   </script>

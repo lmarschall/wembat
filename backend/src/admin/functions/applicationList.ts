@@ -6,12 +6,6 @@ const prisma = new PrismaClient();
 export async function applicationList(req: Request, res: Response) {
     try {
 
-        // const appUId = res.locals.payload.appUId;
-        // const apps = await prisma.application.findMany({
-        //     where: {
-        //         appUId: appUId
-        //     }
-        // });
         const apps = await prisma.application.findMany();
 
         res.json(apps);

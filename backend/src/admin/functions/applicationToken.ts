@@ -1,17 +1,13 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { createApplicationJWT } from "../../crypto";
+import { ApplicationInfo } from "..";
 
 const prisma = new PrismaClient();
-
-interface ApplicationInfo {
-    appUId: string;
-}
 
 export async function applicationToken(req: Request, res: Response) {
     try {
 
-        // const appUId = res.locals.payload.appUId;
         if (!req.body.applicationInfo) throw Error("Application Info not present");
 		const { appUId } = req.body.applicationInfo as ApplicationInfo;
         const app = await prisma.application.findUnique({
