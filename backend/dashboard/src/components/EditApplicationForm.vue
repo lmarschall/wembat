@@ -47,51 +47,43 @@
         </div>
       </div>
     </div>
-  </template>
+</template>
   
-  <style scoped>
-  </style>
+<style scoped>
+</style>
   
-  <script setup lang="ts">
-  import { onMounted, ref } from "vue";
-  import { useTokenStore } from "@/stores/token";
-  import { useApplicationStore } from "@/stores/application";
-  
-  import axios from "axios";
+<script setup lang="ts">
+    import { onMounted, ref } from "vue";
+    import { useApplicationStore } from "@/stores/application";
+    import { WembatRequestService } from "@/services/wembat";
 
-  const buttonDisabled = ref(false);
-  const status = ref(0);
-  const tokenStore = useTokenStore();
-  const applicationStore = useApplicationStore();
+    const buttonDisabled = ref(false);
+    const status = ref(0);
+    const applicationStore = useApplicationStore();
+    const wembatRequestService = new WembatRequestService();
 
+    const inputName = ref<HTMLInputElement | null>(null);
+    const inputDomain = ref<HTMLInputElement | null>(null);
 
-  const inputName = ref<HTMLInputElement | null>(null);
-  const inputDomain = ref<HTMLInputElement | null>(null);
-  
-  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-  
-  const props = defineProps({
-    // products: { type: Array as () => Product[], required: true },
-  });
-  
-  onMounted(() => {
-    const modalElement = document.getElementById("editApplicationForm") as HTMLElement;
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-      // modalElement.addEventListener("hidden.bs.modal", (event) => {
-      //   router.go(0);
-      // });
+    onMounted(() => {
+        const modalElement = document.getElementById("editApplicationForm") as HTMLElement;
 
-      modalElement.addEventListener("shown.bs.modal", async (event) => {
-        console.log(applicationStore.selectedApplication.value);
-        if (inputName.value !== null && inputDomain.value !== null) {
-          inputName.value.value = applicationStore.selectedApplication.value.name;
-          inputDomain.value.value = applicationStore.selectedApplication.value.domain;
-        }
-      });
-  });
-  
-  function testInputName(): boolean {
-        const regName = RegExp("^([a-zA-ZÄÜÖäüöß \-]{5,})$");
+        // modalElement.addEventListener("hidden.bs.modal", (event) => {
+        //   router.go(0);
+        // });
+
+        modalElement.addEventListener("shown.bs.modal", async (event) => {
+            if (inputName.value !== null && inputDomain.value !== null) {
+                inputName.value.value = applicationStore.selectedApplication.name as string;
+                inputDomain.value.value = applicationStore.selectedApplication.domain as string;
+            }
+        });
+    });
+
+    function testInputName(): boolean {
+        const regName = RegExp("^([a-zA-Z]{5,})$");
         inputName.value?.classList.remove("is-invalid", "is-valid");
 
         if (inputName !== null && inputName.value !== null && regName.test(inputName.value.value)) {
@@ -104,7 +96,7 @@
     }
 
     function testInputDomain(): boolean {
-        const regName = RegExp("^([a-zA-ZÄÜÖäüöß \-]{5,})$");
+        const regName = RegExp("^([a-zA-Z0-9\.\:]{5,})$");
         inputDomain.value?.classList.remove("is-invalid", "is-valid");
 
         if (inputDomain !== null && inputDomain.value !== null && regName.test(inputDomain.value.value)) {
@@ -136,7 +128,7 @@
 
             const postData = {
                 applicationInfo: {
-                    appUId: applicationStore.selectedApplication.value.uid,
+                    appUId: applicationStore.selectedApplication.uid,
                     appName: inputName.value?.value,
                     appDomain: inputDomain.value?.value,
                 },
@@ -144,7 +136,7 @@
 
             await sleep(1000);
 
-            if (await post(postData)) {
+            if (await wembatRequestService.applicationUpdate(postData)) {
                 status.value = 2;
             } else {
                 status.value = 3;
@@ -152,18 +144,4 @@
         }
         buttonDisabled.value = false;
     }
-
-    async function post(data: any): Promise<boolean> {
-        try {
-            await axios.post("http://localhost:8080/admin/application/update", data, {
-            headers: {
-                Authorization: `Bearer ${tokenStore.token}`,
-            },
-            });
-            return true;
-        } catch (error) {
-            console.log(error);
-            return false;
-        }
-    }
-  </script>
+</script>

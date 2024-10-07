@@ -23,26 +23,22 @@
   
   <script setup lang="ts">
     import { onMounted, ref } from "vue";
-    import { useTokenStore } from "@/stores/token";
     import { useApplicationStore } from "@/stores/application";
-    
-    import axios from "axios";
+    import { WembatRequestService } from "@/services/wembat";
 
     const buttonDisabled = ref(false);
     const status = ref(0);
-    const tokenStore = useTokenStore();
     const applicationStore = useApplicationStore();
+    const wembatRequestService = new WembatRequestService();
     
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
     
     onMounted(() => {
-      // show modal
-      const modalElement = document.getElementById("createApplicationForm") as HTMLElement;
     });
 
     async function deleteApp() {
       buttonDisabled.value = true;
-      const app = applicationStore.selectedApplication.value;
+      const app = applicationStore.selectedApplication;
 
       const postData = {
         applicationInfo: {
@@ -54,25 +50,12 @@
 
       await sleep(1000);
 
-      if (await post(postData)) {
+      if (await wembatRequestService.applicationDelete(postData)) {
         console.log("Application deleted");
       } else {
         console.log("Application not deleted");
       }
       buttonDisabled.value = false;
     }
-    
-    async function post(data: any): Promise<boolean> {
-      try {
-        await axios.post("http://localhost:8080/admin/application/delete", data, {
-          headers: {
-              Authorization: `Bearer ${tokenStore.token}`,
-          },
-        });
-        return true;
-      } catch (error) {
-        console.log(error);
-        return false;
-      }
-    }
+
   </script>

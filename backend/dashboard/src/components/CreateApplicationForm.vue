@@ -53,14 +53,12 @@
 </style>
   
 <script setup lang="ts">
+    import { WembatRequestService } from "@/services/wembat";
     import { onMounted, ref } from "vue";
-    import { useTokenStore } from "@/stores/token";
 
-    import axios from "axios";
-
-    const tokenStore = useTokenStore();
     const status = ref(0);
     const buttonDisabled = ref(false);
+    const wembatRequestService = new WembatRequestService();
 
     const inputName = ref<HTMLInputElement | null>(null);
     const inputDomain = ref<HTMLInputElement | null>(null);
@@ -71,7 +69,7 @@
     });
 
     function testInputName(): boolean {
-        const regName = RegExp("^([a-zA-ZÄÜÖäüöß \-]{5,})$");
+        const regName = RegExp("^([a-zA-Z]{5,})$");
         inputName.value?.classList.remove("is-invalid", "is-valid");
 
         if (inputName !== null && inputName.value !== null && regName.test(inputName.value.value)) {
@@ -84,7 +82,7 @@
     }
 
     function testInputDomain(): boolean {
-        const regName = RegExp("^([a-zA-ZÄÜÖäüöß \-]{5,})$");
+        const regName = RegExp("^([a-zA-Z0-9\.\:]{5,})$");
         inputDomain.value?.classList.remove("is-invalid", "is-valid");
 
         if (inputDomain !== null && inputDomain.value !== null && regName.test(inputDomain.value.value)) {
@@ -124,26 +122,12 @@
 
             await sleep(1000);
 
-            if (await post(postData)) {
+            if (await wembatRequestService.applicationCreate(postData)) {
                 status.value = 2;
             } else {
                 status.value = 3;
             }
         }
         buttonDisabled.value = false;
-    }
-
-    async function post(data: any): Promise<boolean> {
-        try {
-            await axios.post("http://localhost:8080/admin/application/create", data, {
-            headers: {
-                Authorization: `Bearer ${tokenStore.token}`,
-            },
-            });
-            return true;
-        } catch (error) {
-            console.log(error);
-            return false;
-        }
     }
 </script>

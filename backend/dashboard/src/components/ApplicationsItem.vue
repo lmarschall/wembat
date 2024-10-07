@@ -1,37 +1,122 @@
 <script setup lang="ts">
 
-import axios from 'axios';
-import DataTable from 'datatables.net-dt';
+import DataTable, { type Api } from 'datatables.net-dt';
 import CreateApplicationForm from './CreateApplicationForm.vue';
-
-import { onMounted, defineProps, ref } from 'vue';
-
-import { Modal } from "bootstrap";
 import TokenApplicationForm from './TokenApplicationForm.vue';
 import EditApplicationForm from './EditApplicationForm.vue';
 import DeleteApplicationForm from './DeleteApplicationForm.vue';
-import { useApplicationStore } from '@/stores/application';
-import { useTokenStore } from '@/stores/token';
 
-async function fetchApplications(): Promise<boolean> {
-  try {
-    let appList = await axios.get("http://localhost:8080/admin/application/list", {
-      headers: {
-        Authorization: `Bearer ${tokenStore.token}`,
-      },
-    });
-    apps.value = appList.data;
-    return true;
-  } catch (error) {
-    console.log(error);
-    return false;
-  }
+import { Modal } from "bootstrap";
+import { onMounted, ref } from 'vue';
+import { WembatRequestService, type Application } from '@/services/wembat';
+import { useApplicationStore } from '@/stores/application';
+
+const apps = ref([] as Application[]);
+const applicationStore = useApplicationStore();
+const wembatRequestService = new WembatRequestService();
+let dataTable: Api<any>;
+
+const columns = [
+  { data: 'name' },
+  { data: 'domain' },
+  { data: 'sessions' },
+  { data: 'extn' },
+  { data: 'start_date' },
+  { data: 'salary' },
+];
+
+apps.value.push({
+  name: 'test',
+  domain: 'test',
+  uid: 'test',
+  publicKey: '',
+  privateKey: '',
+});
+
+apps.value.push({
+  name: 'test',
+  domain: 'test',
+  uid: 'test',
+  publicKey: '',
+  privateKey: '',
+});
+
+apps.value.push({
+  name: 'test',
+  domain: 'test',
+  uid: 'test',
+  publicKey: '',
+  privateKey: '',
+});
+
+onMounted(async () => {
+
+  dataTable = new DataTable('#myTable', {
+    // responsive: true,
+    info: false,
+    ordering: true,
+    paging: false,
+    searching: false,
+  });
+
+  const editApplicationForm = document.getElementById("editApplicationForm") as HTMLElement;
+  const createApplicationForm = document.getElementById("createApplicationForm") as HTMLElement;
+  const deleteApplicationForm = document.getElementById("deleteApplicationForm") as HTMLElement;
+
+  editApplicationForm.addEventListener("hidden.bs.modal", async (event) => {
+    await fetchApplications();
+  });
+
+  createApplicationForm.addEventListener("hidden.bs.modal", async (event) => {
+    await fetchApplications();
+  });
+
+  deleteApplicationForm.addEventListener("hidden.bs.modal", async (event) => {
+    await fetchApplications();
+  });
+
+  // await fetchApplications();
+
+
+  console.log(dataTable.columns());
+  dataTable.push({
+    name: 'test',
+    domain: 'test',
+    uid: 'test',
+  });
+  // apps.value.push({
+  //   name: 'test',
+  //   domain: 'test',
+  //   uid: 'test',
+  //   publicKey: '',
+  //   privateKey: '',
+  // });
+  // dataTable = new DataTable('#myTable', {
+  //   // responsive: true,
+  //   info: false,
+  //   ordering: true,
+  //   paging: false,
+  //   searching: false,
+  // });
+})
+
+async function fetchApplications(): Promise<void> {
+  let fetchedApps = await wembatRequestService.applicationList();
+  apps.value = fetchedApps;
+  dataTable.destroy();
+  dataTable = new DataTable('#myTable', {
+    // responsive: true,
+    info: false,
+    ordering: true,
+    paging: false,
+    searching: false,
+  });
 }
 
-async function showApplicationForm(elementId: string, app: any): Promise<void> {
+async function showApplicationForm(elementId: string, app?: Application): Promise<void> {
   const applicationFormElement = document.getElementById(elementId) as HTMLElement;
   console.log(app);
-  applicationStore.selectedApplication.value = app;
+  if (app !== undefined) applicationStore.selectedApplication = app;
 
   if (applicationFormElement) {
     const applicationForm = new Modal(
@@ -43,32 +128,6 @@ async function showApplicationForm(elementId: string, app: any): Promise<void> {
     if (applicationForm) applicationForm.show();
   }
 }
-
-const apps = ref([] as any[]);
-const tokenStore = useTokenStore();
-const applicationStore = useApplicationStore();
-
-apps.value.push({
-    name: 'test',
-    domain: 'test',
-    uid: 'test',
-  });
-
-onMounted(async () => {
-
-  if (tokenStore.token !== undefined) {
-    console.log(tokenStore.token);
-    await fetchApplications();
-  }
-
-  let table = new DataTable('#myTable', {
-    // responsive: true,
-    info: false,
-    ordering: true,
-    paging: false,
-    searching: false,
-  });
-})
 </script>
 
 <template>
@@ -80,7 +139,7 @@ onMounted(async () => {
     </div>
 
     <div class="row">
-      <button type="button" class="btn btn-primary" @click="showApplicationForm('createApplicationForm', null)">
+      <button type="button" class="btn btn-primary" @click="showApplicationForm('createApplicationForm')">
         Add application
       </button>
     </div>
@@ -91,7 +150,12 @@ onMounted(async () => {
     <DeleteApplicationForm />
 
     <div class="row">
-      <table id="myTable" class="table table-hover">
+      <DataTable
+        :columns="columns"
+        ajax="/data.json"
+        class="table table-hover table-striped"
+        width="100%"
+      >
       <thead class="table-dark">
         <tr>
           <th scope="col">#</th>
@@ -118,8 +182,7 @@ onMounted(async () => {
           </td>
         </tr>
       </tbody>
-    </table>
-
+    </DataTable>
     </div>
   </div>
 </template>

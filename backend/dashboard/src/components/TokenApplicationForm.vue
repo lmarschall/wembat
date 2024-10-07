@@ -27,12 +27,13 @@
     import { onMounted, ref } from "vue";
     import { useTokenStore } from "@/stores/token";
     import { useApplicationStore } from "@/stores/application";
-    
-    import axios from "axios";
+    import { WembatRequestService } from "@/services/wembat";
+    import type { ApplicationPostData } from "@/services/wembat";
 
     const applicationToken = ref('');
     const tokenStore = useTokenStore();
     const applicationStore = useApplicationStore();
+    const wembatRequestService = new WembatRequestService();
     
     onMounted(async () => {
 
@@ -43,8 +44,8 @@
       // });
 
       modalElement.addEventListener("shown.bs.modal", async (event) => {
-        if (tokenStore.token !== undefined && applicationStore.selectedApplication.value !== undefined) {
-          await fetchApplicationToken(applicationStore.selectedApplication.value.uid);
+        if (tokenStore.token !== undefined && applicationStore.selectedApplication !== undefined) {
+          await fetchApplicationToken(applicationStore.selectedApplication.uid as string);
         }
       });
           
@@ -52,18 +53,17 @@
 
     async function fetchApplicationToken(appId: string): Promise<boolean> {
       try {
-        const data = {
+        const data: ApplicationPostData = {
           applicationInfo: {
             appUId: appId,
+            appDomain: "",
+            appName: "",
           }
         };
-        let token = await axios.post(`http://localhost:8080/admin/application/token`, data, {
-          headers: {
-            Authorization: `Bearer ${tokenStore.token}`,
-          },
-        });
-        console.log(token.data);
-        applicationToken.value = token.data;
+
+        let token = await wembatRequestService.applicationToken(data);
+        console.log(token);
+        applicationToken.value = token;
         return true;
       } catch (error) {
         console.log(error);
