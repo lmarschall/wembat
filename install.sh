@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # download env template and docker compose
-curl -o .env.template https://raw.githubusercontent.com/lmarschall/wembat/main/backend/.env.template
-curl -o docker-compose.yml https://raw.githubusercontent.com/lmarschall/wembat/main/backend/docker-compose.yml
+curl -o .env.template https://raw.githubusercontent.com/lmarschall/wembat/main/.env.template
+curl -o docker-compose.yml https://raw.githubusercontent.com/lmarschall/wembat/main/docker-compose.yml
 
 # create keys for api server
 mkdir ./keys

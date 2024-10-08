@@ -3,6 +3,8 @@
 - logout workflow
 - application cors dynamically
 - validation issuer with env variable
+- make install process easy
+- update documentation
 -- release
 - fido compliance
 - improve tests
