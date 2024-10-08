@@ -8,40 +8,40 @@
           </div>
           <div class="modal-body">
             <div class="row">
-                        <div class="col">
-                            <div class="form-floating mb-3">
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    id="floatingInputName"
-                                    ref="inputName"
-                                    placeholder="Name"
-                                    v-on:change="testInputName"
-                                />
-                                <label for="floatingInputName" class="form-label">Name</label>
-                                <div class="invalid-feedback">
-                                    Please enter a valid name!
-                                </div>
-                            </div>
-                            <div class="form-floating mb-3">
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    id="floatingInputDomain"
-                                    ref="inputDomain"
-                                    placeholder="Adresse"
-                                    v-on:change="testInputDomain"
-                                />
-                                <label for="floatingInputAddress">Domain</label>
-                                <div class="invalid-feedback">
-                                    Please enter a valid domain!
-                                </div>
-                            </div>
+                <div class="col">
+                    <div class="form-floating mb-3">
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="floatingInputName"
+                            ref="inputName"
+                            placeholder="Name"
+                            v-on:change="testInputName"
+                        />
+                        <label for="floatingInputName" class="form-label">Name</label>
+                        <div class="invalid-feedback">
+                            Please enter a valid name!
                         </div>
                     </div>
+                    <div class="form-floating mb-3">
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="floatingInputDomain"
+                            ref="inputDomain"
+                            placeholder="Adresse"
+                            v-on:change="testInputDomain"
+                        />
+                        <label for="floatingInputAddress">Domain</label>
+                        <div class="invalid-feedback">
+                            Please enter a valid domain!
+                        </div>
+                    </div>
+                </div>
+            </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" ref="closeButton" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             <button type="button" class="btn btn-primary" @click="updateApp()" :disabled="buttonDisabled">Update Application</button>
           </div>
         </div>
@@ -64,15 +64,12 @@
 
     const inputName = ref<HTMLInputElement | null>(null);
     const inputDomain = ref<HTMLInputElement | null>(null);
+    const closeButton = ref<HTMLButtonElement | null>(null);
 
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
     onMounted(() => {
         const modalElement = document.getElementById("editApplicationForm") as HTMLElement;
-
-        // modalElement.addEventListener("hidden.bs.modal", (event) => {
-        //   router.go(0);
-        // });
 
         modalElement.addEventListener("shown.bs.modal", async (event) => {
             if (inputName.value !== null && inputDomain.value !== null) {
@@ -143,5 +140,6 @@
             }
         }
         buttonDisabled.value = false;
+        closeButton.value?.click();
     }
 </script>

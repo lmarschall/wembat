@@ -41,7 +41,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" ref="closeButton" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" @click="createApp()" :disabled="buttonDisabled">Create Application</button>
                 </div>
             </div>
@@ -54,6 +54,7 @@
   
 <script setup lang="ts">
     import { WembatRequestService } from "@/services/wembat";
+    import { Modal } from "bootstrap";
     import { onMounted, ref } from "vue";
 
     const status = ref(0);
@@ -62,6 +63,7 @@
 
     const inputName = ref<HTMLInputElement | null>(null);
     const inputDomain = ref<HTMLInputElement | null>(null);
+    const closeButton = ref<HTMLButtonElement | null>(null);
 
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -129,5 +131,6 @@
             }
         }
         buttonDisabled.value = false;
+        closeButton.value?.click();
     }
 </script>

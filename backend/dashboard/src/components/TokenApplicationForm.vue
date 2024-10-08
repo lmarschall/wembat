@@ -9,7 +9,7 @@
           <div class="modal-body">
             <div class="input-group mb-3">
               <input disabled type="text" v-bind:value="applicationToken" class="form-control" placeholder="Recipient's username" aria-label="Recipient's username" aria-describedby="basic-addon2">
-              <span @click="copyToClipboard()" class="input-group-text" id="basic-addon2">@</span>
+              <span @click="copyToClipboard()" class="input-group-text" id="basic-addon2"><i class="bi bi-copy"></i></span>
             </div>
           </div>
           <div class="modal-footer">
@@ -21,6 +21,9 @@
   </template>
   
   <style scoped>
+  span#basic-addon2 {
+    cursor: pointer;
+  }
   </style>
   
   <script setup lang="ts">
@@ -38,10 +41,6 @@
     onMounted(async () => {
 
       const modalElement = document.getElementById("tokenApplicationForm") as HTMLElement;
-
-      // modalElement.addEventListener("hidden.bs.modal", (event) => {
-      //   router.go(0);
-      // });
 
       modalElement.addEventListener("shown.bs.modal", async (event) => {
         if (tokenStore.token !== undefined && applicationStore.selectedApplication !== undefined) {
