@@ -50,7 +50,7 @@ export async function createSessionToken(
 		.setIssuedAt()
 		.setIssuer(apiUrl)
 		.setAudience(url)
-		.setExpirationTime('10s')
+		.setExpirationTime('15m')
 		.sign(keyPairs.tokenKeyPair.privateKey);
 }
 

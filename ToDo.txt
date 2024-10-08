@@ -1,15 +1,10 @@
-- improve backend redis x
-- onboard workflow x
 - onboard private key directly from privatekeystring
-- token handling x
-- improve installation workflow x
 - improve documentation
-- refresh token workflow x
 - logout workflow
-- application rest interface
+- application cors dynamically
+- validation issuer with env variable
 -- release
 - fido compliance
 - improve tests
 - discoverable credentials / conditional ui
-- http only cookies for session jwt
 - save ip address alongside token in redis
