@@ -9,16 +9,20 @@ Based on the awesome work of [SimpleWebAuthn](https://github.com/MasterKale/Simp
 VitePress provides Syntax Highlighting powered by [Shikiji](https://github.com/antfu/shikiji), with additional features like line-highlighting: -->
 
 
-## Start Wembat Backend
+## Install Wembat Backend
 ```bash
-git clone https://github.com/lmarschall/wembat.git
+bash <(curl -s https://raw.githubusercontent.com/lmarschall/wembat/refs/heads/main/setup/install.sh)
 
-cd ./backend
-
-# create .env from .env.template
+# edit .env file with custom settings
 
 docker compose up -d --build && docker compose logs -f
 ```
+
+## Open Dashboard
+
+## Create Application
+
+## Get Application Token
 
 ## Install Wembat Client
 ```bash
@@ -31,7 +35,7 @@ npm install @wembat/client
 ```ts{4}
 import { WembatClient } from "@wembat/client";
 
-const wembatClient = new WembatClient("http://localhost:8080");
+const wembatClient = new WembatClient(appToken);
 ```
 
 ## Register User
