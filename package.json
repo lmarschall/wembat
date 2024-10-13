@@ -59,7 +59,7 @@
     "typedoc-vitepress-theme": "^1.0.0-next.4",
     "typescript": "^4.5.4",
     "vite": "^4.5.3",
-    "vite-plugin-dts": "^3.6.3",
+    "vite-plugin-dts": "^4.2.4",
     "vitepress": "^1.0.0-rc.34",
     "vitest": "^1.1.1"
   }
