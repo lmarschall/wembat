@@ -1,8 +1,4 @@
 - onboard private key directly from privatekeystring
-- improve documentation
-- logout workflow
-- application cors dynamically
-- validation issuer with env variable
 - make install process easy
 - update documentation
 -- release

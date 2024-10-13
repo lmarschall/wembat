@@ -1,6 +1,7 @@
 import { Application, PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { ApplicationInfo } from "..";
+import { applicationKeys } from "../../application";
 
 const prisma = new PrismaClient();
 
@@ -25,7 +26,14 @@ export async function applicationUpdate(req: Request, res: Response) {
 				throw Error("Error while updating application");
 			}) as Application;
 
-        res.json(app);
+		const appUrl = `https://${app.domain}`;
+		const index = applicationKeys.indexOf(appUrl);
+		
+		if (index !== -1) {
+			applicationKeys[index] = appUrl;
+		}
+
+		res.status(200).send();
 
     } catch (err) {
         console.error(err);

@@ -11,6 +11,9 @@
               <input disabled type="text" v-bind:value="applicationToken" class="form-control" placeholder="Recipient's username" aria-label="Recipient's username" aria-describedby="basic-addon2">
               <span @click="copyToClipboard()" class="input-group-text" id="basic-addon2"><i class="bi bi-copy"></i></span>
             </div>
+            <div class="row">
+              <div id="liveAlertPlaceholder"></div>
+            </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -50,6 +53,19 @@
           
     });
 
+    function appendAlert(message: string, type: string) {
+      const alertPlaceholder = document.getElementById('liveAlertPlaceholder')
+      const wrapper = document.createElement('div')
+      wrapper.innerHTML = [
+        `<div class="alert alert-${type} alert-dismissible" role="alert">`,
+        `   <div>${message}</div>`,
+        '   <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>',
+        '</div>'
+      ].join('')
+
+      alertPlaceholder?.append(wrapper)
+    }
+
     async function fetchApplicationToken(appId: string): Promise<boolean> {
       try {
         const data: ApplicationPostData = {
@@ -72,5 +88,6 @@
 
     async function copyToClipboard() {
       navigator.clipboard.writeText(applicationToken.value);
+      appendAlert('Token copied to clipboard', 'success');
     }
   </script>

@@ -1,6 +1,7 @@
 import { Application, PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { ApplicationInfo } from "..";
+import { applicationKeys } from "../../application";
 
 const prisma = new PrismaClient();
 
@@ -21,7 +22,14 @@ export async function applicationDelete(req: Request, res: Response) {
 				throw Error("Error while deleting application");
 			}) as Application;
 
-        res.json(app);
+		const appUrl = `https://${app.domain}`;
+		const index = applicationKeys.indexOf(appUrl);
+		
+		if (index !== -1) {
+			applicationKeys.splice(index, 1);
+		}
+
+		res.status(200).send();
 
     } catch (err) {
         console.error(err);

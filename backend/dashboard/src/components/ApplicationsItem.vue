@@ -7,9 +7,13 @@
     </div>
 
     <div class="row">
-      <button type="button" class="btn btn-primary" @click="showApplicationForm('createApplicationForm')">
-        Add application
-      </button>
+      <div class="col-4">
+        <button type="button" class="btn btn-primary" @click="showApplicationForm('createApplicationForm')">
+          Add application
+        </button>
+      </div>
+      <div class="col-8">
+      </div>
     </div>
 
     <CreateApplicationForm />
@@ -35,7 +39,7 @@
             <td>{{ app.domain }}</td>
             <td>{{ 0 }}</td>
             <td>
-              <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Dropdown</button>
+              <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Action&ensp;</button>
               <ul class="dropdown-menu">
                 <li><a class="dropdown-item" @click="showApplicationForm('editApplicationForm', app)" href="#"><i class="bi bi-pencil"></i>&ensp;Edit</a></li>
                 <li><a class="dropdown-item" @click="showApplicationForm('tokenApplicationForm', app)" href="#"><i class="bi bi-ticket-perforated"></i>&ensp;Token</a></li>
@@ -51,28 +55,6 @@
 </template>
 
 <style scoped>
-h1 {
-  font-weight: 500;
-  font-size: 2.6rem;
-  position: relative;
-  top: -10px;
-}
-
-h3 {
-  font-size: 1.2rem;
-}
-
-.greetings h1,
-.greetings h3 {
-  text-align: center;
-}
-
-@media (min-width: 1024px) {
-  .greetings h1,
-  .greetings h3 {
-    text-align: left;
-  }
-}
 </style>
 
 <script setup lang="ts">

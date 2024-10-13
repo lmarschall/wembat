@@ -1,6 +1,7 @@
 import { Application, PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { ApplicationInfo } from "..";
+import { applicationKeys } from "../../application";
 
 const prisma = new PrismaClient();
 
@@ -22,7 +23,10 @@ export async function applicationCreate(req: Request, res: Response) {
 				throw Error("Error while creating application");
 			}) as Application;
 
-        res.json(app);
+		const appUrl = `https://${app.domain}`;
+		applicationKeys.push(appUrl);
+
+        res.status(200).send();
 
     } catch (err) {
         console.error(err);

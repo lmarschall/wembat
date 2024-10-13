@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import { checkForWebAuthnToken } from "../../redis";
 import { decodeProtectedHeader, importJWK, jwtVerify } from "jose";
+import { publicKeyJwk } from "../../crypto";
+
+const serverUrl = process.env.SERVER_URL || "http://localhost:8080";
 
 export async function validateWebAuthnToken(
 	req: Request,
@@ -17,21 +20,21 @@ export async function validateWebAuthnToken(
 		if (authorization[0] !== "Bearer") return res.status(401).send();
 
 		const jwt = authorization[1];
-		// check if jwt token was issued by us
-		if ((await checkForWebAuthnToken(jwt)) === false)
-			return res.status(401).send();
 
 		// extract public key from jwk parameters
 		const header = decodeProtectedHeader(jwt);
 		const algorithm = header.alg;
 		const spki = header.jwk;
 
-		if (algorithm !== "ES256" || spki == undefined)
+		if (algorithm == undefined || algorithm == null || algorithm !== "ES256")
+			return res.status(401).send();
+
+		if (spki == undefined || spki == null || JSON.stringify(spki) !== JSON.stringify(publicKeyJwk))
 			return res.status(401).send();
 
 		const importedKey = await importJWK(spki, algorithm);
 		const { payload, protectedHeader } = await jwtVerify(jwt, importedKey, {
-			issuer: "http://localhost:8080",
+			issuer: serverUrl,
 			algorithms: ["ES256"],
 		});
 		res.locals.payload = payload;

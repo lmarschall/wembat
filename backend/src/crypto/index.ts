@@ -17,6 +17,9 @@ const keyPairs: KeyPair = {
 		publicKey: null,
 	},
 };
+
+export let publicKeyJwk;
+
 const apiUrl = process.env.SERVER_URL || "http://localhost:8080";
 
 export async function initCrypto(): Promise<boolean> {
@@ -31,6 +34,8 @@ export async function initCrypto(): Promise<boolean> {
 			privateKey: ecPrivateKey,
 			publicKey: ecPublicKey,
 		};
+
+		publicKeyJwk = await exportJWK(keyPairs.tokenKeyPair.publicKey);
 		return true;
 	} catch (err) {
 		console.error(err);
