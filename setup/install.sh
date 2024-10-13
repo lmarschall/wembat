@@ -32,10 +32,10 @@ VALUES=(
     "$postgresPassword"
     "postgresDatabase"
     "5432"
-    "postgresql://postgresUser:postgresPassword@localhost:5432/postgresDatabase"
+    "postgresql://postgresUser:$postgresPassword@localhost:5432/postgresDatabase"
     "http://localhost:8080"
     "8080"
-    "postgres://postgresUser:postgres@postgresPassword:5432/postgresDatabase?connect_timeout=300"
+    "postgres://postgresUser:$postgresPassword@postgres:5432/postgresDatabase?connect_timeout=300"
 )
 
 # check if template file exists

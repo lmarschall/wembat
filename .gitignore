@@ -1,5 +1,7 @@
 dist
 node_modules
+keys
+.env
 
 docs/.vitepress/dist
 docs/.vitepress/cache
