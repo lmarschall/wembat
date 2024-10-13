@@ -67,3 +67,4 @@ ALTER TABLE "Session" ADD CONSTRAINT "Session_deviceUId_fkey" FOREIGN KEY ("devi
 
 -- AddForeignKey
 ALTER TABLE "Session" ADD CONSTRAINT "Session_appUId_fkey" FOREIGN KEY ("appUId") REFERENCES "Application"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+

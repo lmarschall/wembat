@@ -19,9 +19,13 @@ RUN npx prisma generate
 # build app with typescript
 RUN npm run build
 
-
 # run stage
 FROM node:20-bullseye-slim AS run
+
+# install postgresql client
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
 
 # set environment variables
 ENV NODE_ENV production

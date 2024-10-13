@@ -35,6 +35,7 @@ services:
         environment:
             SERVER_URL: ${API_SERVER_URL}
             DATABASE_URL: ${API_DATABASE_URL}
+            DATABASE_USER: ${DATABASE_POSTGRES_USER}
             DASHBOARD_URL: ${DASHBOARD_SERVER_URL}
             REDIS_HOST: redis
             REDIS_PORT: 6379

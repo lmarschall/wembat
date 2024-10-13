@@ -41,6 +41,7 @@ services:
             SERVER_URL: ${API_SERVER_URL}
             APP_DOMAINS: ${API_APP_DOMAINS}
             DATABASE_URL: ${API_DATABASE_URL}
+            DATABASE_USER: ${DATABASE_POSTGRES_USER}
             DASHBOARD_URL: ${DASHBOARD_SERVER_URL}
             REDIS_HOST: redis
             REDIS_PORT: 6379

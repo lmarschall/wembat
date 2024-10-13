@@ -1,5 +1,5 @@
 - onboard private key directly from privatekeystring
-- make install process easy
+- login page for dashboard
 - update documentation
 -- release
 - fido compliance
