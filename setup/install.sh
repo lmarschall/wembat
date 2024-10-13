@@ -26,6 +26,8 @@ PLACEHOLDERS=(
     "PLACEHOLDER_API_SERVER_URL"
     "PLACEHOLDER_API_SERVER_PORT"
     "PLACEHOLDER_API_DATABASE_URL"
+    "PLACEHOLDER_DASHBOARD_SERVER_URL"
+    "PLACEHOLDER_DASHBOARD_SERVER_PORT"
 )
 VALUES=(
     "postgresUser"
@@ -36,6 +38,8 @@ VALUES=(
     "http://localhost:8080"
     "8080"
     "postgres://postgresUser:$postgresPassword@postgres:5432/postgresDatabase?connect_timeout=300"
+    "http://localhost:9090"
+    "9090"
 )
 
 # check if template file exists
