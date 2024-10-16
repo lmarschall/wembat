@@ -1,46 +1,32 @@
 # Getting Started
 
-This page shows the first steps to start the wembat backend and how to use the wembat client on the localhost.
+This page shows the first steps to install the Wembat Client package and use the Wembat Actions to authenticate users and encrypt data.
 
-<!-- ## Syntax Highlighting
+## Setup Wembat Client
 
-VitePress provides Syntax Highlighting powered by [Shikiji](https://github.com/antfu/shikiji), with additional features like line-highlighting: -->
-
-
-## Start Wembat Backend
-```bash
-git clone https://github.com/lmarschall/wembat.git
-
-cd ./backend
-
-# create .env from .env.template
-
-docker compose up -d --build && docker compose logs -f
-```
-
-## Install Wembat Client
+1. Install the Wembat Client npm package
 ```bash
 npm install @wembat/client
 ```
 
-
-## Create Wembat Client
-
+2. Create a Wembat Client instance with you application token create in the setup section https://wembat.dev/setup
 ```ts{4}
 import { WembatClient } from "@wembat/client";
 
-const wembatClient = new WembatClient("http://localhost:8080");
+const wembatClient = new WembatClient(APPTOKEN);
 ```
 
-## Register User
+## Authenticate User
 
 ::: warning
-The following function must be triggered by a user interaction, a button click for example.
+The following functions must be triggered by a user interaction, a button click for example.
 :::
+
+1. Register the user in your application by calling the Register Action with a user unique identifier as string
 
 ```ts{4}
 async function register() {
-  const registerResponse = await wembatClient.register(uId);
+  const registerResponse = await wembatClient.register(userId);
 
   if (registerResponse.success) {
     const verified = registerResponse.result;
@@ -48,11 +34,7 @@ async function register() {
 }
 ```
 
-## Login User
-
-::: warning
-The following function must be triggered by a user interaction, a button click for example.
-:::
+2. Login the user in your application by calling the Login Action with the given user unique identifier as string
 
 ```ts{4}
 async function login() {
@@ -67,55 +49,3 @@ async function login() {
   }
 }
 ```
-
-<!-- ## Custom Containers
-
-**Input**
-
-```md
-::: info
-This is an info box.
-:::
-
-::: tip
-This is a tip.
-:::
-
-::: warning
-This is a warning.
-:::
-
-::: danger
-This is a dangerous warning.
-:::
-
-::: details
-This is a details block.
-:::
-```
-
-**Output**
-
-::: info
-This is an info box.
-:::
-
-::: tip
-This is a tip.
-:::
-
-::: warning
-This is a warning.
-:::
-
-::: danger
-This is a dangerous warning.
-:::
-
-::: details
-This is a details block.
-:::
-
-## More
-
-Check out the documentation for the [full list of markdown extensions](https://vitepress.dev/guide/markdown). -->

@@ -17,6 +17,7 @@ export default defineConfig({
         text: 'Wembat',
         items: [
           { text: 'Introduction', link: '/introduction' },
+          { text: 'Setup Wembat', link: '/setup' },
           { text: 'Getting Started', link: '/getting-started' },
           { text: 'Client', link: '/client/exports' },
         ]
