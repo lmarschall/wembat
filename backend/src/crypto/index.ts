@@ -25,9 +25,9 @@ const apiUrl = process.env.SERVER_URL || "http://localhost:8080";
 export async function initCrypto(): Promise<boolean> {
 	try {
 		const algorithm = "ES256";
-		const pkcs8 = readFileSync("/usr/src/app/keys/privateKey.pem", "utf8");
+		const pkcs8 = readFileSync("/opt/data/keys/privateKey.pem", "utf8");
 		const ecPrivateKey = await importPKCS8(pkcs8, algorithm);
-		const spki = readFileSync("/usr/src/app/keys/publicKey.pem", "utf8");
+		const spki = readFileSync("/opt/data/keys/publicKey.pem", "utf8");
 		const ecPublicKey = await importSPKI(spki, algorithm);
 
 		keyPairs.tokenKeyPair = {

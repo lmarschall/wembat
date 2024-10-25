@@ -25,7 +25,13 @@ FROM node:20-bullseye-slim AS run
 # install postgresql client
 RUN apt-get update && apt-get install -y \
     postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
+    openssl \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /opt/data \
+    && chown -R node:node /opt/data
+
+# create data volume
+VOLUME /opt/data
 
 # set environment variables
 ENV NODE_ENV production
