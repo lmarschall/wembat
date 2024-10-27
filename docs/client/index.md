@@ -4,117 +4,22 @@ Based on the awesome work of [SimpleWebAuthn](https://github.com/MasterKale/Simp
 
 ### This client library can be used to authenticate users and encrypt data locally via the largeBlob extension of webauthn.
 
-<!-- ## Syntax Highlighting
+Authenticate. Wembat allows user to authenticate using their biometrics
 
-VitePress provides Syntax Highlighting powered by [Shikiji](https://github.com/antfu/shikiji), with additional features like line-highlighting: -->
+Encrypt. Wembat allows user to encrypt sensitive data 
 
-## Start Wembat Backend
-```bash
-git clone https://github.com/lmarschall/wembat.git
+Simple. 
 
-cd ./backend
+## Dashboard
 
-# create .env from .env.template
+## Quickstart
 
-docker compose up -d --build && docker compose logs -f
-```
+- Setup Wembat with the documentation at https://wembat.dev/setup
+- Getting started with the documentation at https://wembat.dev/getting-started
 
-## Install Wembat Client
-```bash
-npm install @wembat/client
-```
+## Join
 
-## Create Wembat Client
-
-```ts{4}
-import { WembatClient } from "@wembat/client";
-
-const wembatClient = new WembatClient("http://localhost:8080");
-```
-
-## Register User
-
-> The following function must be triggered by a user interaction, like a button click for example.
-
-```ts{4}
-async function register() {
-  const registerResponse = await wembatClient.register(uId);
-
-  if (registerResponse.success) {
-    const verified = registerResponse.result;
-  }
-}
-```
-
-## Login User
-
-> The following function must be triggered by a user interaction, like a button click for example.
-
-```ts{4}
-async function login() {
-  const loginResponse = await wembatClient.login(uId);
-
-  if (loginResponse.success) {
-    const loginResult = loginResponse.result;
-
-    if (loginResult.verified) {
-      const token = loginResult.jwt;
-    }
-  }
-}
-```
-
-<!-- ## Custom Containers
-
-**Input**
-
-```md
-::: info
-This is an info box.
-:::
-
-::: tip
-This is a tip.
-:::
-
-::: warning
-This is a warning.
-:::
-
-::: danger
-This is a dangerous warning.
-:::
-
-::: details
-This is a details block.
-:::
-```
-
-**Output**
-
-::: info
-This is an info box.
-:::
-
-::: tip
-This is a tip.
-:::
-
-::: warning
-This is a warning.
-:::
-
-::: danger
-This is a dangerous warning.
-:::
-
-::: details
-This is a details block.
-:::
-
-## More
-
-Check out the documentation for the [full list of markdown extensions](https://vitepress.dev/guide/markdown). -->
+In order to provide a fully functional und updated open source project I'm very open for requests to join this project.
 
 ***
 

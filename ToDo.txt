@@ -1,6 +1,5 @@
 - onboard private key directly from privatekeystring
 - login page for dashboard
-- update documentation
 -- release
 - fido compliance
 - improve tests
