@@ -21,7 +21,7 @@ hero:
     #   link: https://github.com/lmarschall/wembat
     - theme: brand
       text: Get Started
-      link: /getting-started
+      link: /setup
 
 features:
   - title: Effortless

@@ -19,17 +19,9 @@ curl -o .env.template https://raw.githubusercontent.com/lmarschall/wembat/main/s
 curl -o docker-compose.yml https://raw.githubusercontent.com/lmarschall/wembat/main/setup/docker-compose.yml
 ```
 
-2. Create the key folder and create keys for backend
-
-```
-mkdir ./keys
-openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 -out ./keys/privateKey.pem -outform PEM
-openssl ec -in ./keys/privateKey.pem -pubout -out ./keys/publicKey.pem
-```
-
 ## Config Environment
 
-1. Edit the environment file for your needs, the following shows an example config for local development
+1. Edit the environment file according to your evironment, the following shows an example config for local development
 
 ```
 # database
