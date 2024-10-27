@@ -4,11 +4,6 @@
 curl -o .env.template https://raw.githubusercontent.com/lmarschall/wembat/main/setup/.env.template
 curl -o docker-compose.yml https://raw.githubusercontent.com/lmarschall/wembat/main/setup/docker-compose.yml
 
-# create keys for api server
-mkdir ./keys
-openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 -out ./keys/privateKey.pem -outform PEM
-openssl ec -in ./keys/privateKey.pem -pubout -out ./keys/publicKey.pem
-
 # define the template file and output file
 TEMPLATE_FILE=".env.template"
 OUTPUT_FILE=".env"
