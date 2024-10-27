@@ -43,13 +43,16 @@ export async function decrypt(
 		};
 		actionResponse.result = message;
 		actionResponse.success = true;
-	} catch (error: any) {
-		const errorMessage: WembatError = {
-			error: error,
-		};
-		actionResponse.error = errorMessage;
-		console.error(error);
-	} finally {
 		return actionResponse;
+	} catch (error: Error | unknown) {
+		if (error instanceof Error) {
+			actionResponse.error = {
+				error: error.message,
+			};
+			console.error(error);
+			return actionResponse;
+		} else {
+			throw Error("Unknown Error:");
+		}
 	}
 }

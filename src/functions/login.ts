@@ -40,7 +40,7 @@ export async function login(
 	let privateKey: CryptoKey | undefined = undefined;
 	let publicKey: CryptoKey | undefined = undefined;
 	let token: string | undefined = undefined;
-	let refreshToken: string | undefined = undefined;
+	const refreshToken: string | undefined = undefined;
 
 	try {
 		if (!browserSupportsWebAuthn())
@@ -84,7 +84,7 @@ export async function login(
 				},
 			},
 			{
-				withCredentials: true
+				withCredentials: true,
 			}
 		);
 
@@ -207,13 +207,16 @@ export async function login(
 		};
 		actionResponse.result = loginResult;
 		actionResponse.success = true;
-	} catch (error: any) {
-		const errorMessage: WembatError = {
-			error: error,
-		};
-		actionResponse.error = errorMessage;
-		console.error(error);
-	} finally {
 		return [actionResponse, privateKey, publicKey, token, refreshToken];
+	} catch (error: Error | unknown) {
+		if (error instanceof Error) {
+			actionResponse.error = {
+				error: error.message,
+			};
+			console.error(error);
+			return actionResponse;
+		} else {
+			throw Error("Unknown Error:");
+		}
 	}
 }

@@ -91,13 +91,16 @@ export async function register(
 		};
 		actionResponse.result = registerResult;
 		actionResponse.success = true;
-	} catch (error: any) {
-		const errorMessage: WembatError = {
-			error: error,
-		};
-		actionResponse.error = errorMessage as WembatError;
-		console.error(error);
-	} finally {
 		return actionResponse;
+	} catch (error: Error | unknown) {
+		if (error instanceof Error) {
+			actionResponse.error = {
+				error: error.message,
+			};
+			console.error(error);
+			return actionResponse;
+		} else {
+			throw Error("Unknown Error:");
+		}
 	}
 }
