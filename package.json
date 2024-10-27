@@ -41,14 +41,14 @@
     "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
-    "@simplewebauthn/browser": "^8.0.2",
-    "@simplewebauthn/typescript-types": "^8.3.4",
+    "@simplewebauthn/browser": "^11.0.0",
     "axios": "^1.6.1"
   },
   "devDependencies": {
     "@types/node": "^20.9.0",
     "@typescript-eslint/eslint-plugin": "^5.39.0",
     "@typescript-eslint/parser": "^5.39.0",
+    "@simplewebauthn/types": "^11.0.0",
     "eslint": "^8.24.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.2.1",

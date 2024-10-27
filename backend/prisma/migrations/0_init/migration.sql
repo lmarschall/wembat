@@ -13,7 +13,7 @@ CREATE TABLE "Device" (
     "uid" TEXT NOT NULL,
     "userUId" TEXT NOT NULL,
     "credentialPublicKey" BYTEA NOT NULL,
-    "credentialId" BYTEA NOT NULL,
+    "credentialId" TEXT NOT NULL,
     "counter" INTEGER NOT NULL DEFAULT 0,
     "transports" TEXT[],
 

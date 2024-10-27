@@ -59,25 +59,22 @@ export async function register(req: Request, res: Response) {
 		);
 
 		if (verified == false) throw Error("Could not verifiy reponse");
-		
-		const { credentialPublicKey, credentialID, counter } =
-			registrationInfo as any;
 
 		// check if device is already registered with user, else create device registration for user
 		await prisma.device
 			.upsert({
 				where: {
-					credentialId: Buffer.from(credentialID),
+					credentialId: registrationInfo.credential.id,
 				},
 				update: {
 					userUId: user.uid,
-					counter: counter,
+					counter: registrationInfo.credential.counter,
 				},
 				create: {
 					userUId: user.uid,
-					credentialPublicKey: Buffer.from(credentialPublicKey),
-					credentialId: Buffer.from(credentialID),
-					counter: counter,
+					credentialPublicKey: Buffer.from(registrationInfo.credential.publicKey),
+					credentialId: registrationInfo.credential.id,
+					counter: registrationInfo.credential.counter,
 					transports: credentials.response.transports,
 				},
 			})

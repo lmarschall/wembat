@@ -23,7 +23,7 @@
   "homepage": "https://github.com/lmarschall/pwahub#readme",
   "dependencies": {
     "@prisma/client": "^3.13.0",
-    "@simplewebauthn/server": "^8.0.2",
+    "@simplewebauthn/server": "^11.0.0",
     "base64url": "^3.0.1",
     "body-parser": "^1.19.2",
     "compression": "^1.7.4",
@@ -36,7 +36,7 @@
     "redis": "^4.0.6"
   },
   "devDependencies": {
-    "@simplewebauthn/typescript-types": "^7.4.0",
+    "@simplewebauthn/types": "^11.0.0",
     "@types/express": "^4.17.21",
     "@types/node": "^20.9.0",
     "@typescript-eslint/eslint-plugin": "^5.39.0",

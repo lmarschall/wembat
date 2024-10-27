@@ -10,7 +10,7 @@ import {
 	WembatError,
 	WembatLoginResult,
 } from "../types";
-import { AuthenticationResponseJSON } from "@simplewebauthn/typescript-types";
+import { AuthenticationResponseJSON } from "@simplewebauthn/types";
 import {
 	ab2str,
 	bufferToArrayBuffer,
@@ -19,7 +19,7 @@ import {
 	saveCryptoKeyAsString,
 	str2ab,
 } from "../helper";
-import axios, { AxiosInstance } from "axios";
+import { AxiosInstance } from "axios";
 
 /**
  * Logs in the user using WebAuthn authentication.
@@ -69,8 +69,9 @@ export async function login(
 		);
 
 		const credentials: AuthenticationResponseJSON = await startAuthentication(
-			challengeOptions,
-			false
+			{
+				optionsJSON: challengeOptions
+			}
 		).catch((err: string) => {
 			throw Error(err);
 		});

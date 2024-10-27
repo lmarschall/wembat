@@ -10,7 +10,7 @@ import {
 	WembatOnboardResult,
 	WembatRegisterResult,
 } from "../types";
-import { AuthenticationResponseJSON } from "@simplewebauthn/typescript-types";
+import { AuthenticationResponseJSON } from "@simplewebauthn/types";
 import { ab2str, bufferToArrayBuffer, saveCryptoKeyAsString } from "../helper";
 import { AxiosInstance } from "axios";
 
@@ -55,7 +55,7 @@ export async function onboard(
 
 		const credentials: AuthenticationResponseJSON = await startAuthentication(
 			challengeOptions,
-			false
+			// false
 		).catch((err: string) => {
 			throw Error(err);
 		});

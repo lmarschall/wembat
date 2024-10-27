@@ -43,7 +43,6 @@ export async function requestLogin(req: Request, res: Response) {
 			timeout: 60000,
 			allowCredentials: user.devices.map<PublicKeyCredentialDescriptor>((dev) => ({
 				id: dev.credentialId,
-				type: "public-key",
 				transports: dev.transports as AuthenticatorTransport[],
 			})),
 			/**

@@ -38,9 +38,8 @@ export async function requestOnboard(req: Request, res: Response) {
 
 		const opts: GenerateAuthenticationOptionsOpts = {
 			timeout: 60000,
-			allowCredentials: user.devices.map<PublicKeyCredentialDescriptor>((dev) => ({
+			allowCredentials: user.devices.map((dev) => ({
 				id: dev.credentialId,
-				type: "public-key",
 				transports: dev.transports as AuthenticatorTransport[],
 			})),
 			/**

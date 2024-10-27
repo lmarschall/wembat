@@ -1,7 +1,7 @@
 import base64url from "base64url";
 import { UserWithDevices } from "../types";
 import { verifyAuthenticationResponse, VerifyAuthenticationResponseOpts } from "@simplewebauthn/server";
-import { PrismaClient } from "@prisma/client";
+import { Device, PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 
 const prisma = new PrismaClient();
@@ -57,17 +57,16 @@ export async function onboard(req: Request, res: Response) {
 		// user with challenge not found, return error
 		if (user == null) throw Error("Could not find user for given challenge");
 
-		let dbAuthenticator: any = null;
-		const bodyCredIDBuffer = base64url.toBuffer(credentials.rawId);
+		let userDevice: Device = null;
 		// "Query the DB" here for an authenticator matching `credentialID`
 		for (const dev of user.devices) {
-			if (dev.credentialId.equals(bodyCredIDBuffer)) {
-				dbAuthenticator = dev;
+			if (dev.credentialId.equals(credentials.rawId)) {
+				userDevice = dev;
 				break;
 			}
 		}
 
-		if (dbAuthenticator == null) {
+		if (userDevice == null) {
 			throw new Error(`Could not find authenticator matching`);
 		}
 	
@@ -76,7 +75,12 @@ export async function onboard(req: Request, res: Response) {
 			expectedChallenge: `${user.challenge}`,
 			expectedOrigin,
 			expectedRPID: rpId,
-			authenticator: dbAuthenticator,
+			credential: {
+				id: userDevice.uid,
+				publicKey: userDevice.credentialPublicKey,
+				counter: userDevice.counter,
+				transports: userDevice.transports as any[]
+			}
 		};
 	
 		const verification = await verifyAuthenticationResponse(opts).catch(
@@ -96,7 +100,7 @@ export async function onboard(req: Request, res: Response) {
 				data: {
 					userUId: user.uid,
 					appUId: appUId,
-					deviceUId: dbAuthenticator.uid,
+					deviceUId: userDevice.uid,
 					publicKey: publicKey,
 					privateKey: privateKey,
 					nonce: nonce

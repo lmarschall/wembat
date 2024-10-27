@@ -12,7 +12,7 @@ import {
 import {
 	PublicKeyCredentialCreationOptionsJSON,
 	RegistrationResponseJSON,
-} from "@simplewebauthn/typescript-types";
+} from "@simplewebauthn/types";
 import { AxiosInstance } from "axios";
 
 /**
@@ -51,13 +51,12 @@ export async function register(
 		const requestRegisterResponseData: RequestRegisterResponse = JSON.parse(
 			requestRegisterResponse.data
 		);
-		const challengeOptions: PublicKeyCredentialCreationOptionsJSON =
-			requestRegisterResponseData.options;
-
-		// const auth1Credential = await navigator.credentials.create(challengeOptions);
 
 		const credentials: RegistrationResponseJSON = await startRegistration(
-			challengeOptions
+			{
+				optionsJSON: requestRegisterResponseData.options,
+				useAutoRegister: false
+			}
 		).catch((err: string) => {
 			throw Error(err);
 		});
@@ -73,7 +72,7 @@ export async function register(
 		const registerResponse = await axiosClient.post<string>(`/register`, {
 			registerChallengeResponse: {
 				credentials: credentials,
-				challenge: challengeOptions.challenge,
+				challenge: requestRegisterResponseData.options.challenge,
 			},
 		});
 

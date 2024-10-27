@@ -5,6 +5,7 @@ import {
 	generateRegistrationOptions,
 	GenerateRegistrationOptionsOpts,
 } from "@simplewebauthn/server";
+import { isoUint8Array } from '@simplewebauthn/server/helpers';
 import { Request, Response } from "express";
 import { UserInfo } from '../types';
 
@@ -62,13 +63,12 @@ export async function requestRegister(req: Request, res: Response) {
 		const opts: GenerateRegistrationOptionsOpts = {
 			rpName: rpName,
 			rpID: rpId,
-			userID: user.uid,
+			userID: isoUint8Array.fromUTF8String(user.uid),
 			userName: user.mail,
 			timeout: 60000,
 			attestationType: "none",
-			excludeCredentials: user.devices.map<PublicKeyCredentialDescriptor>((dev) => ({
+			excludeCredentials: user.devices.map((dev) => ({
 				id: dev.credentialId,
-				type: "public-key",
 				transports: dev.transports as AuthenticatorTransport[],
 			})),
 			authenticatorSelection: {

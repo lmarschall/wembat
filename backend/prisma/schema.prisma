@@ -21,7 +21,7 @@ model Device {
   uid String @id @default(cuid())
   userUId String
   credentialPublicKey Bytes
-  credentialId Bytes @unique
+  credentialId String @unique
   counter Int @default(0)
   transports String[]
   user User @relation(fields: [userUId], references: [uid])

@@ -1,10 +1,11 @@
 import base64url from "base64url";
-import { PrismaClient, Session } from "@prisma/client";
+import { Device, PrismaClient, Session } from "@prisma/client";
 import { createSessionToken, createSessionRefreshToken } from "../../crypto";
 import { addToWebAuthnTokens } from "../../redis";
 import { verifyAuthenticationResponse, VerifyAuthenticationResponseOpts } from "@simplewebauthn/server";
 import { LoginChallengeResponse, UserWithDevicesAndSessions } from "../types";
 import { Request, Response } from "express";
+import { WebAuthnCredential } from "@simplewebauthn/types";
 
 const prisma = new PrismaClient();
 
@@ -50,18 +51,17 @@ export async function login(req: Request, res: Response) {
 
 		if (!user) throw Error("User with given challenge not found");
 
-		let dbAuthenticator: any = null;
-		const bodyCredIDBuffer = base64url.toBuffer(credentials.rawId);
+		let userDevice: Device = null;
 		// "Query the DB" here for an authenticator matching `credentialID`
 		for (const dev of user.devices) {
-			if (dev.credentialId.equals(bodyCredIDBuffer)) {
-				dbAuthenticator = dev;
+			if (dev.credentialId.equals(credentials.rawId)) {
+				userDevice = dev;
 				break;
 			}
 		}
 
-		if (dbAuthenticator == null) {
-			throw new Error("Could not find matching authenticator matching");
+		if (userDevice == null) {
+			throw new Error("Could not find matching device");
 		}
 
 		const opts: VerifyAuthenticationResponseOpts = {
@@ -69,7 +69,12 @@ export async function login(req: Request, res: Response) {
 			expectedChallenge: `${user.challenge}`,
 			expectedOrigin,
 			expectedRPID: rpId,
-			authenticator: dbAuthenticator,
+			credential: {
+				id: userDevice.uid,
+				publicKey: userDevice.credentialPublicKey,
+				counter: userDevice.counter,
+				transports: userDevice.transports as any[]
+			}
 		};
 
 		const { verified, authenticationInfo } = await verifyAuthenticationResponse(opts).catch(
@@ -83,13 +88,13 @@ export async function login(req: Request, res: Response) {
 
 		// Update the authenticator's counter in the DB to the newest count in the authentication
 		// TODO make this db call not only local parameter
-		dbAuthenticator.counter = authenticationInfo.newCounter;
+		userDevice.counter = authenticationInfo.newCounter;
 
 		// search in user sessions for session with app id
 		// if there is already a session with the app id but not for this device id, return error
 		// because we need to onboard the device to the session first
 		const userSessionsForApp = user.sessions.filter((session) => session.appUId == appUId)
-		const userSessionsForAppAndDevice = userSessionsForApp.filter((session) => session.deviceUId == dbAuthenticator.uid)
+		const userSessionsForAppAndDevice = userSessionsForApp.filter((session) => session.deviceUId == userDevice.uid)
 
 		let userSession: Session;
 		
@@ -101,7 +106,7 @@ export async function login(req: Request, res: Response) {
 				data: {
 					userUId: user.uid,
 					appUId: appUId,
-					deviceUId: dbAuthenticator.uid,
+					deviceUId: userDevice.uid,
 				}
 			})
 			.catch((err) => {
