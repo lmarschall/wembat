@@ -2,6 +2,8 @@
 volumes:
   postgres-data:
     driver: local
+  api-data:
+    driver: local
 
 services:
     postgres:
@@ -31,7 +33,7 @@ services:
         ports:
             - ${API_SERVER_PORT}:8080
         volumes:
-            - ./keys:/usr/src/app/keys
+            - api-data:/opt/data
         environment:
             SERVER_URL: ${API_SERVER_URL}
             DATABASE_URL: ${API_DATABASE_URL}
