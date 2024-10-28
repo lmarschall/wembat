@@ -75,6 +75,7 @@ export async function onboard(req: Request, res: Response) {
 			expectedChallenge: `${user.challenge}`,
 			expectedOrigin,
 			expectedRPID: rpId,
+			requireUserVerification: false,
 			credential: {
 				id: userDevice.uid,
 				publicKey: userDevice.credentialPublicKey,

@@ -26,7 +26,10 @@ class WembatClient {
 	constructor(applicationToken: string) {
 		// parse jwt token and get application information
 		const tokenPayload: WembatClientToken = jwtDecode(applicationToken);
-		console.log(tokenPayload);
+
+		if (tokenPayload == null) {
+			throw new Error("Invalid application token");
+		}
 
 		this.#apiUrl = tokenPayload.iss;
 		this.#axiosClient = axios.create({

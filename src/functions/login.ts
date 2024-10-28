@@ -182,6 +182,11 @@ export async function login(
 					encoded
 				);
 
+				const headers = {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}`,
+				};
+
 				const saveCredentialsResponse = await axiosClient.post<string>(
 					`/update-credentials`,
 					{
@@ -191,6 +196,9 @@ export async function login(
 							nonce: ab2str(nonce),
 							sessionId: loginReponseData.sessionId,
 						},
+					},
+					{
+						headers: headers,
 					}
 				);
 

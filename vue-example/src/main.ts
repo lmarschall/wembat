@@ -9,6 +9,8 @@ import router from "./router";
 
 const applicationToken = import.meta.env.VITE_APP_TOKEN || "";
 
+console.log("Application token: ", applicationToken);
+
 const app = createApp(App);
 const wembatClient = new WembatClient(applicationToken.trim());
 app.provide('wembatClient', wembatClient)

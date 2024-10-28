@@ -49,6 +49,7 @@ export async function register(req: Request, res: Response) {
 			expectedChallenge: `${user.challenge}`,
 			expectedOrigin,
 			expectedRPID: rpId,
+			requireUserVerification: false,
 		};
 
 		const { verified, registrationInfo } = await verifyRegistrationResponse(opts).catch(
