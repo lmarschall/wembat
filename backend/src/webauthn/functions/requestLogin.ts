@@ -41,7 +41,7 @@ export async function requestLogin(req: Request, res: Response) {
 
 		const opts: GenerateAuthenticationOptionsOpts = {
 			timeout: 60000,
-			allowCredentials: user.devices.map<PublicKeyCredentialDescriptor>((dev) => ({
+			allowCredentials: user.devices.map((dev) => ({
 				id: dev.credentialId,
 				transports: dev.transports as AuthenticatorTransport[],
 			})),

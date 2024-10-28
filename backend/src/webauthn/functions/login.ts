@@ -54,7 +54,7 @@ export async function login(req: Request, res: Response) {
 		let userDevice: Device = null;
 		// "Query the DB" here for an authenticator matching `credentialID`
 		for (const dev of user.devices) {
-			if (dev.credentialId.equals(credentials.rawId)) {
+			if (dev.credentialId === credentials.rawId) {
 				userDevice = dev;
 				break;
 			}
