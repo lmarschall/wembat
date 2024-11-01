@@ -1,113 +1,13 @@
 # Introduction
 
-<!-- This page show the first steps to start the wembat backend and use the wembat client on the localhost. -->
-
-<!-- ## Syntax Highlighting
-
-VitePress provides Syntax Highlighting powered by [Shikiji](https://github.com/antfu/shikiji), with additional features like line-highlighting: -->
-
-
-<!-- ## Start Wembat Backend
-```bash
-git clone https://github.com/lmarschall/wembat.git
-
-cd ./backend
-
-docker compose up -d --build && docker compose logs -f
-```
-
-## Initialize Wembat Client
-
-```ts{4}
-import { WembatClient } from "@wembat/client";
-
-const wembatClient = new WembatClient("http://localhost:8080");
-```
-
-## Register User
-
-::: warning
-The following function must be triggered by a user interaction, like a button click for example.
-:::
-
-```ts{4}
-async function register() {
-  const registerResponse = await wembatClient.register(uId);
-
-  if (registerResponse.success) {
-    const verified = registerResponse.result as RegisterResult;
-  }
-}
-```
-
-## Login User
-
-::: warning
-The following function must be triggered by a user interaction, like a button click for example.
-:::
-
-```ts{4}
-async function login() {
-  const loginResponse = await wembatClient.login(uId);
-
-  if (loginResponse.success) {
-    const loginResult: LoginResult = loginResponse.result as LoginResult;
-
-    if (loginResult.verified) {
-      const token = loginResult.jwt;
-    }
-  }
-}
-``` -->
-
-<!-- ## Custom Containers
-
-**Input**
-
-```md
-::: info
-This is an info box.
-:::
-
-::: tip
-This is a tip.
-:::
-
-::: warning
-This is a warning.
-:::
-
-::: danger
-This is a dangerous warning.
-:::
-
-::: details
-This is a details block.
-:::
-```
-
-**Output**
+Wembat is an open source framework to enable developers to create an easy to setup authentication workflow with WebAuthn und encrypt their user data locally with the help of the WebAuthn PRF Extension.
 
 ::: info
-This is an info box.
+Wembat enables you to create a central authentication hub for all your applications, users can **onboard multiple devices for authentication and encryption.**
 :::
 
-::: tip
-This is a tip.
-:::
+You can setup the backend in minutes and start developing application with a powerful set of tools to handle authentication and encryption.
 
-::: warning
-This is a warning.
-:::
+An intuitiv dashboard helps developers to manage their applications.
 
-::: danger
-This is a dangerous warning.
-:::
-
-::: details
-This is a details block.
-:::
-
-## More
-
-Check out the documentation for the [full list of markdown extensions](https://vitepress.dev/guide/markdown). -->
+![alt text](dashboard.png)

@@ -155,6 +155,7 @@ async function onboard() {
     appendAlert(errorResult.error, "danger");
   }
 }
+
 async function token() {
   const tokenResponse = await wembatClient.token();
   console.log("tokenResponse", tokenResponse);

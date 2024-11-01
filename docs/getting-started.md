@@ -10,7 +10,7 @@ npm install @wembat/client
 ```
 
 2. Create a Wembat Client instance with you application token create in the setup section https://wembat.dev/setup
-```ts{4}
+```ts{3}
 import { WembatClient } from "@wembat/client";
 
 const wembatClient = new WembatClient(APPTOKEN);
@@ -24,7 +24,7 @@ The following functions must be triggered by a user interaction, a button click 
 
 1. Register the user in your application by calling the Register Action with a user unique identifier as string
 
-```ts{4}
+```ts{2}
 async function register() {
   const registerResponse = await wembatClient.register(userId);
 
@@ -36,7 +36,7 @@ async function register() {
 
 2. Login the user in your application by calling the Login Action with the given user unique identifier as string
 
-```ts{4}
+```ts{2}
 async function login() {
   const loginResponse = await wembatClient.login(uId);
 
@@ -46,6 +46,44 @@ async function login() {
     if (loginResult.verified) {
       const token = loginResult.jwt;
     }
+  }
+}
+```
+
+## Encrypt Data
+
+```ts{2-6,10,14}
+async function encryptMessage() {
+  const encryptMessage : WembatMessage = {
+    iv: "",
+    message: message.text,
+    encrypted: ""
+  }
+
+  # sender side
+  const publicKey = wembatClient.getCryptoPublicKey();
+  const encryptionResult = await wembatClient.encrypt(encryptMessage, publicKey);
+
+  # receiver side
+  const publicKey = wembatClient.getCryptoPublicKey();
+  const decryptionResult = await wembatClient.decrypt(encryptedMessage, publicKey);
+}
+```
+
+## Onboard Device
+
+::: info
+Onboarding a new device enables you to authenticate and encrypt data with multiple devices. The onboard process can only be started in an active authenticated session. The device to onboard your credentials to must be registered at first hand.
+:::
+
+```ts{2}
+async function onboard() {
+  const onboardResponse = await wembatClient.onboard();
+  if(onboardResponse.success) {
+    appendAlert("Onboarding successful", "success");
+  } else {
+    const errorResult = onboardResponse.error;
+    appendAlert(errorResult.error, "danger");
   }
 }
 ```

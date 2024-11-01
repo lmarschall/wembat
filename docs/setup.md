@@ -60,3 +60,7 @@ docker compose up -d && docker compose logs -f
 3. Click on **Action** and **Token** to retrieve an application token
 
 4. Use this token when creating a Wembat client in your applications
+
+![alt text](dashboard.png)
+
+![alt text](token.png)

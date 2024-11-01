@@ -2,18 +2,22 @@
 
 Based on the awesome work of [SimpleWebAuthn](https://github.com/MasterKale/SimpleWebAuthn)
 
-### This client library can be used to authenticate users and encrypt data locally via the largeBlob extension of webauthn.
+### This client library can be used to authenticate users and encrypt data locally via the prf extension of webauthn.
 
-Authenticate. Wembat allows user to authenticate using their biometrics
+**Authenticate**
+Wembat allows user to authenticate using their biometrics.
 
-Encrypt. Wembat allows user to encrypt sensitive data 
+**Encrypt**
+Wembat allows user to encrypt sensitive data.
 
-Simple. 
+**Simple**
 
 
 ## Dashboard
 
+Manage your applications with an intuitive view.
 
+![alt text](docs/dashboard.png)
 
 ## Quickstart
 

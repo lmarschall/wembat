@@ -33,7 +33,7 @@ onMounted(async () => {
         <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#navbarOffcanvasLg" aria-controls="navbarOffcanvasLg" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
-        <a class="navbar-brand" href="#">Offcanvas navbar</a>
+        <a class="navbar-brand" href="#">Wembat</a>
         <div></div>
         <div class="offcanvas offcanvas-start h-100" tabindex="-1" id="navbarOffcanvasLg" aria-labelledby="navbarOffcanvasLgLabel">
           <ul class="nav nav-pills d-flex flex-column h-100">
@@ -43,12 +43,12 @@ onMounted(async () => {
                 Applications
               </button>
             </li>
-            <li class="nav-item" role="presentation">
+            <!-- <li class="nav-item" role="presentation">
               <button class="nav-link" id="pills-users-tab" data-bs-toggle="pill" data-bs-target="#pills-users" type="button" role="tab" aria-controls="pills-users" aria-selected="true">
                 <i class="bi bi-people-fill"></i>
                 Users
               </button>
-            </li>
+            </li> -->
             <li class="flex-grow-1">
             </li>
             <!-- <li class="nav-item">
