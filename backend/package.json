@@ -29,7 +29,7 @@
     "compression": "^1.7.4",
     "connect-history-api-fallback": "^2.0.0",
     "cors": "^2.8.5",
-    "express": "^4.19.2",
+    "express": "^4.21.2",
     "express-rate-limit": "^7.4.0",
     "helmet": "^5.0.2",
     "jose": "^4.15.5",
