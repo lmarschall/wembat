@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-DB_HOST=postgres
+DB_HOST=$DATABASE_HOST
 DB_PORT=5432
 DB_USER=$DATABASE_USER
 
