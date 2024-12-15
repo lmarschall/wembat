@@ -74,6 +74,7 @@ async function init() {
   
   app.use(limiter);
   app.use(cors(corsOptionsDelegate));
+  app.set("trust proxy", true);
   app.use(cookieParser);
   app.use(helmet());
   app.use(compression()); // COMPRESSION
