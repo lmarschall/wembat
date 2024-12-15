@@ -20,7 +20,7 @@ export interface ApplicationInfo {
 }
 
 export class WembatRequestService {
-    private baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:8080";
+    private baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
     private readonly tokenStore;
 
     constructor() {
