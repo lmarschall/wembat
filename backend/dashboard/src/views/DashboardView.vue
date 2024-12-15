@@ -16,6 +16,7 @@ function saveToken() {
   if (props.token !== undefined)
   {
     tokenStore.token = props.token;
+    tokenStore.setApiUrl();
   }
 }
 
