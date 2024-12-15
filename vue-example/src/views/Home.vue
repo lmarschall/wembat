@@ -94,10 +94,11 @@
 
 import { useRouter } from "vue-router";
 import { ref, onMounted, inject } from "vue";
-import { WembatClient, WembatMessage } from "@wembat/client";
+import { WembatClient } from "@wembat/client";
 
 import TokenService from "../services/token";
 import MessageService from "../services/message";
+import { WembatMessage } from "@wembat/client/dist/types";
 
 const loading = ref(false);
 const router = useRouter();
