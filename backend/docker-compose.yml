@@ -24,9 +24,7 @@ services:
         image: wembat-dashboard
         build:
             context: ./dashboard
-            dockerfile: Dockerfile
-            args:
-                VITE_API_URL: ${API_SERVER_URL}
+            dockerfile: Dockerfile                
         restart: unless-stopped
         logging:
           driver: none
