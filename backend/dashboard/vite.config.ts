@@ -14,5 +14,9 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
+  },
+  define: {
+    // this is necessary to avoid compile errors
+    VITE_API_URL: JSON.stringify(`${process.env.VITE_API_URL}`),
   }
 })

@@ -1,6 +1,8 @@
 
 # define build stage and create gzipped files
 FROM node:20 as build-stage
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 RUN apt-get update
 RUN apt-get install gettext-base
 WORKDIR /build
