@@ -10,6 +10,17 @@ export async function applicationUpdate(req: Request, res: Response) {
 
         if (!req.body.applicationInfo) throw Error("Application Info not present");
 		const { appUId, appName, appDomain } = req.body.applicationInfo as ApplicationInfo;
+
+		const tempApp = await prisma.application
+			.findUnique({
+				where: {
+					uid: appUId
+				}
+			})
+			.catch((err) => {
+				console.log(err);
+				throw Error("Error while updating application");
+			}) as Application;
         
         const app = await prisma.application
 			.update({
@@ -26,11 +37,12 @@ export async function applicationUpdate(req: Request, res: Response) {
 				throw Error("Error while updating application");
 			}) as Application;
 
-		const appUrl = `https://${app.domain}`;
+		const appUrl = `https://${tempApp.domain}`;
 		const index = applicationKeys.indexOf(appUrl);
 		
 		if (index !== -1) {
-			applicationKeys[index] = appUrl;
+			const newAppUrl = `https://${app.domain}`;
+			applicationKeys[index] = newAppUrl;
 		}
 
 		res.status(200).send();
