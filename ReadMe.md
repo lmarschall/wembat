@@ -1,10 +1,12 @@
 # Wembat
 
-### The Wembat framework can be used to authenticate users and encrypt data locally via the prf extension of webauthn. The Wembat Backend is an API server to handle calls from the client library and hosts the dashboard. The client library provides all the frontend functionalities.
+### The Wembat project provides an easy to setup and simple to use authentication and encryption framework to handle user authentication and data encryption for your web projects.
+
+***The Wembat Backend is an API server to handle calls from the client library and hosts the dashboard. The client library provides all the frontend functionalities.***
 
 
-**Simple Authenticate and Encrypt**.
-Wembat allows user to authenticate using their biometrics. You can encrypt sensitive data locally in your browser without the need to care about handling key pairs. Everything is handled for you.
+**Simple Authentication and Encryption**.
+Wembat allows your users to authenticate using their biometrics. You can encrypt sensitive data locally in your browser without the need to care about handling key pairs. Everything is handled for you.
 
 Based on the awesome work of [SimpleWebAuthn](https://github.com/MasterKale/SimpleWebAuthn)
 
