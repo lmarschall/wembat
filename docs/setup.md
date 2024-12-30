@@ -2,7 +2,11 @@
 
 This page shows the first steps to install the Wembat Backend and how to use the Wembat Dashboard to create applications and retrieve tokens, which can be used in applications.
 
-## Install with Script
+## Install Backend
+
+The Wembat backend can be installed via the script or with commands manually.
+
+### Install with Script
 
 1. Install the backend with the following command, all files needed will be downloaded and a default environment file will be generated
 
@@ -10,7 +14,7 @@ This page shows the first steps to install the Wembat Backend and how to use the
 bash <(curl -s https://raw.githubusercontent.com/lmarschall/wembat/refs/heads/main/setup/install.sh)
 ```
 
-## Install with Commands
+### Install with Commands
 
 1. Download the Docker Compose file and the template environment file from the ./setup folder
 
@@ -18,6 +22,8 @@ bash <(curl -s https://raw.githubusercontent.com/lmarschall/wembat/refs/heads/ma
 curl -o .env.template https://raw.githubusercontent.com/lmarschall/wembat/main/setup/.env.template
 curl -o docker-compose.yml https://raw.githubusercontent.com/lmarschall/wembat/main/setup/docker-compose.yml
 ```
+
+2. Rename **.env.template** file into **.env**
 
 ## Config Environment
 

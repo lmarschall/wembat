@@ -6,11 +6,11 @@
 - discoverable credentials / conditional ui
 - save ip address alongside token in redis
 -- review
-- placeholder encryption string
-- example comments with //
+- placeholder encryption string x
+- example comments with // x
 - import wembat message
 - public key endpoint
-- loginresult token und jwt
-- getting started and setup verbessern
-- install optionen
+- loginresult token und jwt x
+- getting started and setup verbessern x
+- install optionen x
 - documentation verbessern

@@ -9,11 +9,16 @@ This page shows the first steps to install the Wembat Client package and use the
 npm install @wembat/client
 ```
 
-2. Create a Wembat Client instance with you application token create in the setup section https://wembat.dev/setup
+2. Optionally - Install the npm package with CDN
+```html
+<script src="https://cdn.jsdelivr.net/npm/@wembat/client/dist/wembat-client.umd.min.js"></script>
+```
+
+3. Create a Wembat Client instance with your application token created in the setup section https://wembat.dev/setup
 ```ts{3}
 import { WembatClient } from "@wembat/client";
 
-const wembatClient = new WembatClient(APPTOKEN);
+const wembatClient = new WembatClient(APPLICATION_TOKEN);
 ```
 
 ## Authenticate User
@@ -44,7 +49,7 @@ async function login() {
     const loginResult = loginResponse.result;
 
     if (loginResult.verified) {
-      const token = loginResult.jwt;
+      const token = loginResult.token;
     }
   }
 }
@@ -56,15 +61,15 @@ async function login() {
 async function encryptMessage() {
   const encryptMessage : WembatMessage = {
     iv: "",
-    message: message.text,
+    message: "This message will be encrypted",
     encrypted: ""
   }
 
-  # sender side
+  // sender side
   const publicKey = wembatClient.getCryptoPublicKey();
   const encryptionResult = await wembatClient.encrypt(encryptMessage, publicKey);
 
-  # receiver side
+  // receiver side
   const publicKey = wembatClient.getCryptoPublicKey();
   const decryptionResult = await wembatClient.decrypt(encryptedMessage, publicKey);
 }

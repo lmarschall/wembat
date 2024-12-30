@@ -10,7 +10,7 @@
     "format": "prettier .  --write"
   },
   "dependencies": {
-    "@wembat/client": "file:..",
+    "@wembat/client": "^0.8.0",
     "axios": "^1.4.0",
     "bootstrap": "^5.3.2",
     "vue": "^3.2.25",
