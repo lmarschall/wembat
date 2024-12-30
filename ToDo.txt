@@ -5,3 +5,12 @@
 - improve tests
 - discoverable credentials / conditional ui
 - save ip address alongside token in redis
+-- review
+- placeholder encryption string
+- example comments with //
+- import wembat message
+- public key endpoint
+- loginresult token und jwt
+- getting started and setup verbessern
+- install optionen
+- documentation verbessern
