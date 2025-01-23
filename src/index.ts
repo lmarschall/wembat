@@ -9,6 +9,8 @@ import { onboard } from "./functions/onboard";
 import { jwtDecode } from "./helper";
 import { token } from "./functions/token";
 
+export * from "./types";
+
 /**
  * Represents a client for interacting with the Wembat API.
  */

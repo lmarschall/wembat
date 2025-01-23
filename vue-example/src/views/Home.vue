@@ -94,11 +94,10 @@
 
 import { useRouter } from "vue-router";
 import { ref, onMounted, inject } from "vue";
-import { WembatClient } from "@wembat/client";
+import { WembatClient, WembatMessage, WembatRegisterResult } from "@wembat/client";
 
 import TokenService from "../services/token";
 import MessageService from "../services/message";
-import { WembatMessage } from "@wembat/client/dist/types";
 
 const loading = ref(false);
 const router = useRouter();
@@ -137,7 +136,7 @@ async function register() {
   const registerResponse = await wembatClient.register("blob");
 
   if(registerResponse.success) {
-    const verified = registerResponse.result;
+    const verified: WembatRegisterResult = registerResponse.result;
     appendAlert("Registration successful", "success");
   } else  {
     const errorResult = registerResponse.error;

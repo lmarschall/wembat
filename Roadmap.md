@@ -10,7 +10,7 @@
 
 ## Version 0.8.x
 - public key endpoint
-- import wembat message
+- import wembat message (done)
 
 ## Version 0.9
 - improve tests
