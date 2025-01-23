@@ -4,6 +4,7 @@
 - App Token lenght reduction
 - WebAuthn Autofill
 - Extensive API Documentation
+- replace .env file with config file
 
 ## Planned Features for 2025
 
