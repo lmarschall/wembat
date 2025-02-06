@@ -10,6 +10,7 @@ import { initCrypto } from "./crypto";
 import { webauthnRoutes } from "./webauthn";
 import { adminRoutes, initAdmin } from "./admin";
 import { applicationKeys, initApplications } from "./application";
+import { initServer, serverRoutes } from "./server";
 
 const port = 8080;
 
@@ -19,6 +20,11 @@ const limiter = rateLimit({
 });
 
 async function init() {
+
+  if (!await initServer()) {
+    console.error("Failed to initialize server");
+    return;
+  }
 
   if (!await initCrypto()) {
     console.error("Failed to initialize crypto");
@@ -46,9 +52,10 @@ async function init() {
     let corsOptions;
   
     const origin = req.header("Origin");
+    const method = req.method;
     const isDomainAllowed = applicationKeys.indexOf(origin) !== -1;
-  
-    console.log(`Request from ${origin} is allowed: ${isDomainAllowed}`);
+    
+    console.log(`Request from ${origin} with method ${method} is allowed: ${isDomainAllowed}`);
   
     if (isDomainAllowed) {
       // Enable CORS for this request
@@ -81,6 +88,7 @@ async function init() {
   app.use(bodyParser.json({ limit: "1mb" }));
   app.use("/webauthn", webauthnRoutes);
   app.use("/admin", adminRoutes);
+  app.use("/server", serverRoutes);
   
   app.listen(port, () => {
     return console.log(`server is listening on ${port}`);

@@ -1,4 +1,4 @@
-import { exportJWK, importPKCS8, importSPKI, SignJWT } from "jose";
+import { exportJWK, exportSPKI, importPKCS8, importSPKI, SignJWT } from "jose";
 import { Application, Session, User } from "@prisma/client";
 import { readFileSync } from "fs";
 
@@ -101,4 +101,8 @@ export async function createAdminJWT() {
 		.setAudience("")
 		// .setExpirationTime('2h') // no exp time
 		.sign(keyPairs.tokenKeyPair.privateKey);
+}
+
+export async function exportPublicKey() {
+	return await exportSPKI(keyPairs.tokenKeyPair.publicKey);
 }
