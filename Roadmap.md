@@ -1,6 +1,5 @@
 ## Requests
 - Docker Image Size Reduction
-- WebAuthn Autofill
 - Extensive API Documentation
 - replace .env file with config file
 
@@ -12,12 +11,14 @@
 
 ## Version 0.9
 - improve tests
+- registered devices endpoint
+- discoverable credentials / conditional ui
+- WebAuthn Autofill
 - onboard private key directly from privatekeystring
 
 ## Version 1.0
 - login page for dashboard
 - fido compliance
-- discoverable credentials / conditional ui
 - OpenId Connect Integration
 - Healthcheck Endpoint - prometheus compatible
 - App Token lenght reduction
