@@ -7,10 +7,9 @@ import compression from "compression";
 import { rateLimit} from "express-rate-limit";
 import { initRedis } from "./redis";
 import { initCrypto } from "./crypto";
-import { webauthnRoutes } from "./webauthn";
-import { adminRoutes, initAdmin } from "./admin";
 import { applicationKeys, initApplications } from "./application";
-import { initServer, serverRoutes } from "./server";
+import { apiRouter, initAdmin } from "./api";
+import { initServer } from "./api/server";
 
 const port = 8080;
 
@@ -86,9 +85,7 @@ async function init() {
   app.use(helmet());
   app.use(compression()); // COMPRESSION
   app.use(bodyParser.json({ limit: "1mb" }));
-  app.use("/webauthn", webauthnRoutes);
-  app.use("/admin", adminRoutes);
-  app.use("/server", serverRoutes);
+  app.use("/api", apiRouter);
   
   app.listen(port, () => {
     return console.log(`server is listening on ${port}`);
