@@ -1,21 +1,23 @@
 import { Request, Response } from "express";
-import { checkForWebAuthnToken } from "../../../redis";
 import { decodeProtectedHeader, importJWK, jwtVerify } from "jose";
-import { publicKeyJwk } from "../../../crypto";
+import { publicKeyJwk } from "../../crypto";
 
 const serverUrl = process.env.SERVER_URL || "http://localhost:8080";
 
-export async function validateWebAuthnToken(
+export async function validateApplicationToken(
 	req: Request,
 	res: Response,
 	next: any
 ) {
-	console.log("validate webauthn token");
+	console.log("validate application token");
 
 	try {
-		if (req.headers.authorization == null) return res.status(401).send();
+		if (req.headers["wembat-app-token"] == null)
+			return res.status(401).send();
 
-		const authorization = req.headers.authorization.split(" ");
+		const authorization = (req.headers["wembat-app-token"] as string).split(
+			" "
+		);
 
 		if (authorization[0] !== "Bearer") return res.status(401).send();
 
@@ -35,8 +37,10 @@ export async function validateWebAuthnToken(
 		const importedKey = await importJWK(spki, algorithm);
 		const { payload, protectedHeader } = await jwtVerify(jwt, importedKey, {
 			issuer: serverUrl,
+			// audience: "urn:example:audience",
 			algorithms: ["ES256"],
 		});
+
 		res.locals.payload = payload;
 		return next();
 	} catch (error) {

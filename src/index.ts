@@ -35,7 +35,7 @@ class WembatClient {
 
 		this.#apiUrl = tokenPayload.iss;
 		this.#axiosClient = axios.create({
-			baseURL: `${this.#apiUrl}/webauthn`,
+			baseURL: `${this.#apiUrl}/api/webauthn`,
 			validateStatus: function (status) {
 				return status == 200 || status == 400;
 			},

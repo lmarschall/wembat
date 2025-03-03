@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { exportPublicKey } from "../../../crypto";
+import { exportPublicKey } from "../../crypto";
 
 export async function serverExportPublicKey(req: Request, res: Response) {
     try {

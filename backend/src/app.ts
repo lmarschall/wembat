@@ -3,15 +3,17 @@ import helmet from "helmet";
 import express from "express";
 import bodyParser from "body-parser";
 import compression from "compression";
-
 import { rateLimit} from "express-rate-limit";
+
+import { apiRouter } from "./api";
 import { initRedis } from "./redis";
-import { initCrypto } from "./crypto";
-import { applicationKeys, initApplications } from "./application";
-import { apiRouter, initAdmin } from "./api";
-import { initServer } from "./api/server";
+import { PrismaClient } from "@prisma/client";
+import { createAdminJWT, initCrypto } from "./crypto";
 
 const port = 8080;
+const dashboardUrl = process.env.DASHBOARD_URL || "http://localhost:9090";
+const prisma = new PrismaClient();
+export const domainWhitelist = new Array<string>();
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -19,11 +21,6 @@ const limiter = rateLimit({
 });
 
 async function init() {
-
-  if (!await initServer()) {
-    console.error("Failed to initialize server");
-    return;
-  }
 
   if (!await initCrypto()) {
     console.error("Failed to initialize crypto");
@@ -40,7 +37,7 @@ async function init() {
     return;
   }
   
-  if (!await initApplications()) {
+  if (!await initWhitelist()) {
     console.error("Failed to initialize applications");
     return;
   }
@@ -52,7 +49,7 @@ async function init() {
   
     const origin = req.header("Origin");
     const method = req.method;
-    const isDomainAllowed = applicationKeys.indexOf(origin) !== -1;
+    const isDomainAllowed = domainWhitelist.indexOf(origin) !== -1;
     
     console.log(`Request from ${origin} with method ${method} is allowed: ${isDomainAllowed}`);
   
@@ -93,3 +90,31 @@ async function init() {
 }
 
 init();
+
+async function initAdmin(): Promise<boolean> {
+	try {
+		const token = await createAdminJWT();
+		console.log(`Dashboard Url: ${dashboardUrl}/${token}`);
+		return true;
+	} catch (err) {
+		console.error(err);
+		return false;
+	}
+}
+
+async function initWhitelist(): Promise<boolean> {
+	try {
+		
+		const apps = await prisma.application.findMany();
+
+		for (const app of apps) {
+			const appUrl = `https://${app.domain}`;
+			domainWhitelist.push(appUrl);
+		}
+		domainWhitelist.push(dashboardUrl);
+		return true;
+	} catch (err) {
+		console.error(err);
+		return false;
+	}
+}

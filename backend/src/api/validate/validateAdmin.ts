@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
-import { checkForWebAuthnToken } from "../../../redis";
 import { decodeProtectedHeader, importJWK, jwtVerify } from "jose";
-import { publicKeyJwk } from "../../../crypto";
+import { publicKeyJwk } from "../../crypto";
 
 const serverUrl = process.env.SERVER_URL || "http://localhost:8080";
 

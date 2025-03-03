@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { Application, PrismaClient } from "@prisma/client";
 import { ApplicationInfo } from "../types";
-import { applicationKeys } from "../../application";
+import { domainWhitelist } from "../../app";
 
 const prisma = new PrismaClient();
 
@@ -24,7 +24,7 @@ export async function applicationCreate(req: Request, res: Response) {
 			}) as Application;
 
 		const appUrl = `https://${app.domain}`;
-		applicationKeys.push(appUrl);
+		domainWhitelist.push(appUrl);
 
         res.status(200).send();
 

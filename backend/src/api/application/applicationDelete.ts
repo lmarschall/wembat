@@ -1,7 +1,7 @@
 import { Application, PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { ApplicationInfo } from "../types";
-import { applicationKeys } from "../../application";
+import { domainWhitelist } from "../../app";
 
 const prisma = new PrismaClient();
 
@@ -23,10 +23,10 @@ export async function applicationDelete(req: Request, res: Response) {
 			}) as Application;
 
 		const appUrl = `https://${app.domain}`;
-		const index = applicationKeys.indexOf(appUrl);
+		const index = domainWhitelist.indexOf(appUrl);
 		
 		if (index !== -1) {
-			applicationKeys.splice(index, 1);
+			domainWhitelist.splice(index, 1);
 		}
 
 		res.status(200).send();
