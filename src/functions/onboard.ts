@@ -55,7 +55,7 @@ export async function onboard(
 
 		const credentials: AuthenticationResponseJSON = await startAuthentication(
 			{
-				optionsJSON: challengeOptions
+				optionsJSON: challengeOptions,
 			}
 		).catch((err: string) => {
 			throw Error(err);

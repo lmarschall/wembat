@@ -70,7 +70,7 @@ export async function login(
 
 		const credentials: AuthenticationResponseJSON = await startAuthentication(
 			{
-				optionsJSON: challengeOptions
+				optionsJSON: challengeOptions,
 			}
 		).catch((err: string) => {
 			throw Error(err);
@@ -181,8 +181,8 @@ export async function login(
 				);
 
 				const headers = {
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${token}`,
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
 				};
 
 				const saveCredentialsResponse = await axiosClient.post<string>(
