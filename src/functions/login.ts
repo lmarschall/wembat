@@ -89,8 +89,6 @@ export async function login(
 			}
 		);
 
-		console.log(axiosClient.defaults.headers);
-
 		if (loginReponse.status !== 200) {
 			throw Error(loginReponse.data);
 		}

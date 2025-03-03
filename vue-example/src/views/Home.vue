@@ -133,7 +133,7 @@ async function logout() {
 async function register() {
   loading.value = true;
 
-  const registerResponse = await wembatClient.register("blob");
+  const registerResponse = await wembatClient.register(TokenService.getTokenUserMail(), true);
 
   if(registerResponse.success) {
     const verified: WembatRegisterResult = registerResponse.result;

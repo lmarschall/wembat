@@ -24,7 +24,8 @@ import { AxiosInstance } from "axios";
  */
 export async function register(
 	axiosClient: AxiosInstance,
-	userMail: string
+	userMail: string,
+	autoRegister: boolean = false
 ): Promise<WembatActionResponse<WembatRegisterResult>> {
 	const actionResponse: WembatActionResponse<WembatRegisterResult> = {
 		success: false,
@@ -33,6 +34,7 @@ export async function register(
 	};
 
 	try {
+		debugger;
 		if (!browserSupportsWebAuthn())
 			throw Error("WebAuthn is not supported on this browser!");
 
@@ -55,7 +57,7 @@ export async function register(
 		const credentials: RegistrationResponseJSON = await startRegistration(
 			{
 				optionsJSON: requestRegisterResponseData.options,
-				useAutoRegister: false
+				useAutoRegister: autoRegister
 			}
 		).catch((err: string) => {
 			throw Error(err);

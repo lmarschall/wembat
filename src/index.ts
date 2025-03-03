@@ -79,8 +79,8 @@ class WembatClient {
 	 * @param userMail - The email address of the user to register.
 	 * @returns A Promise that resolves to a WembatActionResponse containing the registration result.
 	 */
-	public async register (userMail: string): Promise<WembatActionResponse<WembatRegisterResult>> {
-		return await register(this.#axiosClient, userMail);
+	public async register (userMail: string, autoRegister: boolean = false): Promise<WembatActionResponse<WembatRegisterResult>> {
+		return await register(this.#axiosClient, userMail, autoRegister);
 	}
 
 	/**
