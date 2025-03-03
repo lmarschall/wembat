@@ -28,7 +28,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="d-flex flex-column flex-lg-row h-100">
+  <div class="d-flex flex-column flex-lg-row h-100 w-100">
     <div class="flex-shrink-1">
       <nav class="navbar navbar-expand-lg bg-body-tertiary h-100 d-flex flex-row flex-lg-column">
         <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#navbarOffcanvasLg" aria-controls="navbarOffcanvasLg" aria-label="Toggle navigation">
@@ -39,17 +39,17 @@ onMounted(async () => {
         <div class="offcanvas offcanvas-start h-100" tabindex="-1" id="navbarOffcanvasLg" aria-labelledby="navbarOffcanvasLgLabel">
           <ul class="nav nav-pills d-flex flex-column h-100">
             <li class="nav-item" role="presentation">
-              <button class="nav-link active" id="pills-application-tab" data-bs-toggle="pill" data-bs-target="#pills-applications" type="button" role="tab" aria-controls="pills-applications" aria-selected="true">
+              <button class="nav-link button-pills d-flex flex-row flex-nowrap active" id="pills-application-tab" data-bs-toggle="pill" data-bs-target="#pills-applications" type="button" role="tab" aria-controls="pills-applications" aria-selected="true">
                 <i class="bi bi-laptop-fill"></i>
                 Applications
               </button>
             </li>
-            <!-- <li class="nav-item" role="presentation">
-              <button class="nav-link" id="pills-users-tab" data-bs-toggle="pill" data-bs-target="#pills-users" type="button" role="tab" aria-controls="pills-users" aria-selected="true">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link button-pills d-flex flex-row flex-nowrap" id="pills-users-tab" data-bs-toggle="pill" data-bs-target="#pills-users" type="button" role="tab" aria-controls="pills-users" aria-selected="true">
                 <i class="bi bi-people-fill"></i>
                 Users
               </button>
-            </li> -->
+            </li>
             <li class="flex-grow-1">
             </li>
             <!-- <li class="nav-item">
@@ -74,3 +74,38 @@ onMounted(async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+
+.d-flex.flex-column.flex-lg-row.h-100 {
+  max-width: 95vw;
+}
+
+button.navbar-toggler {
+  margin: 0px 0px 0px 20px;
+}
+
+ul.nav.nav-pills.d-flex.flex-column.h-100 {
+  margin: 10px 0px 0px 0px;
+}
+
+i.bi {
+  margin: 0px 10px;
+}
+
+button.button-pills {
+  min-width: 200px;
+}
+
+div#navbarOffcanvasLg {
+    width: fit-content;
+}
+
+a.navbar-brand {
+  margin: 10px 0px 10px 0px;
+}
+
+li.nav-item {
+    margin: 0px 10px;
+}
+</style>

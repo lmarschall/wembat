@@ -36,6 +36,8 @@ import { RouterLink, RouterView } from 'vue-router'
     line-height: 38px;
     font-size: 14px;
     border: none;
+    white-space: nowrap;
+    margin: 10px;
   }
 
   a.navbar-brand {
