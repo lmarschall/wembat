@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import { checkForWebAuthnToken } from "../../redis";
 import { decodeProtectedHeader, importJWK, jwtVerify } from "jose";
 import { publicKeyJwk } from "../../crypto";
 

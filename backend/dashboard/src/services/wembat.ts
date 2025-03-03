@@ -28,7 +28,7 @@ export class WembatRequestService {
 
     public async applicationUpdate(data: any): Promise<boolean> {
         try {
-            await axios.post(`${this.tokenStore.apiUrl}/admin/application/update`, data, {
+            await axios.post(`${this.tokenStore.apiUrl}/api/application/update`, data, {
                 headers: {
                     Authorization: `Bearer ${this.tokenStore.token}`,
                 },
@@ -42,7 +42,7 @@ export class WembatRequestService {
 
     public async applicationList(): Promise<Application[]> {
         try {
-            let listRequest = await axios.get(`${this.tokenStore.apiUrl}/admin/application/list`, {
+            let listRequest = await axios.get(`${this.tokenStore.apiUrl}/api/application/list`, {
                 headers: {
                     Authorization: `Bearer ${this.tokenStore.token}`,
                 },
@@ -56,7 +56,7 @@ export class WembatRequestService {
 
     public async applicationCreate(data: any): Promise<boolean> {
         try {
-            await axios.post(`${this.tokenStore.apiUrl}/admin/application/create`, data, {
+            await axios.post(`${this.tokenStore.apiUrl}/api/application/create`, data, {
                 headers: {
                     Authorization: `Bearer ${this.tokenStore.token}`,
                 },
@@ -70,7 +70,7 @@ export class WembatRequestService {
 
     public async applicationDelete(data: any): Promise<boolean> {
         try {
-            await axios.post(`${this.tokenStore.apiUrl}/admin/application/delete`, data, {
+            await axios.post(`${this.tokenStore.apiUrl}/api/application/delete`, data, {
                 headers: {
                     Authorization: `Bearer ${this.tokenStore.token}`,
                 },
@@ -84,7 +84,7 @@ export class WembatRequestService {
 
     public async applicationToken(data: any): Promise<string> {
         try {
-            let tokenRequest = await axios.post(`${this.tokenStore.apiUrl}/admin/application/token`, data, {
+            let tokenRequest = await axios.post(`${this.tokenStore.apiUrl}/api/application/token`, data, {
                 headers: {
                     Authorization: `Bearer ${this.tokenStore.token}`,
                 },

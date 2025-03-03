@@ -52,3 +52,9 @@ export interface ExtensionsLargeBlobRead
 		read: boolean;
 	};
 }
+
+export type ApplicationInfo = {
+    appUId: string;
+    appName: string;
+    appDomain: string;
+};

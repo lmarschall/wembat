@@ -1,11 +1,11 @@
 import base64url from "base64url";
 import { Device, PrismaClient, Session } from "@prisma/client";
-import { createSessionToken, createSessionRefreshToken } from "../../crypto";
-import { addToWebAuthnTokens } from "../../redis";
 import { verifyAuthenticationResponse, VerifyAuthenticationResponseOpts } from "@simplewebauthn/server";
 import { LoginChallengeResponse, UserWithDevicesAndSessions } from "../types";
 import { Request, Response } from "express";
 import { WebAuthnCredential } from "@simplewebauthn/types";
+import { createSessionRefreshToken, createSessionToken } from "../../crypto";
+import { addToWebAuthnTokens } from "../../redis";
 
 const prisma = new PrismaClient();
 

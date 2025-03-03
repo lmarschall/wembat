@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { createApplicationJWT } from "../../crypto";
-import { ApplicationInfo } from "..";
+import { ApplicationInfo } from "../types";
 
 const prisma = new PrismaClient();
 

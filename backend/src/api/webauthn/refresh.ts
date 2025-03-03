@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
-import { createSessionToken } from "../../crypto";
 import { SessionInfo, UserInfo, UserWithDevicesAndSessions } from "../types";
 import { Request, Response } from "express";
+import { createSessionToken } from "../../crypto";
 
 const prisma = new PrismaClient();
 
