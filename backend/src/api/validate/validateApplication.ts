@@ -13,13 +13,13 @@ export async function validateApplicationToken(
 
 	try {
 		if (req.headers["wembat-app-token"] == null)
-			return res.status(401).send();
+			throw Error("No Wembat App Token header");
 
 		const authorization = (req.headers["wembat-app-token"] as string).split(
 			" "
 		);
 
-		if (authorization[0] !== "Bearer") return res.status(401).send();
+		if (authorization[0] !== "Bearer") throw Error("Invalid Authorization header");
 
 		const jwt = authorization[1];
 
@@ -29,15 +29,14 @@ export async function validateApplicationToken(
 		const spki = header.jwk;
 
 		if (algorithm == undefined || algorithm == null || algorithm !== "ES256")
-			return res.status(401).send();
+			throw Error("Invalid algorithm");
 
 		if (spki == undefined || spki == null || JSON.stringify(spki) !== JSON.stringify(publicKeyJwk))
-			return res.status(401).send();
+			throw Error("Invalid public key");
 
 		const importedKey = await importJWK(spki, algorithm);
 		const { payload, protectedHeader } = await jwtVerify(jwt, importedKey, {
 			issuer: serverUrl,
-			// audience: "urn:example:audience",
 			algorithms: ["ES256"],
 		});
 
@@ -45,6 +44,6 @@ export async function validateApplicationToken(
 		return next();
 	} catch (error) {
 		console.log(error);
-		return res.status(401).send();
+		return res.status(401).send(error.message);
 	}
 }

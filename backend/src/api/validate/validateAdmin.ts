@@ -12,11 +12,11 @@ export async function validateAdminToken(
 	console.log("validate admin token");
 
 	try {
-		if (req.headers.authorization == null) return res.status(401).send();
+		if (req.headers.authorization == null) throw Error("No Authorization header");
 
 		const authorization = req.headers.authorization.split(" ");
 
-		if (authorization[0] !== "Bearer") return res.status(401).send();
+		if (authorization[0] !== "Bearer") throw Error("Invalid Authorization header");
 
 		const jwt = authorization[1];
 
@@ -26,10 +26,10 @@ export async function validateAdminToken(
 		const spki = header.jwk;
 
 		if (algorithm == undefined || algorithm == null || algorithm !== "ES256")
-			return res.status(401).send();
+			throw Error("Invalid algorithm");
 
 		if (spki == undefined || spki == null || JSON.stringify(spki) !== JSON.stringify(publicKeyJwk))
-			return res.status(401).send();
+			throw Error("Invalid public key");
 
 		const importedKey = await importJWK(spki, algorithm);
 		const { payload, protectedHeader } = await jwtVerify(jwt, importedKey, {
@@ -40,6 +40,6 @@ export async function validateAdminToken(
 		return next();
 	} catch (error) {
 		console.log(error);
-		return res.status(401).send();
+		return res.status(401).send(error.message);
 	}
 }
