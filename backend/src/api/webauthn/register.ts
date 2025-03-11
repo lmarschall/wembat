@@ -61,6 +61,8 @@ export async function register(req: Request, res: Response) {
 
 		if (verified == false) throw Error("Could not verifiy reponse");
 
+		if (registrationInfo == null) throw Error("Registration Info not present");
+
 		// check if device is already registered with user, else create device registration for user
 		await prisma.device
 			.upsert({

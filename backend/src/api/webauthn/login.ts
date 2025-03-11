@@ -51,7 +51,7 @@ export async function login(req: Request, res: Response) {
 
 		if (!user) throw Error("User with given challenge not found");
 
-		let userDevice: Device = null;
+		let userDevice: Device | null = null;
 		// "Query the DB" here for an authenticator matching `credentialID`
 		for (const dev of user.devices) {
 			if (dev.credentialId === credentials.rawId) {

@@ -45,7 +45,7 @@ export async function refresh(req: Request, res: Response) {
 			.send(JSON.stringify({
 				token: token
 			}));
-    } catch (error) {
+    } catch (error: any) {
         console.log(error);
 		return res.status(400).send(error.message);
     }

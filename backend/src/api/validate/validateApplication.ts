@@ -42,7 +42,7 @@ export async function validateApplicationToken(
 
 		res.locals.payload = payload;
 		return next();
-	} catch (error) {
+	} catch (error: any) {
 		console.log(error);
 		return res.status(401).send(error.message);
 	}

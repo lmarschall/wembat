@@ -1,4 +1,4 @@
-import { exportJWK, exportSPKI, importPKCS8, importSPKI, SignJWT } from "jose";
+import { exportJWK, exportSPKI, importPKCS8, importSPKI, SignJWT, JWK } from "jose";
 import { Application, Session, User } from "@prisma/client";
 import { readFileSync } from "fs";
 
@@ -18,7 +18,7 @@ const keyPairs: KeyPair = {
 	},
 };
 
-export let publicKeyJwk;
+export let publicKeyJwk: JWK;
 
 const apiUrl = process.env.SERVER_URL || "http://localhost:8080";
 

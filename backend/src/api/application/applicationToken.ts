@@ -16,6 +16,8 @@ export async function applicationToken(req: Request, res: Response) {
             }
         });
 
+        if (app == undefined) throw Error("Application not found");
+
         const token = await createApplicationJWT(app);
 
         res.json(token);

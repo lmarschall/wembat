@@ -1,6 +1,6 @@
 import cors from "cors";
 import helmet from "helmet";
-import express from "express";
+import express, { Request } from "express";
 import bodyParser from "body-parser";
 import compression from "compression";
 import { rateLimit} from "express-rate-limit";
@@ -63,7 +63,7 @@ async function init() {
     callback(null, corsOptions);
   };
 
-  function cookieParser(req, res, next) {
+  function cookieParser(req: Request, res: Response, next) {
     var cookies = req.headers.cookie;
     if (cookies) {
       req.cookies = cookies.split(";").reduce((obj, c) => {
