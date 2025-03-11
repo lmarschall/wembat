@@ -1,18 +1,36 @@
-import { validateAdminToken } from "./validateAdmin";
+
 import { Request, Response } from "express";
 import { publicKeyJwk } from "../../crypto";
 // import { decodeProtectedHeader, importJWK, jwtVerify } from "jose";
 
 import * as jose from "jose";
 
-jest.mock("jose", () => ({
-	// ...existing code...
-	decodeProtectedHeader: jest.fn(),
+// jest.mock("jose", () => ({
+// 	// ...existing code...
+// 	decodeProtectedHeader: jest.fn(),
+// 	importJWK: jest.fn(),
+// 	jwtVerify: jest.fn(),
+// }));
+
+jest.mock('jose', () => ({
+	...jest.requireActual('jose'),  // Keep other implementations intact
+	decodeProtectedHeader: jest.fn(),  // Mock this function
 	importJWK: jest.fn(),
 	jwtVerify: jest.fn(),
-}));
+  }));
 
-jest.mock("jose");
+//   import decodeProtectedHeader from 'jose'; // Default import
+
+// jest.mock('jose', () => ({
+// 	__esModule: true,
+// 	default: jest.fn(), // Mock the default export
+// }));
+  
+(jose.decodeProtectedHeader as jest.Mock).mockReturnValue({ alg: "invalid" });
+
+import { validateAdminToken } from "./validateAdmin";
+
+// jest.mock("jose");
 
 describe("validateAdminToken", () => {
 	let req: Partial<Request>;
@@ -57,7 +75,8 @@ describe("validateAdminToken", () => {
 	it("should return 401 if public key is invalid", async () => {
 		req.headers = req.headers || {};
 		req.headers.authorization = "Bearer token";
-		(jose.decodeProtectedHeader as jest.Mock).mockReturnValue({ alg: "ES256", jwk: "invalid" });
+		const mockFn = jose.decodeProtectedHeader as jest.MockedFunction<typeof jose.decodeProtectedHeader>;
+		mockFn.mockReturnValue({ alg: "ES256", jwk: { kty: "EC", crv: "P-256", x: "invalid", y: "invalid" } });
 		await validateAdminToken(req as Request, res as Response, next);
 		expect(res.status).toHaveBeenCalledWith(401);
 		expect(res.send).toHaveBeenCalledWith("Invalid public key");
