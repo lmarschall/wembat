@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { SessionInfo, UserInfo, UserWithDevicesAndSessions } from "../types";
 import { Request, Response } from "express";
-import { createSessionToken } from "../../crypto";
+import { cryptoService } from "../../crypto";
 
 const prisma = new PrismaClient();
 
@@ -38,7 +38,7 @@ export async function refresh(req: Request, res: Response) {
 
         if (!userSession) throw Error("User session not found");
 
-        const token = await createSessionToken(userSession, user, expectedOrigin);
+        const token = await cryptoService.createSessionToken(userSession, user, expectedOrigin);
         
         return res
 			.status(200)

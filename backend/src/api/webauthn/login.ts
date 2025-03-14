@@ -4,7 +4,7 @@ import { verifyAuthenticationResponse, VerifyAuthenticationResponseOpts } from "
 import { LoginChallengeResponse, UserWithDevicesAndSessions } from "../types";
 import { Request, Response } from "express";
 import { WebAuthnCredential } from "@simplewebauthn/types";
-import { createSessionRefreshToken, createSessionToken } from "../../crypto";
+import { cryptoService } from "../../crypto";
 import { addToWebAuthnTokens } from "../../redis";
 
 const prisma = new PrismaClient();
@@ -127,8 +127,8 @@ export async function login(req: Request, res: Response) {
 		}
 
 		// create new json web token for api calls
-		const token = await createSessionToken(userSession, user, expectedOrigin);
-		const refreshToken = await createSessionRefreshToken(userSession, user, expectedOrigin);
+		const token = await cryptoService.createSessionToken(userSession, user, expectedOrigin);
+		const refreshToken = await cryptoService.createSessionRefreshToken(userSession, user, expectedOrigin);
 
 		// add self generated jwt to whitelist
 		await addToWebAuthnTokens(token);

@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { decodeProtectedHeader, importJWK, jwtVerify } from "jose";
-import { publicKeyJwk } from "../../crypto";
+import { cryptoService } from "../../crypto";
 
 const serverUrl = process.env.SERVER_URL || "http://localhost:8080";
 
@@ -28,7 +28,9 @@ export async function validateWebAuthnToken(
 		if (algorithm == undefined || algorithm == null || algorithm !== "ES256")
 			throw Error("Invalid algorithm");
 
-		if (spki == undefined || spki == null || JSON.stringify(spki) !== JSON.stringify(publicKeyJwk))
+		const publicKeyJwk = cryptoService.getPublicKeyJwk();
+
+		if (spki == undefined || spki == null || JSON.stringify(spki) !== JSON.stringify())
 			throw Error("Invalid public key");
 
 		const importedKey = await importJWK(spki, algorithm);

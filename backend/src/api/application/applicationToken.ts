@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
-import { createApplicationJWT } from "../../crypto";
+import { cryptoService } from "../../crypto";
 import { ApplicationInfo } from "../types";
 
 const prisma = new PrismaClient();
@@ -18,7 +18,7 @@ export async function applicationToken(req: Request, res: Response) {
 
         if (app == undefined) throw Error("Application not found");
 
-        const token = await createApplicationJWT(app);
+        const token = await cryptoService.createApplicationJWT(app);
 
         res.json(token);
 

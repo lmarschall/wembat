@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
-import { exportPublicKey } from "../../crypto";
+import { cryptoService } from "../../crypto";
 
 export async function serverExportPublicKey(req: Request, res: Response) {
     try {
 
-        const publicKey = await exportPublicKey();
+        const publicKey = await cryptoService.exportPublicKey();
         res.json(publicKey);
 
     } catch (err) {
