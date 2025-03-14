@@ -1,5 +1,9 @@
+name: test-backend
+
+on: [push]
+
 jobs:
-  test:
+  test-wembat-backend:
     runs-on: ubuntu-latest
     defaults:
       run:
