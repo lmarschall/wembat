@@ -3,9 +3,7 @@ import { Request, Response } from "express";
 import { ApplicationInfo } from "../types";
 import { domainWhitelist } from "../../app";
 
-const prisma = new PrismaClient();
-
-export async function applicationUpdate(req: Request, res: Response) {
+export async function applicationUpdate(req: Request, res: Response, prisma: PrismaClient) {
     try {
 
         if (!req.body.applicationInfo) throw Error("Application Info not present");
@@ -38,17 +36,17 @@ export async function applicationUpdate(req: Request, res: Response) {
 			}) as Application;
 
 		const appUrl = `https://${tempApp.domain}`;
-		const index = domainWhitelist.indexOf(appUrl);
+		// const index = domainWhitelist.indexOf(appUrl);
 		
-		if (index !== -1) {
-			const newAppUrl = `https://${app.domain}`;
-			domainWhitelist[index] = newAppUrl;
-		}
+		// if (index !== -1) {
+		// 	const newAppUrl = `https://${app.domain}`;
+		// 	domainWhitelist[index] = newAppUrl;
+		// }
 
 		res.status(200).send();
 
-    } catch (err) {
+    } catch (err: any) {
         console.error(err);
-        res.status(500).send("Internal Server Error");
+        res.status(500).send(err.message);
     }
 }

@@ -1,17 +1,15 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 
-const prisma = new PrismaClient();
-
-export async function applicationList(req: Request, res: Response) {
+export async function applicationList(req: Request, res: Response, prisma: PrismaClient) {
     try {
 
         const apps = await prisma.application.findMany();
 
-        res.json(apps);
+        res.status(200).json(apps);
 
-    } catch (err) {
+    } catch (err: any) {
         console.error(err);
-        res.status(500).send("Internal Server Error");
+        res.status(500).send(err.message);
     }
 }

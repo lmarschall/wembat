@@ -17,8 +17,11 @@ import { validateWebAuthnToken } from "./validate/validateWebAuthn";
 import { validateApplicationToken } from "./validate/validateApplication";
 import { validateAdminToken } from "./validate/validateAdmin";
 import { serverExportPublicKey } from "./server/serverExportPublicKey";
+import { PrismaClient } from "@prisma/client";
 
 export const apiRouter = Router();
+
+const prisma = new PrismaClient();
 
 const dashboardUrl = process.env.DASHBOARD_URL || "http://localhost:9090";
 
@@ -37,7 +40,7 @@ apiRouter.post(
 apiRouter.post(
 	"/application/create",
 	[validateAdminToken],
-	async (req: Request, res: Response) => applicationCreate(req, res)
+	async (req: Request, res: Response) => applicationCreate(req, res, prisma)
 );
 
 apiRouter.post(

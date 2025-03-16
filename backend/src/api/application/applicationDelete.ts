@@ -1,11 +1,9 @@
-import { Application, PrismaClient } from "@prisma/client";
+import { Application } from "@prisma/client";
 import { Request, Response } from "express";
 import { ApplicationInfo } from "../types";
 import { domainWhitelist } from "../../app";
 
-const prisma = new PrismaClient();
-
-export async function applicationDelete(req: Request, res: Response) {
+export async function applicationDelete(req: Request, res: Response, prisma: PrismaClient) {
     try {
 
         if (!req.body.applicationInfo) throw Error("Application Info not present");
@@ -17,22 +15,22 @@ export async function applicationDelete(req: Request, res: Response) {
 					uid: appUId,
 				}
 			})
-			.catch((err) => {
+			.catch((err: any) => {
 				console.log(err);
 				throw Error("Error while deleting application");
 			}) as Application;
 
 		const appUrl = `https://${app.domain}`;
-		const index = domainWhitelist.indexOf(appUrl);
+		// const index = domainWhitelist.indexOf(appUrl);
 		
-		if (index !== -1) {
-			domainWhitelist.splice(index, 1);
-		}
+		// if (index !== -1) {
+		// 	domainWhitelist.splice(index, 1);
+		// }
 
 		res.status(200).send();
 
-    } catch (err) {
+    } catch (err: any) {
         console.error(err);
-        res.status(500).send("Internal Server Error");
+        res.status(500).send(err.message);
     }
 }

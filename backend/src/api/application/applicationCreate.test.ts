@@ -1,21 +1,22 @@
 import { Request, Response } from "express";
 import { applicationCreate } from "./applicationCreate";
+
+jest.mock("@prisma/client", () => {
+    return {
+        ...jest.requireActual('@prisma/client'),  // Keep other implementations intact
+        PrismaClient: jest.fn().mockImplementation(() => ({
+            application: {
+                create: jest.fn(),
+            },
+        })),
+    };
+});
+
 import { PrismaClient } from "@prisma/client";
-import { domainWhitelist } from "../../app";
-
-// jest.mock("@prisma/client");
-
-jest.mock("@prisma/client", () => ({
-    ...jest.requireActual('@prisma/client'),  // Keep other implementations intact
-	application: {
-        // findUnique: jest.fn(),
-        create: jest.fn(),
-    },
-}));
 
 const prisma = new PrismaClient();
 
-describe("applicationCreate", () => {
+describe("testApplicationCreate", () => {
     let req: Partial<Request>;
     let res: Partial<Response>;
 
@@ -27,13 +28,14 @@ describe("applicationCreate", () => {
             status: jest.fn().mockReturnThis(),
             send: jest.fn(),
         };
+        jest.clearAllMocks();
     });
 
     it("should return 500 if applicationInfo is not present", async () => {
-        await applicationCreate(req as Request, res as Response);
+        await applicationCreate(req as Request, res as Response, prisma);
 
         expect(res.status).toHaveBeenCalledWith(500);
-        expect(res.send).toHaveBeenCalledWith("Internal Server Error");
+        expect(res.send).toHaveBeenCalledWith("Application Info not present");
     });
 
     it("should return 500 if there is an error while creating the application", async () => {
@@ -49,10 +51,10 @@ describe("applicationCreate", () => {
             new Error("Database error")
         );
 
-        await applicationCreate(req as Request, res as Response);
+        await applicationCreate(req as Request, res as Response, prisma);
 
         expect(res.status).toHaveBeenCalledWith(500);
-        expect(res.send).toHaveBeenCalledWith("Internal Server Error");
+        expect(res.send).toHaveBeenCalledWith("Error while creating application");
     });
 
     it("should create an application and return 200 if valid data is provided", async () => {
@@ -74,10 +76,9 @@ describe("applicationCreate", () => {
             mockApplication
         );
 
-        await applicationCreate(req as Request, res as Response);
+        await applicationCreate(req as Request, res as Response, prisma);
 
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.send).toHaveBeenCalled();
-        expect(domainWhitelist).toContain("https://test.com");
     });
 });

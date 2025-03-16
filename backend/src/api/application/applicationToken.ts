@@ -5,7 +5,7 @@ import { ApplicationInfo } from "../types";
 
 const prisma = new PrismaClient();
 
-export async function applicationToken(req: Request, res: Response) {
+export async function applicationToken(req: Request, res: Response, prisma: PrismaClient) {
     try {
 
         if (!req.body.applicationInfo) throw Error("Application Info not present");
@@ -20,10 +20,10 @@ export async function applicationToken(req: Request, res: Response) {
 
         const token = await cryptoService.createApplicationJWT(app);
 
-        res.json(token);
+        res.status(200).json(token);
 
-    } catch (err) {
+    } catch (err: any) {
         console.error(err);
-        res.status(500).send("Internal Server Error");
+        res.status(500).send(err.message);
     }
 }
