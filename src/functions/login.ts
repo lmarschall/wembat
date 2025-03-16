@@ -29,7 +29,8 @@ import { AxiosInstance } from "axios";
  */
 export async function login(
 	axiosClient: AxiosInstance,
-	userMail: string
+	userMail: string,
+	autoLogin: boolean = false
 ): Promise<any> {
 	const actionResponse: WembatActionResponse<WembatLoginResult> = {
 		success: false,

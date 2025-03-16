@@ -88,8 +88,8 @@ class WembatClient {
 	 * @param userMail The email address of the user.
 	 * @returns A promise that resolves to a WembatActionResponse containing the login result.
 	 */
-	public async login (userMail: string): Promise<WembatActionResponse<WembatLoginResult>> {
-		const [loginResult, privateKey, publicKey, jwt] = await login(this.#axiosClient, userMail);
+	public async login (userMail: string, autoLogin: boolean = false): Promise<WembatActionResponse<WembatLoginResult>> {
+		const [loginResult, privateKey, publicKey, jwt] = await login(this.#axiosClient, userMail, autoLogin);
 		this.#privateKey = privateKey;
 		this.#publicKey = publicKey;
 		this.#jwt = jwt;
