@@ -1,34 +1,58 @@
+//// typescript
+// filepath: /home/lukas/Source/wembat/backend/src/api/server/serverExportPublicKey.test.ts
+
 import { Request, Response } from "express";
-import { cryptoService, initCryptoTest } from "../../crypto";
 import { serverExportPublicKey } from "./serverExportPublicKey";
+import { cryptoService } from "../../crypto";
 
-describe("validateServerExportPublicKey", () => {
-    let req: Partial<Request>;
-    let res: Partial<Response>;
+jest.mock("../../crypto", () => ({
+  cryptoService: {
+    exportPublicKey: jest.fn(),
+  },
+}));
 
-    beforeEach(async () => {
+describe("testServerExportPublicKey", () => {
+  let req: Partial<Request>;
+  let res: Partial<Response>;
 
-        req = {
-            headers: {},
-        };
-        res = {
-            locals: {},
-            status: jest.fn().mockReturnThis(),
-            send: jest.fn()
-        };
-    });
+  beforeEach(() => {
+    req = {};
+    res = {
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn(),
+      json: jest.fn(),
+    };
+    jest.clearAllMocks();
+  });
 
-    it("should return 500 if export of public server key fails", async () => {
-        await serverExportPublicKey(req as Request, res as Response);
-        expect(res.status).toHaveBeenCalledWith(500);
-        expect(res.send).toHaveBeenCalledWith("Internal Server Error");
-    });
+  it("should return 500 if cryptoService is not initialized", async () => {
+    // Mock cryptoService als undefined
+    (require("../../crypto").cryptoService as any) = undefined;
 
-    it("should return public server key if valid", async () => {
-        await initCryptoTest();
-        const pubKey = await cryptoService.exportPublicKey();
-        await serverExportPublicKey(req as Request, res as Response);
-        expect(res.status).toHaveBeenCalledWith(200);
-        expect(res.json).toHaveBeenCalledWith(JSON.stringify(pubKey));
-    });
+    await serverExportPublicKey(req as Request, res as Response);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith("CryptoService not initialized");
+
+    // Wiederherstellen
+    (require("../../crypto").cryptoService as any) = { exportPublicKey: jest.fn() };
+  });
+
+  it("should return 500 when exportPublicKey fails", async () => {
+    (cryptoService.exportPublicKey as jest.Mock).mockRejectedValue(new Error("Export error"));
+
+    await serverExportPublicKey(req as Request, res as Response);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith("Export error");
+  });
+
+  it("should return 200 and the public key if successful", async () => {
+    (cryptoService.exportPublicKey as jest.Mock).mockResolvedValue("mockedPublicKey");
+
+    await serverExportPublicKey(req as Request, res as Response);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith("mockedPublicKey");
+  });
 });

@@ -28,7 +28,7 @@ export async function validateWebAuthnToken(
 		if (algorithm == undefined || algorithm == null || algorithm !== "ES256")
 			throw Error("Invalid algorithm");
 
-		const publicKeyJwk = cryptoService.getPublicKeyJwk();
+		const publicKeyJwk = await cryptoService.getPublicKeyJwk();
 
 		if (spki == undefined || spki == null || JSON.stringify(spki) !== JSON.stringify(publicKeyJwk))
 			throw Error("Invalid public key");

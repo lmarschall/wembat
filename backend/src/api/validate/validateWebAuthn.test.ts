@@ -79,8 +79,8 @@ describe("validateWebAuthnToken", () => {
 		res.locals = res.locals || {};
 		req.headers.authorization = "Bearer " + jwt;
 		await validateWebAuthnToken(req as Request, res as Response, next);
-		expect(res.locals.payload).toBe("session.uid");
-		expect(res.locals.payload).toBe("user.mail");
+		expect(res.locals.payload.sessionId).toBe("session.uid");
+		expect(res.locals.payload.userMail).toBe("user.mail");
 		expect(next).toHaveBeenCalled();
 	});
 });

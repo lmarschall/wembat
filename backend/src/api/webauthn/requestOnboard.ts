@@ -77,7 +77,7 @@ export async function requestOnboard(req: Request, res: Response, prisma: Prisma
 				throw Error("Updating user challenge failed");
 			});
 
-		res.send(
+		res.status(200).send(
 			JSON.stringify({ options: options })
 		);
 	} catch (error: any) {

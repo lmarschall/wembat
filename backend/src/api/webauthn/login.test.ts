@@ -4,7 +4,7 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { login } from "./login";
-import { cryptoService } from "../../crypto";
+import { cryptoService, initCryptoTest } from "../../crypto";
 import { redisService } from "../../redis";
 import { verifyAuthenticationResponse } from "@simplewebauthn/server";
 
@@ -30,7 +30,9 @@ jest.mock("../../crypto", () => ({
 }));
 
 jest.mock("../../redis", () => ({
-  addToWebAuthnTokens: jest.fn(),
+  redisService: {
+    addToWebAuthnTokens: jest.fn(),
+  }
 }));
 
 jest.mock("@simplewebauthn/server", () => ({
@@ -43,7 +45,7 @@ describe("testLogin", () => {
   let req: Partial<Request>;
   let res: Partial<Response>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     req = {
       body: {},
     };
@@ -107,7 +109,7 @@ describe("testLogin", () => {
     req.body = {
       loginChallengeResponse: {
         challenge: "some-challenge",
-        credentials: { rawId: "test-raw-id" },
+        credentials: { rawId: "device-uid" },
       },
     };
     res.locals.payload = {
@@ -118,7 +120,7 @@ describe("testLogin", () => {
     (prisma.user.findUnique as jest.Mock).mockResolvedValue({
       uid: "testUserId",
       challenge: "some-challenge",
-      devices: [{ uid: "device1", credentialId: "abc", counter: 0 }],
+      devices: [{ uid: "device1", credentialId: "device-uid", counter: 0 }],
       sessions: [],
     });
 
@@ -208,6 +210,7 @@ describe("testLogin", () => {
     // createSessionToken und createSessionRefreshToken mocken
     (cryptoService.createSessionToken as jest.Mock).mockResolvedValue("test-session-token");
     (cryptoService.createSessionRefreshToken as jest.Mock).mockResolvedValue("test-refresh-token");
+    (redisService.addToWebAuthnTokens as jest.Mock).mockResolvedValue({});
 
     await login(req as Request, res as Response, prisma);
 

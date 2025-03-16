@@ -79,7 +79,7 @@ describe("validateApplicationToken", () => {
 		res.locals = res.locals || {};
 		req.headers["wembat-app-token"] = "Bearer " + jwt;
 		await validateApplicationToken(req as Request, res as Response, next);
-		expect(res.locals.payload).toBe("application.uid");
+		expect(res.locals.payload.appUId).toBe("application.uid");
 		expect(next).toHaveBeenCalled();
 	});
 });
