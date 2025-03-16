@@ -12,8 +12,6 @@ export async function applicationCreate(req: Request, res: Response, prisma: Pri
         if (!req.body.applicationInfo) throw Error("Application Info not present");
 		const { appUId, appName, appDomain } = req.body.applicationInfo as ApplicationInfo;
         
-		console.log(appUId, appName, appDomain);
-		console.log(prisma.application);
         const app = await prisma.application
 			.create({
 				data: {

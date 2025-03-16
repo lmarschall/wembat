@@ -39,8 +39,6 @@ export async function initCryptoTest(algorithm = "ES256") {
 	const keyPairs: GenerateKeyPairResult<KeyLike> = await generateKeyPair(
 		algorithm
 	);
-	console.log(keyPairs);
-	console.log("init crypto test");
 	cryptoService = new CryptoService(keyPairs.privateKey, keyPairs.publicKey);
 }
 

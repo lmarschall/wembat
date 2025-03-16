@@ -43,10 +43,7 @@ export async function validateApplicationToken(
 			issuer: serverUrl,
 			algorithms: ["ES256"],
 		});
-
-		console.log("payload: ", payload);
-		console.log("protectedHeader: ", protectedHeader);
-
+		
 		res.locals.payload = payload;
 		return next();
 	} catch (error: any) {
