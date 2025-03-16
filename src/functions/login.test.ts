@@ -106,8 +106,9 @@ describe("login", () => {
 			data: "Updated",
 		});
 
-		const result = await login(mockAxiosClient as any, "test@user.com");
-		expect(result.success).toBe(true);
-		expect(result.result.token).toBe("testToken");
+		const  [actionResponse, privateKey, publicKey, token, refreshToken] = await login(mockAxiosClient as any, "test@user.com");
+		console.log(actionResponse);
+		expect(actionResponse.success).toBe(true);
+		expect(token).toBe("testToken");
 	});
 });

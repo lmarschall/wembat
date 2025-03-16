@@ -1,5 +1,5 @@
 import { AxiosInstance, AxiosResponse } from "axios";
-import { jwtDecode } from "../helper";
+import { jwtDecode } from "./helper";
 import {
 	TokenResponse,
 	WembatActionResponse,

@@ -1,4 +1,4 @@
-import { WembatClientToken } from "./types";
+import { WembatClientToken } from "../types";
 
 /**
  * Converts a string to an ArrayBuffer.
@@ -35,12 +35,13 @@ export function jwtDecode(jwt: string): any {
     try {
         const base64Url = jwt.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
             return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
         }).join(''));
     
         return JSON.parse(jsonPayload);
-    } catch{
+    } catch (err: any) {
+        console.error(err);
         return null;
     }
 }
@@ -94,7 +95,8 @@ export async function deriveEncryptionKey(privateKey: CryptoKey, publicKey: Cryp
  * @returns A Promise that resolves to the exported CryptoKey as a string.
  */
 export async function saveCryptoKeyAsString(cryptoKey: CryptoKey): Promise<string> {
-    const exported = await window.crypto.subtle.exportKey("jwk", cryptoKey);
+    console.log(typeof cryptoKey);
+    const exported = await crypto.subtle.exportKey("jwk", cryptoKey);
     return JSON.stringify(exported);
 }
 

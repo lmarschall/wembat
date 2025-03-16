@@ -3,7 +3,7 @@
 
 import { describe, it, expect, beforeAll, vi, Mock } from "vitest";
 import { decrypt } from "./decrypt";
-import { deriveEncryptionKey, str2ab } from "../helper";
+import { deriveEncryptionKey, str2ab } from "./helper";
 import { WembatMessage, WembatActionResponse } from "../types";
 
 // window.crypto in Node-Umgebung mocken

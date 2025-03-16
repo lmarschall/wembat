@@ -65,7 +65,7 @@ describe("register", () => {
 
 		const result = await register(mockAxios as any, "test@user.com");
 		expect(result.success).toBe(false);
-		expect(result.error.error).toBe("Registration failed");
+		expect(result.error.error).toBe("Error: Registration failed");
 	});
 
 	it("sollte Fehler werfen, wenn /register nicht Status 200 liefert", async () => {

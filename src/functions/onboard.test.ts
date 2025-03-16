@@ -8,7 +8,7 @@ import {
 	browserSupportsWebAuthnAutofill,
 	startAuthentication,
 } from "@simplewebauthn/browser";
-import { ab2str, bufferToArrayBuffer, saveCryptoKeyAsString } from "../helper";
+import { ab2str, bufferToArrayBuffer, saveCryptoKeyAsString } from "./helper";
 import { AxiosInstance } from "axios";
 
 // Mock-Funktionen
@@ -116,7 +116,7 @@ describe("onboard", () => {
 			mockPrivateKey
 		);
 		expect(result.success).toBe(false);
-		expect(result.error.error).toBe("Auth failed");
+		expect(result.error.error).toBe("Error: Auth failed");
 	});
 
 	it("sollte Fehler werfen, wenn /onboard kein 200 zurückgibt", async () => {

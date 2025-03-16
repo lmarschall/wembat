@@ -18,7 +18,7 @@ import {
 	loadCryptoPublicKeyFromString,
 	saveCryptoKeyAsString,
 	str2ab,
-} from "../helper";
+} from "./helper";
 import { AxiosInstance } from "axios";
 
 /**
@@ -41,7 +41,6 @@ export async function login(
 	let privateKey: CryptoKey | undefined = undefined;
 	let publicKey: CryptoKey | undefined = undefined;
 	let token: string | undefined = undefined;
-	const refreshToken: string | undefined = undefined;
 
 	try {
 		if (!browserSupportsWebAuthn())
@@ -156,7 +155,7 @@ export async function login(
 			} else {
 				console.log("Generating new keys");
 
-				const keyPair = await window.crypto.subtle.generateKey(
+				const keyPair = await crypto.subtle.generateKey(
 					{
 						name: "ECDH",
 						namedCurve: "P-384",
@@ -171,7 +170,7 @@ export async function login(
 				const publicKeyString = await saveCryptoKeyAsString(publicKey);
 				const privateKeyString = await saveCryptoKeyAsString(privateKey);
 
-				const nonce = window.crypto.getRandomValues(new Uint8Array(12));
+				const nonce = crypto.getRandomValues(new Uint8Array(12));
 				const encoder = new TextEncoder();
 				const encoded = encoder.encode(privateKeyString);
 
@@ -215,7 +214,7 @@ export async function login(
 		};
 		actionResponse.result = loginResult;
 		actionResponse.success = true;
-		return [actionResponse, privateKey, publicKey, token, refreshToken];
+		return [actionResponse, privateKey, publicKey, token];
 	} catch (error: Error | unknown) {
 		if (error instanceof Error) {
 			actionResponse.error = {

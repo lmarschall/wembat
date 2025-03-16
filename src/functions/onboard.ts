@@ -11,7 +11,7 @@ import {
 	WembatRegisterResult,
 } from "../types";
 import { AuthenticationResponseJSON } from "@simplewebauthn/types";
-import { ab2str, bufferToArrayBuffer, saveCryptoKeyAsString } from "../helper";
+import { ab2str, bufferToArrayBuffer, saveCryptoKeyAsString } from "./helper";
 import { AxiosInstance } from "axios";
 
 export async function onboard(
@@ -100,7 +100,7 @@ export async function onboard(
 			privateKey as CryptoKey
 		);
 
-		const nonce = window.crypto.getRandomValues(new Uint8Array(12));
+		const nonce = crypto.getRandomValues(new Uint8Array(12));
 		const encoder = new TextEncoder();
 
 		console.log("encrypt private key");

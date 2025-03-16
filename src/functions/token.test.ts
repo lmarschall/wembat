@@ -9,7 +9,7 @@ import {
 	type AxiosResponse,
 	type InternalAxiosRequestConfig,
 } from "axios";
-import { jwtDecode } from "../helper";
+import { jwtDecode } from "./helper";
 
 // Mock helper functions
 vi.mock("../helper", () => ({
