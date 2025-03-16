@@ -6,6 +6,7 @@ import {
 	SignJWT,
 	KeyLike,
 	generateKeyPair,
+	GenerateKeyPairResult,
 } from "jose";
 import { Application, Session, User } from "@prisma/client";
 import { readFileSync } from "fs";
@@ -35,7 +36,9 @@ export async function initCrypto(): Promise<boolean> {
 }
 
 export async function initCryptoTest(algorithm = "ES256") {
-	const keyPairs: any = await generateKeyPair(algorithm);
+	const keyPairs: GenerateKeyPairResult<KeyLike> = await generateKeyPair(
+		algorithm
+	);
 	cryptoService = new CryptoService(keyPairs.privateKey, keyPairs.publicKey);
 }
 

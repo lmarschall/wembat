@@ -28,14 +28,14 @@ export class RedisService {
 	private client = createClient({ url: this.redisurl });
 	private prisma = new PrismaClient();
 
-	constructor() {}
-
-	async connect() {
-		console.log(`connecting to redis cache ${this.redisurl}`);
-
+	constructor() {
 		this.client.on("connect", () => {
 			console.log("connected to redis cache!");
 		});
+	}
+
+	async connect() {
+		console.log(`connecting to redis cache ${this.redisurl}`);
 
 		await this.client.connect();
 	}

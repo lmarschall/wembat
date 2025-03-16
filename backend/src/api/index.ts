@@ -23,8 +23,6 @@ export const apiRouter = Router();
 
 const prisma = new PrismaClient();
 
-const dashboardUrl = process.env.DASHBOARD_URL || "http://localhost:9090";
-
 apiRouter.get(
 	"/application/list",
 	[validateAdminToken],
