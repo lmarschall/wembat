@@ -17,7 +17,7 @@ vi.mock("@simplewebauthn/browser", () => ({
 	browserSupportsWebAuthnAutofill: vi.fn(),
 	startAuthentication: vi.fn(),
 }));
-vi.mock("../helper", () => ({
+vi.mock("./helper", () => ({
 	ab2str: vi.fn(),
 	bufferToArrayBuffer: vi.fn(),
 	saveCryptoKeyAsString: vi.fn(),

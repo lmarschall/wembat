@@ -12,7 +12,7 @@ import {
 import { jwtDecode } from "./helper";
 
 // Mock helper functions
-vi.mock("../helper", () => ({
+vi.mock("./helper", () => ({
 	jwtDecode: vi.fn(),
 }));
 

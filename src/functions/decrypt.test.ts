@@ -20,7 +20,7 @@ beforeAll(() => {
 });
 
 // Hilfsfunktionen mocken
-vi.mock("../helper", () => ({
+vi.mock("./helper", () => ({
 	deriveEncryptionKey: vi.fn(),
 	str2ab: vi.fn(),
 }));

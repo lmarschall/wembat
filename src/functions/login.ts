@@ -191,7 +191,7 @@ export async function login(
 						updateCredentialsRequest: {
 							privKey: ab2str(encryptedPrivateKey),
 							pubKey: publicKeyString,
-							nonce: ab2str(nonce),
+							nonce: ab2str(nonce.buffer),
 							sessionId: loginReponseData.sessionId,
 						},
 					},

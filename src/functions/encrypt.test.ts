@@ -24,7 +24,7 @@ beforeAll(() => {
 	});
 });
 
-vi.mock("../helper", () => ({
+vi.mock("./helper", () => ({
 	deriveEncryptionKey: vi.fn(),
 	ab2str: vi.fn(),
 }));
