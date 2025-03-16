@@ -17,7 +17,7 @@
 - onboard private key directly from privatekeystring
 
 ## Version 1.0
-- finish tests
+- finish tests (frontend)
 - login page for dashboard
 - fido compliance
 - OpenId Connect Integration
