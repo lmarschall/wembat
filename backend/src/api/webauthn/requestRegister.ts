@@ -13,9 +13,7 @@ type UserWithDevices = Prisma.UserGetPayload<{
 	include: { devices: true };
 }>;
 
-const prisma = new PrismaClient();
-
-export async function requestRegister(req: Request, res: Response) {
+export async function requestRegister(req: Request, res: Response, prisma: PrismaClient) {
     try {
 
 		// 1 check for user info

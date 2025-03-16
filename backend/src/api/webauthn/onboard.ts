@@ -4,9 +4,7 @@ import { verifyAuthenticationResponse, VerifyAuthenticationResponseOpts } from "
 import { Device, PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 
-const prisma = new PrismaClient();
-
-export async function onboard(req: Request, res: Response) {
+export async function onboard(req: Request, res: Response, prisma: PrismaClient) {
     try {
 
 		// check for jwt token

@@ -1,11 +1,9 @@
 import { PrismaClient } from "@prisma/client";
-import { SessionInfo, UserInfo, UserWithDevicesAndSessions } from "../types";
+import { SessionInfo, UserWithDevicesAndSessions } from "../types";
 import { Request, Response } from "express";
 import { cryptoService } from "../../crypto";
 
-const prisma = new PrismaClient();
-
-export async function refresh(req: Request, res: Response) {
+export async function refresh(req: Request, res: Response, prisma: PrismaClient) {
     try {
 
         if (!req.cookies.refreshToken) throw Error("Refresh Token not present");

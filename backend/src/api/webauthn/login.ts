@@ -1,15 +1,11 @@
-import base64url from "base64url";
 import { Device, PrismaClient, Session } from "@prisma/client";
 import { verifyAuthenticationResponse, VerifyAuthenticationResponseOpts } from "@simplewebauthn/server";
 import { LoginChallengeResponse, UserWithDevicesAndSessions } from "../types";
 import { Request, Response } from "express";
-import { WebAuthnCredential } from "@simplewebauthn/types";
 import { cryptoService } from "../../crypto";
 import { addToWebAuthnTokens } from "../../redis";
 
-const prisma = new PrismaClient();
-
-export async function login(req: Request, res: Response) {
+export async function login(req: Request, res: Response, prisma: PrismaClient) {
     try {
 
 		// 1 check for challenge response
@@ -19,8 +15,6 @@ export async function login(req: Request, res: Response) {
 		// 5 verify authentication response
 		// 6 do stuff
 		// 7 ?????
-
-		const body = req.body;
 
 		if (!req.body.loginChallengeResponse)
 			throw Error("Login Challenge Response not present");
