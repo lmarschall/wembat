@@ -79,6 +79,7 @@ onMounted(async () => {
 
 .d-flex.flex-column.flex-lg-row.h-100 {
   max-width: 95vw;
+  margin: 0 auto;
 }
 
 button.navbar-toggler {
