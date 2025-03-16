@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: "./src"
+        working-directory: "./"
 
     steps:
       - name: Checkout repository
@@ -22,4 +22,4 @@ jobs:
         run: npm install
 
       - name: Run tests
-        run: npx vitest ./funtions/
+        run: npm run test

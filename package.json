@@ -32,7 +32,7 @@
     "lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix ./src/**/*.ts",
     "format": "prettier ./src/**/*.ts --write",
     "prepublish": "npm run build",
-    "test": "vitest",
+    "test": "vitest ./src/functions/*.test.ts",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "docs": "typedoc",
