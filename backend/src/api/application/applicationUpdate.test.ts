@@ -4,6 +4,7 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { applicationUpdate } from "./applicationUpdate";
+import { redisService } from "../../redis";
 
 // Prisma-Client mocken
 jest.mock("@prisma/client", () => {
@@ -16,6 +17,13 @@ jest.mock("@prisma/client", () => {
     })),
   };
 });
+
+jest.mock("../../redis", () => ({
+  redisService: {
+    addToDomainWhitelist: jest.fn(),
+    removeFromDomainWhitelist: jest.fn(),
+  }
+}));
 
 const prisma = new PrismaClient();
 
@@ -111,6 +119,9 @@ describe("testApplicationUpdate", () => {
       name: "Updated Name",
       domain: "updated-domain.com",
     });
+
+    (redisService.addToDomainWhitelist as jest.Mock).mockResolvedValue({});
+    (redisService.removeFromDomainWhitelist as jest.Mock).mockResolvedValue({});
 
     await applicationUpdate(req as Request, res as Response, prisma);
 

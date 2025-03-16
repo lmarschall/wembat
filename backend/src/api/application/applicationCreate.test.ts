@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { applicationCreate } from "./applicationCreate";
+import { redisService } from "../../redis";
 
 jest.mock("@prisma/client", () => {
     return {
@@ -11,6 +12,12 @@ jest.mock("@prisma/client", () => {
         })),
     };
 });
+
+jest.mock("../../redis", () => ({
+    redisService: {
+      addToDomainWhitelist: jest.fn(),
+    }
+}));
 
 import { PrismaClient } from "@prisma/client";
 
@@ -75,6 +82,8 @@ describe("testApplicationCreate", () => {
         (prisma.application.create as jest.Mock).mockResolvedValue(
             mockApplication
         );
+
+        (redisService.addToDomainWhitelist as jest.Mock).mockResolvedValue({});
 
         await applicationCreate(req as Request, res as Response, prisma);
 

@@ -4,6 +4,7 @@
 import { Request, Response } from "express";
 import { applicationDelete } from "./applicationDelete";
 import { PrismaClient } from "@prisma/client";
+import { redisService } from "../../redis";
 
 // Prisma mocken
 jest.mock("@prisma/client", () => {
@@ -15,6 +16,12 @@ jest.mock("@prisma/client", () => {
     })),
   };
 });
+
+jest.mock("../../redis", () => ({
+  redisService: {
+    removeFromDomainWhitelist: jest.fn(),
+  }
+}));
 
 const prisma = new PrismaClient();
 
@@ -80,6 +87,8 @@ describe("testApplicationDelete", () => {
 
     // Mock für erfolgreichen Löschvorgang
     (prisma.application.delete as jest.Mock).mockResolvedValue(mockApplication);
+
+    (redisService.removeFromDomainWhitelist as jest.Mock).mockResolvedValue({});
 
     await applicationDelete(req as Request, res as Response, prisma);
 

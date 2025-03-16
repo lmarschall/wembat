@@ -1,6 +1,7 @@
 import { Application, PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { ApplicationInfo } from "../types";
+import { redisService } from "../../redis";
 
 export async function applicationDelete(req: Request, res: Response, prisma: PrismaClient) {
     try {
@@ -20,11 +21,7 @@ export async function applicationDelete(req: Request, res: Response, prisma: Pri
 			}) as Application;
 
 		const appUrl = `https://${app.domain}`;
-		// const index = domainWhitelist.indexOf(appUrl);
-		
-		// if (index !== -1) {
-		// 	domainWhitelist.splice(index, 1);
-		// }
+		await redisService.removeFromDomainWhitelist(appUrl);
 
 		res.status(200).send();
 

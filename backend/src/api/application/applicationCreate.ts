@@ -1,10 +1,7 @@
 import { Request, Response } from "express";
 import { Application, PrismaClient } from "@prisma/client";
 import { ApplicationInfo } from "../types";
-import { error } from "console";
-// import { domainWhitelist } from "../../app";
-
-// const prisma = new PrismaClient();
+import { redisService } from "../../redis";
 
 export async function applicationCreate(req: Request, res: Response, prisma: PrismaClient) {
     try {
@@ -27,7 +24,7 @@ export async function applicationCreate(req: Request, res: Response, prisma: Pri
 		console.log(app);
 
 		const appUrl = `https://${app.domain}`;
-		// domainWhitelist.push(appUrl);
+		await redisService.addToDomainWhitelist(appUrl);
 
         res.status(200).send();
 

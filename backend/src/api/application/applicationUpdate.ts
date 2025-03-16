@@ -1,6 +1,7 @@
 import { Application, PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { ApplicationInfo } from "../types";
+import { redisService } from "../../redis";
 
 export async function applicationUpdate(req: Request, res: Response, prisma: PrismaClient) {
     try {
@@ -35,12 +36,9 @@ export async function applicationUpdate(req: Request, res: Response, prisma: Pri
 			}) as Application;
 
 		const appUrl = `https://${tempApp.domain}`;
-		// const index = domainWhitelist.indexOf(appUrl);
 		
-		// if (index !== -1) {
-		// 	const newAppUrl = `https://${app.domain}`;
-		// 	domainWhitelist[index] = newAppUrl;
-		// }
+		await redisService.removeFromDomainWhitelist(appUrl);
+		await redisService.addToDomainWhitelist(app.domain);
 
 		res.status(200).send();
 

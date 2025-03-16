@@ -3,8 +3,6 @@ import { Request, Response } from "express";
 import { cryptoService } from "../../crypto";
 import { ApplicationInfo } from "../types";
 
-const prisma = new PrismaClient();
-
 export async function applicationToken(req: Request, res: Response, prisma: PrismaClient) {
     try {
 
