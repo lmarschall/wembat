@@ -1,80 +1,79 @@
+//// typescript
+// filepath: /home/lukas/Source/wembat/src/functions/decrypt.test.ts
+
+import { describe, it, expect, beforeAll, vi, Mock } from "vitest";
 import { decrypt } from "./decrypt";
-import { expect, test } from "vitest";
-import { WembatMessage } from "../types";
+import { deriveEncryptionKey, str2ab } from "../helper";
+import { WembatMessage, WembatActionResponse } from "../types";
 
-test("decrypt - successful decryption", async () => {
-	const privateKey = await window.crypto.subtle.generateKey(
-		{
-			name: "ECDH",
-			namedCurve: "P-384",
+// window.crypto in Node-Umgebung mocken
+beforeAll(() => {
+	Object.defineProperty(globalThis, "window", {
+		value: {
+			crypto: {
+				subtle: {
+					decrypt: vi.fn(),
+				},
+			},
 		},
-		true,
-		["deriveKey", "deriveBits"]
-	);
-	const publicKey = await window.crypto.subtle.generateKey(
-		{
-			name: "ECDH",
-			namedCurve: "P-384",
-		},
-		true,
-		[]
-	);
-	const wembatMessage: WembatMessage = {
-		iv: "randomIV",
-		message: "Hello, World!",
-		encrypted: "encryptedMessage",
-	};
-	const expectedDecryptedMessage = {
-		message: "Hello, World!",
-		encrypted: "",
-		iv: "randomIV",
-	};
-	// const str2abSpy = jest.spyOn(window, 'str2ab').mockReturnValue(new Uint8Array([72, 101, 108, 108, 111, 44, 32, 87, 111, 114, 108, 100, 33]).buffer);
-	// const decryptSpy = jest.spyOn(window.crypto.subtle, 'decrypt').mockResolvedValue(new Uint8Array([72, 101, 108, 108, 111, 44, 32, 87, 111, 114, 108, 100, 33]).buffer);
-
-	const result = await decrypt(
-		privateKey.privateKey,
-		wembatMessage,
-		publicKey.publicKey
-	);
-
-	expect(result.success).toBe(true);
-	expect(result.error).toEqual({});
-	expect(result.result).toEqual(expectedDecryptedMessage);
-	// expect(str2abSpy).toHaveBeenCalledWith("randomIV");
-	// expect(str2abSpy).toHaveBeenCalledWith("encryptedMessage");
-	// expect(decryptSpy).toHaveBeenCalledWith(
-	//     {
-	//         name: "AES-GCM",
-	//         iv: new Uint8Array([114, 97, 110, 100, 111, 109, 73, 86]).buffer,
-	//     },
-	//     expect.any(CryptoKey),
-	//     new Uint8Array([72, 101, 108, 108, 111, 44, 32, 87, 111, 114, 108, 100, 33]).buffer
-	// );
+	});
 });
 
-test("decrypt - private key undefined", async () => {
-	const privateKey = undefined;
-	const publicKey = await window.crypto.subtle.generateKey(
-		{
-			name: "ECDH",
-			namedCurve: "P-384",
-		},
-		true,
-		[]
-	);
-	const wembatMessage: WembatMessage = {
-		iv: "randomIV",
-		message: "Hello, World!",
-		encrypted: "encryptedMessage",
-	};
-	const expectedErrorMessage = {
-		error: new Error("Private Key undefined!"),
-	};
+// Hilfsfunktionen mocken
+vi.mock("../helper", () => ({
+	deriveEncryptionKey: vi.fn(),
+	str2ab: vi.fn(),
+}));
 
-	const result = await decrypt(privateKey, wembatMessage, publicKey.publicKey);
+describe("decrypt", () => {
+	it("wirft Fehler, wenn privateKey nicht vorhanden ist", async () => {
+		const result = await decrypt(
+			undefined,
+			{} as WembatMessage,
+			{} as CryptoKey
+		);
+		expect(result.success).toBe(false);
+		expect(result.error.error).toBe("Private Key undefined!");
+	});
 
-	expect(result.success).toBe(false);
-	expect(result.error).toEqual(expectedErrorMessage);
-	expect(result.result).toEqual({});
+	it("gibt entschlüsseltes Objekt zurück, wenn alles korrekt ist", async () => {
+		// Mocks
+		(deriveEncryptionKey as Mock).mockResolvedValue("mockEncryptionKey");
+		(str2ab as Mock).mockReturnValue(new ArrayBuffer(8));
+		(globalThis.window.crypto.subtle.decrypt as Mock).mockResolvedValue(
+			new TextEncoder().encode("Decrypted Message")
+		);
+
+		const mockPrivateKey = {} as CryptoKey;
+		const mockPublicKey = {} as CryptoKey;
+		const mockMsg: WembatMessage = {
+			message: "",
+			encrypted: "MockEncryptedData",
+			iv: "MockIv",
+		};
+
+		const result = await decrypt(mockPrivateKey, mockMsg, mockPublicKey);
+		expect(deriveEncryptionKey).toHaveBeenCalledWith(
+			mockPrivateKey,
+			mockPublicKey
+		);
+		expect(result.success).toBe(true);
+		expect(result.result.message).toBe("Decrypted Message");
+		expect(result.result.iv).toBe("MockIv");
+	});
+
+	it("gibt Fehler zurück, wenn decrypt fehlschlägt", async () => {
+		(deriveEncryptionKey as Mock).mockResolvedValue("mockEncryptionKey");
+		(str2ab as Mock).mockReturnValue(new ArrayBuffer(8));
+		(globalThis.window.crypto.subtle.decrypt as Mock).mockRejectedValue(
+			new Error("Decrypt failed")
+		);
+
+		const mockKey = {} as CryptoKey;
+		const mockMsg = { message: "", encrypted: "Encrypted", iv: "Iv" };
+
+		const result = await decrypt(mockKey, mockMsg, mockKey);
+		expect(result.success).toBe(false);
+		expect(result.error.error).toBe("Decrypt failed");
+	});
 });

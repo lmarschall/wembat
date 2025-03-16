@@ -1,69 +1,130 @@
-import axios from "axios";
+//// typescript
+// filepath: /home/lukas/Source/wembat/src/functions/register.test.ts
+
+import { describe, it, beforeEach, vi, expect, Mock } from "vitest";
 import { register } from "./register";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+	browserSupportsWebAuthn,
+	startRegistration,
+} from "@simplewebauthn/browser";
+import type { AxiosInstance } from "axios";
+
+// Browser-Funktionalitäten mocken
+vi.mock("@simplewebauthn/browser", () => ({
+	browserSupportsWebAuthn: vi.fn(),
+	startRegistration: vi.fn(),
+}));
 
 describe("register", () => {
-	let axiosClient: any;
-	let userMail: string;
+	let mockAxios: Partial<AxiosInstance>;
 
 	beforeEach(() => {
-		axiosClient = axios.create();
-		userMail = "test@example.com";
+		vi.clearAllMocks();
+		(browserSupportsWebAuthn as Mock).mockReturnValue(true);
+
+		mockAxios = {
+			post: vi.fn() as Mock,
+		};
 	});
 
-	afterEach(() => {
-		axiosClient = null;
-		userMail = "";
-	});
+	it("sollte Fehler werfen, wenn WebAuthn nicht unterstützt wird", async () => {
+		(browserSupportsWebAuthn as Mock).mockReturnValue(false);
 
-	it("should throw an error if WebAuthn is not supported on the browser", async () => {
-		// Mock browserSupportsWebAuthn to return false
-		// jest.spyOn(window, 'browserSupportsWebAuthn').mockReturnValue(false);
+		const result = await register(mockAxios as any, "test@user.com");
 
-		await expect(register(axiosClient, userMail)).rejects.toThrowError(
+		expect(result.success).toBe(false);
+		expect(result.error.error).toBe(
 			"WebAuthn is not supported on this browser!"
 		);
 	});
 
-	it("should make a request to /request-register and throw an error if the response status is not 200", async () => {
-		// Mock axiosClient.post to return a non-200 response
-		// jest.spyOn(axiosClient, 'post').mockResolvedValueOnce({
-		//   status: 500,
-		//   data: 'Internal Server Error',
-		// });
-
-		await expect(register(axiosClient, userMail)).rejects.toThrowError(
-			"Internal Server Error"
-		);
-	});
-
-	it("should make a request to /register and throw an error if the response status is not 200", async () => {
-		// Mock axiosClient.post to return a non-200 response
-		// jest.spyOn(axiosClient, 'post').mockResolvedValueOnce({
-		//   status: 500,
-		//   data: 'Internal Server Error',
-		// });
-
-		await expect(register(axiosClient, userMail)).rejects.toThrowError(
-			"Internal Server Error"
-		);
-	});
-
-	it("should return a WembatActionResponse with success set to true and the registration result", async () => {
-		// Mock axiosClient.post to return a successful response
-		// jest.spyOn(axiosClient, 'post').mockResolvedValueOnce({
-		//   status: 200,
-		//   data: JSON.stringify({
-		//     verifiedStatus: true,
-		//   }),
-		// });
-
-		const actionResponse = await register(axiosClient, userMail);
-
-		expect(actionResponse.success).toBe(true);
-		expect(actionResponse.error).toEqual({});
-		expect(actionResponse.result).toEqual({
-			verifiedStatus: true,
+	it("sollte Fehler werfen, wenn /request-register nicht Status 200 liefert", async () => {
+		(mockAxios.post as Mock).mockResolvedValueOnce({
+			status: 400,
+			data: "Bad request",
 		});
+
+		const result = await register(mockAxios as any, "test@user.com");
+
+		expect(result.success).toBe(false);
+		expect(result.error.error).toBe("Bad request");
+	});
+
+	it("sollte Fehler werfen, wenn startRegistration fehlschlägt", async () => {
+		(mockAxios.post as Mock).mockResolvedValueOnce({
+			status: 200,
+			data: JSON.stringify({
+				options: {
+					challenge: "testChallenge",
+				},
+			}),
+		});
+		(startRegistration as Mock).mockRejectedValue(
+			new Error("Registration failed")
+		);
+
+		const result = await register(mockAxios as any, "test@user.com");
+		expect(result.success).toBe(false);
+		expect(result.error.error).toBe("Registration failed");
+	});
+
+	it("sollte Fehler werfen, wenn /register nicht Status 200 liefert", async () => {
+		(mockAxios.post as Mock)
+			// /request-register
+			.mockResolvedValueOnce({
+				status: 200,
+				data: JSON.stringify({
+					options: { challenge: "testChallenge" },
+				}),
+			})
+			// /register
+			.mockResolvedValueOnce({
+				status: 400,
+				data: "Register endpoint error",
+			});
+
+		(startRegistration as Mock).mockResolvedValue({
+			clientExtensionResults: {},
+			id: "credentialId",
+			rawId: "rawId",
+			response: {},
+			type: "public-key",
+		});
+
+		const result = await register(mockAxios as any, "test@user.com");
+
+		expect(result.success).toBe(false);
+		expect(result.error.error).toBe("Register endpoint error");
+	});
+
+	it("sollte success=true zurückgeben, wenn alles korrekt verläuft", async () => {
+		(mockAxios.post as Mock)
+			// /request-register
+			.mockResolvedValueOnce({
+				status: 200,
+				data: JSON.stringify({
+					options: { challenge: "testChallenge" },
+				}),
+			})
+			// /register
+			.mockResolvedValueOnce({
+				status: 200,
+				data: JSON.stringify({
+					verified: true,
+				}),
+			});
+
+		(startRegistration as Mock).mockResolvedValue({
+			clientExtensionResults: {},
+			id: "credentialId",
+			rawId: "rawId",
+			response: {},
+			type: "public-key",
+		});
+
+		const result = await register(mockAxios as any, "test@user.com");
+
+		expect(result.success).toBe(true);
+		expect(result.result.verified).toBe(true);
 	});
 });

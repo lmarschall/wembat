@@ -1,84 +1,84 @@
-import { encrypt } from "./encrypt";
-import { ab2str, deriveEncryptionKey } from "../helper";
-import { WembatMessage } from "../types";
-import { beforeEach, describe, expect, it } from "vitest";
+//// typescript
+// filepath: /home/lukas/Source/wembat/src/functions/encrypt.test.ts
 
-// Mock the necessary functions and objects
-// jest.mock('../helper', () => ({
-//   ab2str: jest.fn(),
-//   deriveEncryptionKey: jest.fn(),
-// }));
+import { describe, it, expect, beforeAll, vi, Mock } from "vitest";
+import { encrypt } from "./encrypt";
+import { deriveEncryptionKey, ab2str } from "../helper";
+import { WembatMessage } from "../types";
+
+// window.crypto in Node-Umgebung mocken
+beforeAll(() => {
+	Object.defineProperty(globalThis, "window", {
+		value: {
+			crypto: {
+				getRandomValues: vi.fn().mockImplementation((arr: Uint8Array) => {
+					// mock z.B. gefülltes Array
+					for (let i = 0; i < arr.length; i++) arr[i] = i;
+					return arr;
+				}),
+				subtle: {
+					encrypt: vi.fn(),
+				},
+			},
+		},
+	});
+});
+
+vi.mock("../helper", () => ({
+	deriveEncryptionKey: vi.fn(),
+	ab2str: vi.fn(),
+}));
 
 describe("encrypt", () => {
-	const privateKey = {} as CryptoKey;
-	const publicKey = {} as CryptoKey;
-	const wembatMessage: WembatMessage = {
-		message: "Hello, World!",
-		iv: "randomIV",
-		encrypted: "encryptedMessage",
-	};
-
-	beforeEach(() => {
-		// Clear mock function calls and return values
-		// (ab2str as jest.Mock).mockClear();
-		// (deriveEncryptionKey as jest.Mock).mockClear();
+	it("wirft Fehler, wenn privateKey nicht vorhanden ist", async () => {
+		const result = await encrypt(
+			undefined,
+			{} as WembatMessage,
+			{} as CryptoKey
+		);
+		expect(result.success).toBe(false);
+		expect(result.error.error).toBe("Private Key undefined!");
 	});
 
-	it("should encrypt the Wembat message", async () => {
-		// Mock the necessary functions and return values
-		// (deriveEncryptionKey as jest.Mock).mockResolvedValue({});
-		// (window.crypto.getRandomValues as jest.Mock).mockReturnValue(new Uint8Array(12));
-		// (window.crypto.subtle.encrypt as jest.Mock).mockResolvedValue(new ArrayBuffer(16));
-		// (ab2str as jest.Mock).mockReturnValue('encrypted');
+	it("verschlüsselt erfolgreich und gibt Objekte zurück", async () => {
+		(deriveEncryptionKey as Mock).mockResolvedValue("mockEncKey");
+		(ab2str as Mock).mockReturnValue("mockedString");
 
-		const result = await encrypt(privateKey, wembatMessage, publicKey);
+		(globalThis.window.crypto.subtle.encrypt as Mock).mockResolvedValue(
+			new ArrayBuffer(8)
+		);
 
+		const mockPrivateKey = {} as CryptoKey;
+		const mockPublicKey = {} as CryptoKey;
+		const mockMsg: WembatMessage = {
+			message: "Hello World",
+			encrypted: "",
+			iv: "",
+		};
+
+		const result = await encrypt(mockPrivateKey, mockMsg, mockPublicKey);
+
+		expect(deriveEncryptionKey).toHaveBeenCalledWith(
+			mockPrivateKey,
+			mockPublicKey
+		);
+		expect(globalThis.window.crypto.subtle.encrypt).toHaveBeenCalled();
 		expect(result.success).toBe(true);
-		expect(result.error).toEqual({});
-		expect(result.result).toEqual({
-			encrypted: "encrypted",
-			iv: "encrypted",
-			message: "",
-		});
-		expect(deriveEncryptionKey).toHaveBeenCalledWith(privateKey, publicKey);
-		expect(window.crypto.getRandomValues).toHaveBeenCalledWith(
-			new Uint8Array(12)
-		);
-		expect(window.crypto.subtle.encrypt).toHaveBeenCalledWith(
-			{
-				name: "AES-GCM",
-				iv: expect.any(Uint8Array),
-			},
-			{},
-			expect.any(Uint8Array)
-		);
-		expect(ab2str).toHaveBeenCalledWith(new ArrayBuffer(16));
+		expect(result.result.encrypted).toBe("mockedString");
+		expect(result.result.iv).toBe("mockedString");
 	});
 
-	it("should handle the case when the private key is undefined", async () => {
-		const result = await encrypt(undefined, wembatMessage, publicKey);
+	it("gibt Fehler zurück, wenn encrypt fehlschlägt", async () => {
+		(deriveEncryptionKey as Mock).mockResolvedValue("mockEncKey");
+		(globalThis.window.crypto.subtle.encrypt as Mock).mockRejectedValue(
+			new Error("Encryption failed")
+		);
+
+		const mockKey = {} as CryptoKey;
+		const mockMsg: WembatMessage = { message: "test", encrypted: "", iv: "" };
+		const result = await encrypt(mockKey, mockMsg, mockKey);
 
 		expect(result.success).toBe(false);
-		expect(result.error).toEqual({ error: expect.any(Error) });
-		expect(result.result).toEqual({});
-		expect(deriveEncryptionKey).not.toHaveBeenCalled();
-		expect(window.crypto.getRandomValues).not.toHaveBeenCalled();
-		expect(window.crypto.subtle.encrypt).not.toHaveBeenCalled();
-		expect(ab2str).not.toHaveBeenCalled();
-	});
-
-	it("should handle errors during encryption", async () => {
-		// Mock the necessary functions and return values
-		// (deriveEncryptionKey as jest.Mock).mockRejectedValue(new Error('Encryption error'));
-
-		const result = await encrypt(privateKey, wembatMessage, publicKey);
-
-		expect(result.success).toBe(false);
-		expect(result.error).toEqual({ error: expect.any(Error) });
-		expect(result.result).toEqual({});
-		expect(deriveEncryptionKey).toHaveBeenCalledWith(privateKey, publicKey);
-		expect(window.crypto.getRandomValues).not.toHaveBeenCalled();
-		expect(window.crypto.subtle.encrypt).not.toHaveBeenCalled();
-		expect(ab2str).not.toHaveBeenCalled();
+		expect(result.error.error).toBe("Encryption failed");
 	});
 });

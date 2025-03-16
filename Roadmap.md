@@ -15,6 +15,7 @@
 - discoverable credentials / conditional ui (done)
 - conditional create (done)
 - onboard private key directly from privatekeystring
+- move window functions to helper class in frontend
 
 ## Version 1.0
 - finish tests (frontend)

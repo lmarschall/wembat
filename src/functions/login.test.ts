@@ -1,81 +1,113 @@
-import axios from "axios";
+//// typescript
+// filepath: /home/lukas/Source/wembat/src/functions/login.test.ts
+
+import { describe, it, beforeEach, vi, expect, Mock } from "vitest";
 import { login } from "./login";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+	browserSupportsWebAuthn,
+	browserSupportsWebAuthnAutofill,
+	startAuthentication,
+} from "@simplewebauthn/browser";
+
+// Axios-Mock (vereinfacht)
+const mockAxiosClient = {
+	post: vi.fn(),
+};
+
+// browserSupportsWebAuthn, browserSupportsWebAuthnAutofill und startAuthentication mocken
+vi.mock("@simplewebauthn/browser", () => ({
+	browserSupportsWebAuthn: vi.fn(),
+	browserSupportsWebAuthnAutofill: vi.fn(),
+	startAuthentication: vi.fn(),
+}));
 
 describe("login", () => {
-	let axiosClient: any;
-	let userMail: string;
-
 	beforeEach(() => {
-		axiosClient = axios.create();
-		userMail = "test@example.com";
+		vi.clearAllMocks();
+		(browserSupportsWebAuthn as Mock).mockReturnValue(true);
+		(browserSupportsWebAuthnAutofill as Mock).mockResolvedValue(true);
 	});
 
-	afterEach(() => {
-		axiosClient = null;
-		userMail = "";
-	});
+	it("wirft Fehler, wenn WebAuthn nicht unterstützt wird", async () => {
+		(browserSupportsWebAuthn as Mock).mockReturnValue(false);
 
-	it("should throw an error if WebAuthn is not supported on the browser", async () => {
-		// Mock browserSupportsWebAuthn to return false
-		// jest.spyOn(window, 'browserSupportsWebAuthn').mockReturnValue(false);
-
-		await expect(login(axiosClient, userMail)).rejects.toThrowError(
+		const result = await login(mockAxiosClient as any, "test@user.com");
+		expect(result.success).toBe(false);
+		expect(result.error.error).toBe(
 			"WebAuthn is not supported on this browser!"
 		);
 	});
 
-	it("should make a request to /request-login and throw an error if the response status is not 200", async () => {
-		// Mock axiosClient.post to return a non-200 response
-		// jest.spyOn(axiosClient, 'post').mockResolvedValueOnce({
-		//   status: 500,
-		//   data: 'Internal Server Error',
-		// });
-
-		await expect(login(axiosClient, userMail)).rejects.toThrowError(
-			"Internal Server Error"
-		);
-	});
-
-	it("should make a request to /login and throw an error if the response status is not 200", async () => {
-		// Mock axiosClient.post to return a non-200 response
-		// jest.spyOn(axiosClient, 'post').mockResolvedValueOnce({
-		//   status: 500,
-		//   data: 'Internal Server Error',
-		// });
-
-		await expect(login(axiosClient, userMail)).rejects.toThrowError(
-			"Internal Server Error"
-		);
-	});
-
-	it("should return an array containing the action response, private key, public key, and JWT", async () => {
-		// Mock axiosClient.post to return a successful response
-		// jest.spyOn(axiosClient, 'post').mockResolvedValueOnce({
-		//   status: 200,
-		//   data: JSON.stringify({
-		//     verified: true,
-		//     jwt: 'fake-jwt',
-		//     publicUserKey: 'fake-public-key',
-		//     privateUserKeyEncrypted: 'fake-encrypted-private-key',
-		//     nonce: 'fake-nonce',
-		//     sessionId: 'fake-session-id',
-		//   }),
-		// });
-
-		const [actionResponse, privateKey, publicKey, jwt] = await login(
-			axiosClient,
-			userMail
-		);
-
-		expect(actionResponse.success).toBe(true);
-		expect(actionResponse.error).toEqual({});
-		expect(actionResponse.result).toEqual({
-			verified: true,
-			jwt: "fake-jwt",
+	it("wirft Fehler, wenn /request-login nicht Status 200 zurückgibt", async () => {
+		mockAxiosClient.post.mockResolvedValueOnce({
+			status: 400,
+			data: "Bad request",
 		});
-		expect(privateKey).toBeDefined();
-		expect(publicKey).toBeDefined();
-		expect(jwt).toBe("fake-jwt");
+
+		const result = await login(mockAxiosClient as any, "test@user.com");
+		expect(result.success).toBe(false);
+		expect(result.error.error).toBe("Bad request");
+	});
+
+	it("wirft Fehler, wenn Login nicht verifiziert ist", async () => {
+		// /request-login
+		mockAxiosClient.post.mockResolvedValueOnce({
+			status: 200,
+			data: JSON.stringify({
+				options: {
+					challenge: "testChallenge",
+					extensions: { prf: { eval: { first: new ArrayBuffer(2) } } },
+				},
+			}),
+		});
+		// startAuthentication
+		(startAuthentication as Mock).mockResolvedValue({
+			clientExtensionResults: { prf: { results: { first: [1, 2] } } },
+		});
+		// /login
+		mockAxiosClient.post.mockResolvedValueOnce({
+			status: 200,
+			data: JSON.stringify({ verified: false }),
+		});
+
+		const result = await login(mockAxiosClient as any, "test@user.com");
+		expect(result.success).toBe(false);
+		expect(result.error.error).toBe("Login not verified");
+	});
+
+	it("kehrt mit success=true zurück, wenn alles korrekt ist", async () => {
+		// /request-login
+		mockAxiosClient.post.mockResolvedValueOnce({
+			status: 200,
+			data: JSON.stringify({
+				options: {
+					challenge: "testChallenge",
+					extensions: { prf: { eval: { first: new ArrayBuffer(2) } } },
+				},
+			}),
+		});
+		// startAuthentication
+		(startAuthentication as Mock).mockResolvedValue({
+			clientExtensionResults: { prf: { results: { first: [1, 2] } } },
+		});
+		// /login
+		mockAxiosClient.post.mockResolvedValueOnce({
+			status: 200,
+			data: JSON.stringify({
+				verified: true,
+				token: "testToken",
+				publicUserKey: "",
+				privateUserKeyEncrypted: "",
+			}),
+		});
+		// /update-credentials
+		mockAxiosClient.post.mockResolvedValueOnce({
+			status: 200,
+			data: "Updated",
+		});
+
+		const result = await login(mockAxiosClient as any, "test@user.com");
+		expect(result.success).toBe(true);
+		expect(result.result.token).toBe("testToken");
 	});
 });
