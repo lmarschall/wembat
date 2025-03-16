@@ -27,3 +27,4 @@
 
 ## Version 1.1
 - authorization features
+- auth application crud functions
