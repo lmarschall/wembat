@@ -98,10 +98,10 @@ apiRouter.post(
 	"/webauthn/refresh-token",
 	[validateApplicationToken],
 	async (req: Request, res: Response) => refresh(req, res)
-)
+);
 
 apiRouter.get(
-    "/server/publicKey",
-    [validateApplicationToken],
-    async (req: Request, res: Response) => serverExportPublicKey(req, res)
+	"/server/publicKey",
+	[validateApplicationToken],
+	async (req: Request, res: Response) => serverExportPublicKey(req, res)
 );

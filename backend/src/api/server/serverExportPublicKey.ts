@@ -5,7 +5,7 @@ export async function serverExportPublicKey(req: Request, res: Response) {
     try {
 
         const publicKey = await cryptoService.exportPublicKey();
-        res.json(publicKey);
+        res.status(200).json(publicKey);
 
     } catch (err) {
         console.error(err);

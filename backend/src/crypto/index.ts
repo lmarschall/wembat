@@ -1,4 +1,12 @@
-import { exportJWK, exportSPKI, importPKCS8, importSPKI, SignJWT, KeyLike, generateKeyPair } from "jose";
+import {
+	exportJWK,
+	exportSPKI,
+	importPKCS8,
+	importSPKI,
+	SignJWT,
+	KeyLike,
+	generateKeyPair,
+} from "jose";
 import { Application, Session, User } from "@prisma/client";
 import { readFileSync } from "fs";
 
@@ -26,7 +34,7 @@ export async function initCrypto(): Promise<boolean> {
 	}
 }
 
-export async function initCryptoTest(algorithm: string = "ES256") {
+export async function initCryptoTest(algorithm = "ES256") {
 	const keyPairs: any = await generateKeyPair(algorithm);
 	cryptoService = new CryptoService(keyPairs.privateKey, keyPairs.publicKey);
 }
@@ -39,7 +47,7 @@ export class CryptoService {
 		this.keyPair = {
 			privateKey: privateKey,
 			publicKey: publicKey,
-		};;
+		};
 	}
 
 	async getPublicKeyJwk() {
@@ -53,53 +61,36 @@ export class CryptoService {
 	async exportPublicKey() {
 		return await exportSPKI(this.keyPair.publicKey);
 	}
-	
-	async createSessionToken(
-		session: Session,
-		user: User,
-		url: string
-	) {
 
+	async createSessionToken(session: Session, user: User, url: string) {
 		return await this.createJWT(
 			{ sessionId: session.uid, userMail: user.mail },
 			"ES256",
 			url,
-			"15m",
-		)
+			"15m"
+		);
 	}
-	
-	async createSessionRefreshToken(
-		session: Session,
-		user: User,
-		url: string
-	) {
 
+	async createSessionRefreshToken(session: Session, user: User, url: string) {
 		return await this.createJWT(
 			{ sessionId: session.uid, userMail: user.mail },
 			"ES256",
 			url,
 			"7d"
-		)
+		);
 	}
-	
-	async createApplicationJWT(application: Application) {
 
+	async createApplicationJWT(application: Application) {
 		return this.createJWT(
 			{ appUId: application.uid },
 			"ES256",
 			`https://${application.domain}`,
 			""
-		)
+		);
 	}
-	
-	async createAdminJWT() {
 
-		return await this.createJWT(
-			{ admin: true },
-			"ES256",
-			"",
-			""
-		)
+	async createAdminJWT() {
+		return await this.createJWT({ admin: true }, "ES256", "", "");
 	}
 
 	async createJWT(

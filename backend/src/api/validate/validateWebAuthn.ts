@@ -30,7 +30,7 @@ export async function validateWebAuthnToken(
 
 		const publicKeyJwk = cryptoService.getPublicKeyJwk();
 
-		if (spki == undefined || spki == null || JSON.stringify(spki) !== JSON.stringify())
+		if (spki == undefined || spki == null || JSON.stringify(spki) !== JSON.stringify(publicKeyJwk))
 			throw Error("Invalid public key");
 
 		const importedKey = await importJWK(spki, algorithm);
