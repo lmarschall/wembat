@@ -5,7 +5,7 @@ import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { login } from "./login";
 import { cryptoService } from "../../crypto";
-import { addToWebAuthnTokens } from "../../redis";
+import { redisService } from "../../redis";
 import { verifyAuthenticationResponse } from "@simplewebauthn/server";
 
 // Alle Abhängigkeiten mocken: Prisma, cryptoService, addToWebAuthnTokens, verifyAuthenticationResponse

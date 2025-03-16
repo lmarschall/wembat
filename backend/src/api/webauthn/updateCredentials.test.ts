@@ -3,6 +3,7 @@
 
 import { Request, Response } from "express";
 import { updateCredentials } from "./updateCredentials";
+import { PrismaClient } from "@prisma/client";
 
 // Prisma mocken
 jest.mock("@prisma/client", () => ({
@@ -12,6 +13,8 @@ jest.mock("@prisma/client", () => ({
     },
   })),
 }));
+
+const prisma = new PrismaClient();
 
 describe("testUpdateCredentials", () => {
   let req: Partial<Request>;

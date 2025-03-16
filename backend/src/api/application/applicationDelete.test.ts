@@ -4,7 +4,6 @@
 import { Request, Response } from "express";
 import { applicationDelete } from "./applicationDelete";
 import { PrismaClient } from "@prisma/client";
-import { domainWhitelist } from "../../app";
 
 // Prisma mocken
 jest.mock("@prisma/client", () => {
@@ -71,7 +70,7 @@ describe("testApplicationDelete", () => {
     };
 
     // Domain vorher zum Whitelist-Array hinzufügen
-    // domainWhitelist.push("https://test.com");
+    // redisService.addToDomainWhitelist("https://test.com");
 
     const mockApplication = {
       uid: "test-app-id",

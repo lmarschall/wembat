@@ -3,7 +3,7 @@ import { verifyAuthenticationResponse, VerifyAuthenticationResponseOpts } from "
 import { LoginChallengeResponse, UserWithDevicesAndSessions } from "../types";
 import { Request, Response } from "express";
 import { cryptoService } from "../../crypto";
-import { addToWebAuthnTokens } from "../../redis";
+import { redisService } from "../../redis";
 
 export async function login(req: Request, res: Response, prisma: PrismaClient) {
     try {
@@ -89,7 +89,7 @@ export async function login(req: Request, res: Response, prisma: PrismaClient) {
 		// if there is already a session with the app id but not for this device id, return error
 		// because we need to onboard the device to the session first
 		const userSessionsForApp = user.sessions.filter((session) => session.appUId == appUId)
-		const userSessionsForAppAndDevice = userSessionsForApp.filter((session) => session.deviceUId == userDevice.uid)
+		const userSessionsForAppAndDevice = userSessionsForApp.filter((session) => session.deviceUId == userDevice?.uid)
 
 		let userSession: Session;
 		
@@ -125,7 +125,7 @@ export async function login(req: Request, res: Response, prisma: PrismaClient) {
 		const refreshToken = await cryptoService.createSessionRefreshToken(userSession, user, expectedOrigin);
 
 		// add self generated jwt to whitelist
-		await addToWebAuthnTokens(token);
+		await redisService.addToWebAuthnTokens(token);
 
 		return res
 			.status(200)

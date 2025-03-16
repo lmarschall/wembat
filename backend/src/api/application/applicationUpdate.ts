@@ -1,7 +1,6 @@
 import { Application, PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { ApplicationInfo } from "../types";
-import { domainWhitelist } from "../../app";
 
 export async function applicationUpdate(req: Request, res: Response, prisma: PrismaClient) {
     try {

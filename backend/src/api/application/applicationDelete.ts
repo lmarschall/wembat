@@ -1,7 +1,6 @@
-import { Application } from "@prisma/client";
+import { Application, PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { ApplicationInfo } from "../types";
-import { domainWhitelist } from "../../app";
 
 export async function applicationDelete(req: Request, res: Response, prisma: PrismaClient) {
     try {
