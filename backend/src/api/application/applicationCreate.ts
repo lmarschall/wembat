@@ -1,11 +1,9 @@
 import { Request, Response } from "express";
 import { Application, PrismaClient } from "@prisma/client";
 import { ApplicationInfo } from "../types";
-import { domainWhitelist } from "../../app";
+import { redisService } from "../../redis";
 
-const prisma = new PrismaClient();
-
-export async function applicationCreate(req: Request, res: Response) {
+export async function applicationCreate(req: Request, res: Response, prisma: PrismaClient) {
     try {
 
         if (!req.body.applicationInfo) throw Error("Application Info not present");
@@ -23,13 +21,15 @@ export async function applicationCreate(req: Request, res: Response) {
 				throw Error("Error while creating application");
 			}) as Application;
 
+		console.log(app);
+
 		const appUrl = `https://${app.domain}`;
-		domainWhitelist.push(appUrl);
+		await redisService.addToDomainWhitelist(appUrl);
 
         res.status(200).send();
 
-    } catch (err) {
+    } catch (err: any) {
         console.error(err);
-        res.status(500).send("Internal Server Error");
+        res.status(500).send(err.message);
     }
 }

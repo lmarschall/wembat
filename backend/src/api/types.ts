@@ -54,7 +54,7 @@ export interface ExtensionsLargeBlobRead
 }
 
 export type ApplicationInfo = {
-    appUId: string;
-    appName: string;
-    appDomain: string;
+	appUId: string;
+	appName: string;
+	appDomain: string;
 };

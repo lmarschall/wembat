@@ -1,26 +1,22 @@
-import { exportJWK, exportSPKI, importPKCS8, importSPKI, SignJWT } from "jose";
+import {
+	exportJWK,
+	exportSPKI,
+	importPKCS8,
+	importSPKI,
+	SignJWT,
+	KeyLike,
+	generateKeyPair,
+	GenerateKeyPairResult,
+} from "jose";
 import { Application, Session, User } from "@prisma/client";
 import { readFileSync } from "fs";
 
 interface KeyPair {
-	tokenKeyPair: TokenKeyPair;
+	privateKey: KeyLike;
+	publicKey: KeyLike;
 }
 
-interface TokenKeyPair {
-	privateKey: any;
-	publicKey: any;
-}
-
-const keyPairs: KeyPair = {
-	tokenKeyPair: {
-		privateKey: null,
-		publicKey: null,
-	},
-};
-
-export let publicKeyJwk;
-
-const apiUrl = process.env.SERVER_URL || "http://localhost:8080";
+export let cryptoService: CryptoService;
 
 export async function initCrypto(): Promise<boolean> {
 	try {
@@ -30,12 +26,8 @@ export async function initCrypto(): Promise<boolean> {
 		const spki = readFileSync("/opt/data/keys/publicKey.pem", "utf8");
 		const ecPublicKey = await importSPKI(spki, algorithm);
 
-		keyPairs.tokenKeyPair = {
-			privateKey: ecPrivateKey,
-			publicKey: ecPublicKey,
-		};
+		cryptoService = new CryptoService(ecPrivateKey, ecPublicKey);
 
-		publicKeyJwk = await exportJWK(keyPairs.tokenKeyPair.publicKey);
 		return true;
 	} catch (err) {
 		console.error(err);
@@ -43,66 +35,90 @@ export async function initCrypto(): Promise<boolean> {
 	}
 }
 
-export async function createSessionToken(
-	session: Session,
-	user: User,
-	url: string
-) {
-	const publicJwk = await exportJWK(keyPairs.tokenKeyPair.publicKey);
-
-	return await new SignJWT({ sessionId: session.uid, userMail: user.mail })
-		.setProtectedHeader({ alg: "ES256", jwk: publicJwk })
-		.setIssuedAt()
-		.setIssuer(apiUrl)
-		.setAudience(url)
-		.setExpirationTime('15m')
-		.sign(keyPairs.tokenKeyPair.privateKey);
+export async function initCryptoTest(algorithm = "ES256") {
+	const keyPairs: GenerateKeyPairResult<KeyLike> = await generateKeyPair(
+		algorithm
+	);
+	cryptoService = new CryptoService(keyPairs.privateKey, keyPairs.publicKey);
 }
 
-export async function createSessionRefreshToken(
-	session: Session,
-	user: User,
-	url: string
-) {
-	const publicJwk = await exportJWK(keyPairs.tokenKeyPair.publicKey);
+export class CryptoService {
+	private keyPair: KeyPair;
+	private apiUrl: string = process.env.SERVER_URL || "http://localhost:8080";
 
-	return await new SignJWT({ sessionId: session.uid, userMail: user.mail })
-		.setProtectedHeader({ alg: "ES256", jwk: publicJwk })
-		.setIssuedAt()
-		.setIssuer(apiUrl)
-		.setAudience(url)
-		.setExpirationTime('7d')
-		.sign(keyPairs.tokenKeyPair.privateKey);
-}
+	constructor(privateKey: KeyLike, publicKey: KeyLike) {
+		this.keyPair = {
+			privateKey: privateKey,
+			publicKey: publicKey,
+		};
+	}
 
-export async function createApplicationJWT(application: Application) {
-	const publicJwk = await exportJWK(keyPairs.tokenKeyPair.publicKey);
+	async getPublicKeyJwk() {
+		return await exportJWK(this.keyPair.publicKey);
+	}
 
-	return await new SignJWT({
-		appUId: application.uid
-	})
-		.setProtectedHeader({ alg: "ES256", jwk: publicJwk })
-		.setIssuedAt()
-		.setIssuer(apiUrl)
-		.setAudience(`https://${application.domain}`)
-		// .setExpirationTime('2h') // no exp time
-		.sign(keyPairs.tokenKeyPair.privateKey);
-}
+	async setPublicKey(publicKey: KeyLike) {
+		this.keyPair.publicKey = publicKey;
+	}
 
-export async function createAdminJWT() {
-	const publicJwk = await exportJWK(keyPairs.tokenKeyPair.publicKey);
+	async exportPublicKey() {
+		return await exportSPKI(this.keyPair.publicKey);
+	}
 
-	return await new SignJWT({
-		admin: true
-	})
-		.setProtectedHeader({ alg: "ES256", jwk: publicJwk })
-		.setIssuedAt()
-		.setIssuer(apiUrl)
-		.setAudience("")
-		// .setExpirationTime('2h') // no exp time
-		.sign(keyPairs.tokenKeyPair.privateKey);
-}
+	async createSessionToken(session: Session, user: User, url: string) {
+		return await this.createJWT(
+			{ sessionId: session.uid, userMail: user.mail },
+			"ES256",
+			url,
+			"15m"
+		);
+	}
 
-export async function exportPublicKey() {
-	return await exportSPKI(keyPairs.tokenKeyPair.publicKey);
+	async createSessionRefreshToken(session: Session, user: User, url: string) {
+		return await this.createJWT(
+			{ sessionId: session.uid, userMail: user.mail },
+			"ES256",
+			url,
+			"7d"
+		);
+	}
+
+	async createApplicationJWT(application: Application) {
+		return this.createJWT(
+			{ appUId: application.uid },
+			"ES256",
+			`https://${application.domain}`,
+			""
+		);
+	}
+
+	async createAdminJWT() {
+		return await this.createJWT({ admin: true }, "ES256", "", "");
+	}
+
+	async createJWT(
+		payload: any,
+		algorithm: string,
+		audience: string,
+		expiresIn: string
+	) {
+		const publicJwk = await exportJWK(this.keyPair.publicKey);
+
+		if (expiresIn != "") {
+			return await new SignJWT(payload)
+				.setProtectedHeader({ alg: algorithm, jwk: publicJwk })
+				.setIssuedAt()
+				.setIssuer(this.apiUrl)
+				.setAudience(audience)
+				.setExpirationTime(expiresIn)
+				.sign(this.keyPair.privateKey);
+		} else {
+			return await new SignJWT(payload)
+				.setProtectedHeader({ alg: algorithm, jwk: publicJwk })
+				.setIssuedAt()
+				.setIssuer(this.apiUrl)
+				.setAudience(audience)
+				.sign(this.keyPair.privateKey);
+		}
+	}
 }

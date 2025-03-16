@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { decodeProtectedHeader, importJWK, jwtVerify } from "jose";
-import { publicKeyJwk } from "../../crypto";
+import { cryptoService } from "../../crypto";
 
 const serverUrl = process.env.SERVER_URL || "http://localhost:8080";
 
@@ -31,18 +31,22 @@ export async function validateApplicationToken(
 		if (algorithm == undefined || algorithm == null || algorithm !== "ES256")
 			throw Error("Invalid algorithm");
 
+		const publicKeyJwk = await cryptoService.getPublicKeyJwk();
+
 		if (spki == undefined || spki == null || JSON.stringify(spki) !== JSON.stringify(publicKeyJwk))
 			throw Error("Invalid public key");
+
+		console.log("try to verify jwt");
 
 		const importedKey = await importJWK(spki, algorithm);
 		const { payload, protectedHeader } = await jwtVerify(jwt, importedKey, {
 			issuer: serverUrl,
 			algorithms: ["ES256"],
 		});
-
+		
 		res.locals.payload = payload;
 		return next();
-	} catch (error) {
+	} catch (error: any) {
 		console.log(error);
 		return res.status(401).send(error.message);
 	}

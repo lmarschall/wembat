@@ -17,91 +17,92 @@ import { validateWebAuthnToken } from "./validate/validateWebAuthn";
 import { validateApplicationToken } from "./validate/validateApplication";
 import { validateAdminToken } from "./validate/validateAdmin";
 import { serverExportPublicKey } from "./server/serverExportPublicKey";
+import { PrismaClient } from "@prisma/client";
 
 export const apiRouter = Router();
 
-const dashboardUrl = process.env.DASHBOARD_URL || "http://localhost:9090";
+const prisma = new PrismaClient();
 
 apiRouter.get(
 	"/application/list",
 	[validateAdminToken],
-	async (req: Request, res: Response) => applicationList(req, res)
+	async (req: Request, res: Response) => applicationList(req, res, prisma)
 );
 
 apiRouter.post(
 	"/application/token",
 	[validateAdminToken],
-	async (req: Request, res: Response) => applicationToken(req, res)
+	async (req: Request, res: Response) => applicationToken(req, res, prisma)
 );
 
 apiRouter.post(
 	"/application/create",
 	[validateAdminToken],
-	async (req: Request, res: Response) => applicationCreate(req, res)
+	async (req: Request, res: Response) => applicationCreate(req, res, prisma)
 );
 
 apiRouter.post(
 	"/application/update",
 	[validateAdminToken],
-	async (req: Request, res: Response) => applicationUpdate(req, res)
+	async (req: Request, res: Response) => applicationUpdate(req, res, prisma)
 );
 
 apiRouter.post(
 	"/application/delete",
 	[validateAdminToken],
-	async (req: Request, res: Response) => applicationDelete(req, res)
+	async (req: Request, res: Response) => applicationDelete(req, res, prisma)
 );
 
 apiRouter.post(
 	"/webauthn/request-register",
 	[validateApplicationToken],
-	async (req: Request, res: Response) => requestRegister(req, res)
+	async (req: Request, res: Response) => requestRegister(req, res, prisma)
 );
 
 apiRouter.post(
 	"/webauthn/register",
 	[validateApplicationToken],
-	async (req: Request, res: Response) => register(req, res)
+	async (req: Request, res: Response) => register(req, res, prisma)
 );
 
 apiRouter.post(
 	"/webauthn/request-login",
 	[validateApplicationToken],
-	async (req: Request, res: Response) => requestLogin(req, res)
+	async (req: Request, res: Response) => requestLogin(req, res, prisma)
 );
 
 apiRouter.post(
 	"/webauthn/login",
 	[validateApplicationToken],
-	async (req: Request, res: Response) => login(req, res)
+	async (req: Request, res: Response) => login(req, res, prisma)
 );
 
 apiRouter.post(
 	"/webauthn/update-credentials",
 	[validateWebAuthnToken],
-	async (req: Request, res: Response) => updateCredentials(req, res)
+	async (req: Request, res: Response) => updateCredentials(req, res, prisma)
 );
 
 apiRouter.post(
 	"/webauthn/request-onboard",
 	[validateWebAuthnToken],
-	async (req: Request, res: Response) => requestOnboard(req, res)
+	async (req: Request, res: Response) => requestOnboard(req, res, prisma)
 );
 
 apiRouter.post(
 	"/webauthn/onboard",
 	[validateWebAuthnToken],
-	async (req: Request, res: Response) => onboard(req, res)
+	async (req: Request, res: Response) => onboard(req, res, prisma)
 );
 
 apiRouter.post(
 	"/webauthn/refresh-token",
 	[validateApplicationToken],
-	async (req: Request, res: Response) => refresh(req, res)
-)
+	async (req: Request, res: Response) => refresh(req, res, prisma)
+);
 
 apiRouter.get(
-    "/server/publicKey",
-    [validateApplicationToken],
-    async (req: Request, res: Response) => serverExportPublicKey(req, res)
+	"/server/publicKey",
+	[validateApplicationToken],
+	async (req: Request, res: Response) => serverExportPublicKey(req, res)
 );

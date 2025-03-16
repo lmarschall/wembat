@@ -1,9 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 
-const prisma = new PrismaClient();
-
-export async function updateCredentials(req: Request, res: Response) {
+export async function updateCredentials(req: Request, res: Response, prisma: PrismaClient) {
     try {
 
 		// check for jwt token

@@ -1,15 +1,11 @@
-import base64url from "base64url";
 import { Device, PrismaClient, Session } from "@prisma/client";
 import { verifyAuthenticationResponse, VerifyAuthenticationResponseOpts } from "@simplewebauthn/server";
 import { LoginChallengeResponse, UserWithDevicesAndSessions } from "../types";
 import { Request, Response } from "express";
-import { WebAuthnCredential } from "@simplewebauthn/types";
-import { createSessionRefreshToken, createSessionToken } from "../../crypto";
-import { addToWebAuthnTokens } from "../../redis";
+import { cryptoService } from "../../crypto";
+import { redisService } from "../../redis";
 
-const prisma = new PrismaClient();
-
-export async function login(req: Request, res: Response) {
+export async function login(req: Request, res: Response, prisma: PrismaClient) {
     try {
 
 		// 1 check for challenge response
@@ -19,8 +15,6 @@ export async function login(req: Request, res: Response) {
 		// 5 verify authentication response
 		// 6 do stuff
 		// 7 ?????
-
-		const body = req.body;
 
 		if (!req.body.loginChallengeResponse)
 			throw Error("Login Challenge Response not present");
@@ -51,7 +45,7 @@ export async function login(req: Request, res: Response) {
 
 		if (!user) throw Error("User with given challenge not found");
 
-		let userDevice: Device = null;
+		let userDevice: Device | null = null;
 		// "Query the DB" here for an authenticator matching `credentialID`
 		for (const dev of user.devices) {
 			if (dev.credentialId === credentials.rawId) {
@@ -95,7 +89,7 @@ export async function login(req: Request, res: Response) {
 		// if there is already a session with the app id but not for this device id, return error
 		// because we need to onboard the device to the session first
 		const userSessionsForApp = user.sessions.filter((session) => session.appUId == appUId)
-		const userSessionsForAppAndDevice = userSessionsForApp.filter((session) => session.deviceUId == userDevice.uid)
+		const userSessionsForAppAndDevice = userSessionsForApp.filter((session) => session.deviceUId == userDevice?.uid)
 
 		let userSession: Session;
 		
@@ -127,11 +121,11 @@ export async function login(req: Request, res: Response) {
 		}
 
 		// create new json web token for api calls
-		const token = await createSessionToken(userSession, user, expectedOrigin);
-		const refreshToken = await createSessionRefreshToken(userSession, user, expectedOrigin);
+		const token = await cryptoService.createSessionToken(userSession, user, expectedOrigin);
+		const refreshToken = await cryptoService.createSessionRefreshToken(userSession, user, expectedOrigin);
 
 		// add self generated jwt to whitelist
-		await addToWebAuthnTokens(token);
+		await redisService.addToWebAuthnTokens(token);
 
 		return res
 			.status(200)

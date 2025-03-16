@@ -4,9 +4,7 @@ import { verifyAuthenticationResponse, VerifyAuthenticationResponseOpts } from "
 import { Device, PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 
-const prisma = new PrismaClient();
-
-export async function onboard(req: Request, res: Response) {
+export async function onboard(req: Request, res: Response, prisma: PrismaClient) {
     try {
 
 		// check for jwt token
@@ -57,7 +55,7 @@ export async function onboard(req: Request, res: Response) {
 		// user with challenge not found, return error
 		if (user == null) throw Error("Could not find user for given challenge");
 
-		let userDevice: Device = null;
+		let userDevice: Device | null = null;
 		// "Query the DB" here for an authenticator matching `credentialID`
 		for (const dev of user.devices) {
 			if (dev.credentialId === credentials.rawId) {
