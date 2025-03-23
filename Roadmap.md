@@ -14,8 +14,7 @@
 - registered devices endpoint
 - discoverable credentials / conditional ui (done)
 - conditional create (done)
-- onboard private key directly from privatekeystring
-- move window functions to helper class in frontend
+- register new device with already registered devices there 
 
 ## Version 1.0
 - finish tests (frontend)

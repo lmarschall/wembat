@@ -13,8 +13,12 @@ export type SessionInfo = {
 	sessionId: string;
 };
 
-// can be put in the wembat client types
 export type RegisterChallengeResponse = {
+	challenge: string;
+	credentials: RegistrationResponseJSON;
+};
+
+export type linkChallengeResponse = {
 	challenge: string;
 	credentials: RegistrationResponseJSON;
 };

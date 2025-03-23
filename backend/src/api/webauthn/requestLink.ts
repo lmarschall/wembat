@@ -1,4 +1,3 @@
-import { randomBytes } from 'crypto'
 import { PrismaClient, Prisma } from "@prisma/client";
 
 import {
@@ -7,43 +6,34 @@ import {
 } from "@simplewebauthn/server";
 import { isoUint8Array } from '@simplewebauthn/server/helpers';
 import { Request, Response } from "express";
-import { UserInfo } from '../types';
 
 type UserWithDevices = Prisma.UserGetPayload<{
 	include: { devices: true };
 }>;
 
-export async function requestRegister(req: Request, res: Response, prisma: PrismaClient) {
+export async function requestLink(req: Request, res: Response, prisma: PrismaClient) {
     try {
 
-		// 1 check for user info
+		// 1 check for payload
 		// 2 check for rpId
-		// 3 check for rpName
 		// 3 find user with mail
 		// ?????
 		// 4 generate registration options
 		// 5 update user challenge
-
-		if (!req.body.userInfo) throw Error("User info not present");
-		const { userMail } = req.body.userInfo as UserInfo;
 
 		if(!res.locals.payload) throw Error("Payload not present");
 		const audience = res.locals.payload.aud;
 		const domain = audience.split("://")[1];
 		const rpId = domain.split(":")[0];
 		const rpName = "Wembat";
+		const userMail = res.locals.payload.userMail;
 
 		// add logic with jwt token check if user has already registered devices
 
 		const user = (await prisma.user
-			.upsert({
+			.findUnique({
 				where: {
 					mail: userMail,
-				},
-				update: {},
-				create: {
-					mail: userMail,
-					salt: randomBytes(32),
 				},
 				include: {
 					devices: true,
@@ -54,7 +44,8 @@ export async function requestRegister(req: Request, res: Response, prisma: Prism
 				throw Error("User could not be found or created in database");
 			})) as UserWithDevices;
 
-		if (user.devices.length > 0) throw Error("User already registered with one device, please login and link a new device");
+		
+		if (user == null) throw Error("User could not be found in database");
 
 		const opts: GenerateRegistrationOptionsOpts = {
 			rpName: rpName,

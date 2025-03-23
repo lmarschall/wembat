@@ -54,10 +54,10 @@
               <button
                 class="btn btn-link"
                 type="submit"
-                @click="register()"
+                @click="link()"
                 :disabled="loading"
               >
-                Register Device
+                Link Device
               </button>
             </div>
             <div class="col-12">
@@ -98,6 +98,7 @@ import { WembatClient, WembatMessage, WembatRegisterResult } from "@wembat/clien
 
 import TokenService from "../services/token";
 import MessageService from "../services/message";
+import axios from "axios";
 
 const loading = ref(false);
 const router = useRouter();
@@ -110,6 +111,7 @@ onMounted(async () => {
   } else {
     router.push("/login");
   }
+  await devices();
 })
 
 function appendAlert(message: string, type: string) {
@@ -130,28 +132,22 @@ async function logout() {
   router.push("/login");
 }
 
-async function register() {
-  loading.value = true;
-
-  const registerResponse = await wembatClient.register(TokenService.getTokenUserMail(), true);
-
-  if(registerResponse.success) {
-    const verified: WembatRegisterResult = registerResponse.result;
-    appendAlert("Registration successful", "success");
-  } else  {
-    const errorResult = registerResponse.error;
-    appendAlert(errorResult.error, "danger");
-  }
-
-  loading.value = false;
-}
-
 async function onboard() {
   const onboardResponse = await wembatClient.onboard();
   if(onboardResponse.success) {
     appendAlert("Onboarding successful", "success");
   } else {
     const errorResult = onboardResponse.error;
+    appendAlert(errorResult.error, "danger");
+  }
+}
+
+async function link() {
+  const linkResponse = await wembatClient.link();
+  if(linkResponse.success) {
+    appendAlert("Linking successful", "success");
+  } else {
+    const errorResult = linkResponse.error;
     appendAlert(errorResult.error, "danger");
   }
 }
@@ -198,6 +194,43 @@ async function decryptMessage() {
       const errorResult = decryptionResult.error;
       appendAlert(errorResult.error, "danger");
     }
+  }
+}
+
+function getApiUrl() {
+  const appToken = import.meta.env.VITE_APP_TOKEN || "";
+  const parts = appToken.split('.');
+  
+  if (parts.length !== 3) {
+    throw new Error('Invalid JWT token format');
+  }
+
+  // Decode the payload (second part of the token)
+  const payloadBase64 = parts[1];
+  const payloadJson = atob(payloadBase64); // Decode from Base64 to JSON string
+  const payload = JSON.parse(payloadJson); // Parse JSON string to an object
+  
+  console.log('Decoded token:', payload);
+
+  const apiUrl = payload.iss || "";
+  return apiUrl;
+}
+
+async function devices() {
+  try {
+    const apiUrl = getApiUrl();
+    const token = TokenService.getToken();
+    // Sende GET-Request an /api/devices mit Authorization-Header
+    const response = await axios.get(apiUrl + "/api/device/list", {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    console.log("Devices:", response.data);
+    appendAlert(response.data.length + " User Devices loaded", "success");
+  } catch (error: any) {
+    console.error(error);
+    appendAlert("Error loading devices", "danger");
   }
 }
 </script>

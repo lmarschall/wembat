@@ -8,6 +8,7 @@ import { encrypt } from "./functions/encrypt";
 import { onboard } from "./functions/onboard";
 import { jwtDecode } from "./functions/helper";
 import { token } from "./functions/token";
+import { link } from "./functions/link";
 
 export * from "./types";
 
@@ -100,6 +101,10 @@ class WembatClient {
 
 	public async onboard (): Promise<WembatActionResponse<WembatRegisterResult>> {
 		return await onboard(this.#axiosClient, this.#publicKey, this.#privateKey);
+	}
+
+	public async link (): Promise<WembatActionResponse<WembatRegisterResult>> {
+		return await link(this.#axiosClient);
 	}
 
 	public async token (): Promise<WembatActionResponse<WembatToken>> {

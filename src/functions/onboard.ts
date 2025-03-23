@@ -95,7 +95,6 @@ export async function onboard(
 		);
 
 		console.log("save private key to string");
-		// TODO better load decrypted string directly here
 		const privateKeyString = await saveCryptoKeyAsString(
 			privateKey as CryptoKey
 		);
@@ -115,7 +114,7 @@ export async function onboard(
 			onboardRequest: {
 				privateKey: ab2str(encryptedPrivateKey),
 				publicKey: publicKeyString,
-				nonce: ab2str(nonce),
+				nonce: ab2str(nonce.buffer),
 				credentials: credentials,
 				challenge: challengeOptions.challenge,
 			},

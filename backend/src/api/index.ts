@@ -18,6 +18,9 @@ import { validateApplicationToken } from "./validate/validateApplication";
 import { validateAdminToken } from "./validate/validateAdmin";
 import { serverExportPublicKey } from "./server/serverExportPublicKey";
 import { PrismaClient } from "@prisma/client";
+import { deviceList } from "./device/deviceList";
+import { requestLink } from "./webauthn/requestLink";
+import { link } from "./webauthn/link";
 
 export const apiRouter = Router();
 
@@ -53,6 +56,12 @@ apiRouter.post(
 	async (req: Request, res: Response) => applicationDelete(req, res, prisma)
 );
 
+apiRouter.get(
+	"/device/list",
+	[validateWebAuthnToken],
+	async (req: Request, res: Response) => deviceList(req, res, prisma)
+);
+
 apiRouter.post(
 	"/webauthn/request-register",
 	[validateApplicationToken],
@@ -63,6 +72,18 @@ apiRouter.post(
 	"/webauthn/register",
 	[validateApplicationToken],
 	async (req: Request, res: Response) => register(req, res, prisma)
+);
+
+apiRouter.post(
+	"/webauthn/request-link",
+	[validateWebAuthnToken],
+	async (req: Request, res: Response) => requestLink(req, res, prisma)
+);
+
+apiRouter.post(
+	"/webauthn/link",
+	[validateWebAuthnToken],
+	async (req: Request, res: Response) => link(req, res, prisma)
 );
 
 apiRouter.post(

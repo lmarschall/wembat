@@ -106,6 +106,16 @@ export interface WembatRegisterResult {
 }
 
 /**
+ * Represents the result of a Wembat link.
+ */
+export interface WembatLinkResult {
+	/**
+	 * Indicates whether the link was successful.
+	 */
+	verified: boolean;
+}
+
+/**
  * Represents the result of a Wembat login.
  */
 export interface WembatLoginResult {
@@ -134,6 +144,13 @@ export interface WembatOnboardResult {
  * Represents the response object for registering a request.
  */
 export interface RequestRegisterResponse {
+	options: PublicKeyCredentialCreationOptionsJSON;
+}
+
+/**
+ * Represents the response object for linking a request.
+ */
+export interface RequestLinkResponse {
 	options: PublicKeyCredentialCreationOptionsJSON;
 }
 
