@@ -5,20 +5,23 @@
         <div class="card border-0">
           <div class="card-body">
             <div class="col-12 text-start">
-              <h1 class="upper">
-                Wembat
-              </h1>
               <h1 class="lower">
                 WebAuthn Login
               </h1>
-              <p>
-                We are using WebAuthn to authenticate our users. <br />
-                Please provide a valid username and login
-                via your device credentials.
+              <p class="lead">
+                We are using WebAuthn to authenticate our users.
               </p>
+              <div class="card">
+                <div class="card-body body-info">
+                  <p class="card-text">
+                    Please provide a valid username and login
+                    via your device credentials.
+                </p>
+                </div>
+              </div>
             </div>
 
-            <div class="form-floating mb-3">
+            <div class="form-floating mb-3 mt-3">
               <input
                 type="text"
                 id="floatingInput"
@@ -29,10 +32,7 @@
               />
               <label for="floatingInput">Username</label>
             </div>
-            <div class="col-12">
-              <div id="liveAlertPlaceholder"></div>
-            </div>
-            <div class="col-12">
+            <div class="col-12 d-flex flex-row justify-content-evenly">
               <button
                 class="btn btn-primary"
                 type="submit"
@@ -47,16 +47,17 @@
                 ></span>
                 Login
               </button>
-            </div>
-            <div class="col-12">
               <button
-                class="btn btn-link"
+                class="btn btn-secondary"
                 type="submit"
                 @click="register()"
                 :disabled="loading"
               >
-                Register Device
+                Register
               </button>
+            </div>
+            <div class="col-12 mt-5">
+              <div id="liveAlertPlaceholder"></div>
             </div>
           </div>
         </div>

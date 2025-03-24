@@ -30,12 +30,17 @@ import Footer from "./components/Footer.vue";
     font-size: 56px;
   }
 
-  p {
+  p.lead {
     font-weight: 500;
     font-size: 24px;
   }
 
-  .btn.btn-primary {
+  p {
+    font-weight: 500;
+    font-size: 20px;
+  }
+
+  .btn {
     border-radius: 20px;
     padding: 0px 20px;
     line-height: 38px;
@@ -81,6 +86,10 @@ import Footer from "./components/Footer.vue";
   input.form-control {
     color: rgba(255, 255, 245, 0.86)
   }
+
+  .card-body.body-info {
+    background-color: darkslategrey;
+  }
 }
 
 [data-bs-theme=light] #app {
@@ -108,6 +117,10 @@ import Footer from "./components/Footer.vue";
 
   input.form-control {
     color: rgba(60, 60, 67)
+  }
+
+  .card-body.body-info {
+    background-color: aliceblue;
   }
 }
 </style>

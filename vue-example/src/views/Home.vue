@@ -5,19 +5,22 @@
         <div class="card border-0">
           <div class="card-body">
             <div class="col-12 text-start">
-              <h1 class="upper">
-                Wembat
-              </h1>
               <h1 class="lower">
                 WebAuthn Encryption
               </h1>
-              <p>
-                We are using the largeBlob extenstion of WebAuthn to encrypt your message. <br />
-                Enter your message and with the saved private key in the authenticator <br />
-                and the publicly stored public key we derive an encryption key.
+              <p class="lead">
+                We are using the PRF extension of WebAuthn to encrypt your private data.
               </p>
+              <div class="card">
+                <div class="card-body body-info">
+                  <p class="card-text">
+                  Enter your message and encrypt it with one device, link a new device, onboard this device
+                  and logout. Login with the onboarded device and decrypt the same message.
+                </p>
+                </div>
+              </div>
             </div>
-            <div class="form-floating mb-3">
+            <div class="form-floating mb-3 mt-3">
               <input
                 type="text"
                 class="form-control"
@@ -27,10 +30,7 @@
               />
               <label for="messageInput">Encrypted Message</label>
             </div>
-            <div class="col-12">
-              <div id="liveAlertPlaceholder"></div>
-            </div>
-            <div class="col-12">
+            <div class="col-12 d-flex flex-row justify-content-evenly">
               <button
                 class="btn btn-primary"
                 type="submit"
@@ -39,10 +39,36 @@
               >
                 Encrypt Message
               </button>
-            </div>
-            <div class="col-12">
+
               <button
-                class="btn btn-link"
+                class="btn btn-secondary"
+                type="submit"
+                @click="link()"
+                :disabled="loading"
+              >
+                Link Device
+              </button>
+
+              <button
+                class="btn btn-secondary"
+                type="submit"
+                @click="onboard()"
+                :disabled="loading"
+              >
+                Onboard Device
+              </button>
+
+              <button
+                class="btn btn-success"
+                type="submit"
+                @click="token()"
+                :disabled="loading"
+              >
+                Get Token
+              </button>
+
+              <button
+                class="btn btn-warning"
                 type="submit"
                 @click="logout()"
                 :disabled="loading"
@@ -50,35 +76,8 @@
                 Logout
               </button>
             </div>
-            <div class="col-12">
-              <button
-                class="btn btn-link"
-                type="submit"
-                @click="link()"
-                :disabled="loading"
-              >
-                Link Device
-              </button>
-            </div>
-            <div class="col-12">
-              <button
-                class="btn btn-link"
-                type="submit"
-                @click="onboard()"
-                :disabled="loading"
-              >
-                Onboard Device
-              </button>
-            </div>
-            <div class="col-12">
-              <button
-                class="btn btn-link"
-                type="submit"
-                @click="token()"
-                :disabled="loading"
-              >
-                Get Token
-              </button>
+            <div class="col-12 mt-5">
+              <div id="liveAlertPlaceholder"></div>
             </div>
           </div>
         </div>
@@ -108,10 +107,10 @@ const wembatClient: WembatClient = inject('wembatClient') as WembatClient
 onMounted(async () => {
   if(TokenService.hasToken() && wembatClient.getCryptoPublicKey() !== undefined) {
     await decryptMessage();
+    await devices();
   } else {
     router.push("/login");
   }
-  await devices();
 })
 
 function appendAlert(message: string, type: string) {
