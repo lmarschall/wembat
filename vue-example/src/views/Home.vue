@@ -59,7 +59,7 @@
               </button>
 
               <button
-                class="btn btn-success"
+                class="btn btn-secondary"
                 type="submit"
                 @click="token()"
                 :disabled="loading"

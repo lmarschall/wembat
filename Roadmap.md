@@ -11,13 +11,14 @@
 
 ## Version 0.9
 - improve tests (done)
-- registered devices endpoint
+- registered devices endpoint (done)
 - discoverable credentials / conditional ui (done)
 - conditional create (done)
-- register new device with already registered devices there 
+- register new device with already registered devices there (done)
 
 ## Version 1.0
-- finish tests (frontend)
+- finish tests (frontend) (done)
+- finish documentations 
 - login page for dashboard
 - fido compliance
 - OpenId Connect Integration
