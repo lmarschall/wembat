@@ -55,6 +55,7 @@ describe("link", () => {
     });
 
     it("should return error if prisma.user.findUnique rejects", async () => {
+        res.locals = res.locals || {};
         req.body.linkChallengeResponse = { challenge: "testChallenge", credentials: {} };
         res.locals.payload = { aud: "https://example.com", userMail: "test@example.com" };
         (prisma.user.findUnique as jest.Mock).mockRejectedValue(new Error("DB error"));
@@ -65,6 +66,7 @@ describe("link", () => {
     });
 
     it("should return error if user is not found", async () => {
+        res.locals = res.locals || {};
         req.body.linkChallengeResponse = { challenge: "testChallenge", credentials: {} };
         res.locals.payload = { aud: "https://example.com", userMail: "test@example.com" };
         (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
@@ -75,6 +77,7 @@ describe("link", () => {
     });
 
     it("should return error if verifyRegistrationResponse fails", async () => {
+        res.locals = res.locals || {};
         req.body.linkChallengeResponse = { challenge: "testChallenge", credentials: { response: { transports: ["usb"] } } };
         res.locals.payload = { aud: "https://example.com", userMail: "test@example.com" };
         const fakeUser = {
@@ -91,6 +94,7 @@ describe("link", () => {
     });
 
     it("should return error if verified is false", async () => {
+        res.locals = res.locals || {};
         req.body.linkChallengeResponse = { challenge: "testChallenge", credentials: { response: { transports: ["usb"] } } };
         res.locals.payload = { aud: "https://example.com", userMail: "test@example.com" };
         const fakeUser = {
@@ -107,6 +111,7 @@ describe("link", () => {
     });
 
     it("should return error if registrationInfo is null", async () => {
+        res.locals = res.locals || {};
         req.body.linkChallengeResponse = { challenge: "testChallenge", credentials: { response: { transports: ["usb"] } } };
         res.locals.payload = { aud: "https://example.com", userMail: "test@example.com" };
         const fakeUser = {
@@ -123,6 +128,7 @@ describe("link", () => {
     });
 
     it("should return error if prisma.device.upsert fails", async () => {
+        res.locals = res.locals || {};
         req.body.linkChallengeResponse = {
             challenge: "testChallenge",
             credentials: { response: { transports: ["usb"] } },
@@ -153,6 +159,7 @@ describe("link", () => {
     });
 
     it("should return 200 and verified = true on success", async () => {
+        res.locals = res.locals || {};
         req.body.linkChallengeResponse = {
             challenge: "testChallenge",
             credentials: { response: { transports: ["usb"] } },

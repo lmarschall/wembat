@@ -29,12 +29,15 @@ onMounted(async () => {
 
 <template>
   <div class="d-flex flex-column flex-lg-row h-100 w-100">
-    <div class="flex-shrink-1">
+    <div class="flex-shrink-1 sidebar">
       <nav class="navbar navbar-expand-lg bg-body-tertiary h-100 d-flex flex-row flex-lg-column">
         <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#navbarOffcanvasLg" aria-controls="navbarOffcanvasLg" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
-        <a class="navbar-brand" href="#">Wembat</a>
+        <a class="navbar-brand w-lg-100 d-flex flex-row" href="#">
+          <img src="./../assets/wembat.png" alt="Logo" width="42" height="42" class="d-inline-block align-text-top">
+          wembat
+        </a>
         <div></div>
         <div class="offcanvas offcanvas-start h-100" tabindex="-1" id="navbarOffcanvasLg" aria-labelledby="navbarOffcanvasLgLabel">
           <ul class="nav nav-pills d-flex flex-column h-100">
@@ -62,7 +65,9 @@ onMounted(async () => {
         </div>
       </nav>
     </div>
-    <div class="flex-grow-1">
+    <div class="flex-grow-1 content">
+      <div>
+      </div>
       <div class="tab-content" id="pills-tabContent">
         <div class="tab-pane fade show active" id="pills-applications" role="tabpanel" aria-labelledby="pills-application-tab" tabindex="0">
           <ApplicationsItem />
@@ -77,8 +82,21 @@ onMounted(async () => {
 
 <style scoped>
 
+.content {
+  overflow-x: scroll;
+}
+
+a.navbar-brand {
+  justify-content: flex-start;
+  align-items: center;
+  padding: 10px 0px 10px 20px;
+}
+
+img.d-inline-block.align-text-top {
+  margin: 0px 10px;
+}
+
 .d-flex.flex-column.flex-lg-row.h-100 {
-  max-width: 95vw;
   margin: 0 auto;
 }
 
@@ -90,6 +108,10 @@ ul.nav.nav-pills.d-flex.flex-column.h-100 {
   margin: 10px 0px 0px 0px;
 }
 
+.nav-link.active {
+  background-color: #3e63dd;
+}
+
 i.bi {
   margin: 0px 10px;
 }
@@ -99,7 +121,7 @@ button.button-pills {
 }
 
 div#navbarOffcanvasLg {
-    width: fit-content;
+  width: fit-content;
 }
 
 a.navbar-brand {
@@ -107,6 +129,13 @@ a.navbar-brand {
 }
 
 li.nav-item {
-    margin: 0px 10px;
+  margin: 0px 10px;
 }
+
+@media (min-width: 992px) {  /* Large screens (lg) and above */
+  .w-lg-100 {
+    width: 100%;
+  }
+}
+
 </style>

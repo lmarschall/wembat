@@ -1,9 +1,13 @@
 <template>
   <div class="">
 
-    <div class="row">
-      <h1>Applications</h1>
-      <h3>Manage your applications</h3>
+    <div class="row ">
+      <div class="col-1"></div>
+      <div class="col-11">
+        <h2 class="text-start">Applications</h2>
+        <p class="text-start">Manage your applications</p>
+      </div>
+      
     </div>
 
     <div class="row">
