@@ -77,7 +77,6 @@
         };
 
         let token = await wembatRequestService.applicationToken(data);
-        console.log(token);
         applicationToken.value = token;
         return true;
       } catch (error) {

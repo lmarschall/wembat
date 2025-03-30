@@ -108,7 +108,6 @@ describe("login", () => {
 
 		const [actionResponse, privateKey, publicKey, token, refreshToken] =
 			await login(mockAxiosClient as any, "test@user.com");
-		console.log(actionResponse);
 		expect(actionResponse.success).toBe(true);
 		expect(token).toBe("testToken");
 	});

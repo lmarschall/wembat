@@ -105,7 +105,6 @@ export async function deriveEncryptionKey(
 export async function saveCryptoKeyAsString(
 	cryptoKey: CryptoKey
 ): Promise<string> {
-	console.log(typeof cryptoKey);
 	const exported = await crypto.subtle.exportKey("jwk", cryptoKey);
 	return JSON.stringify(exported);
 }

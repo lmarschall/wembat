@@ -21,8 +21,6 @@ export async function applicationCreate(req: Request, res: Response, prisma: Pri
 				throw Error("Error while creating application");
 			}) as Application;
 
-		console.log(app);
-
 		const appUrl = `https://${app.domain}`;
 		await redisService.addToDomainWhitelist(appUrl);
 

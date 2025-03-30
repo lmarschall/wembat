@@ -142,7 +142,6 @@ async function fetchApplications(): Promise<void> {
 
 async function showApplicationForm(elementId: string, app?: Application): Promise<void> {
   const applicationFormElement = document.getElementById(elementId) as HTMLElement;
-  console.log(app);
   if (app !== undefined) applicationStore.selectedApplication = app;
 
   if (applicationFormElement) {
