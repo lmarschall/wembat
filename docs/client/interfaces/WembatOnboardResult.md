@@ -14,7 +14,7 @@ Indicates whether the onboarding process was successfully verified.
 
 #### Source
 
-[types.ts:140](https://github.com/lmarschall/wembat/blob/6919e5d/src/types.ts#L140)
+[types.ts:140](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L140)
 
 ***
 

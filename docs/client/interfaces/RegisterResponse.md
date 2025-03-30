@@ -14,7 +14,7 @@ Indicates whether the registration is verified or not.
 
 #### Source
 
-[types.ts:164](https://github.com/lmarschall/wembat/blob/6919e5d/src/types.ts#L164)
+[types.ts:164](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L164)
 
 ***
 

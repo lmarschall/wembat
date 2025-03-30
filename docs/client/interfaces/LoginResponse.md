@@ -14,7 +14,7 @@ A unique nonce value associated with the login request.
 
 #### Source
 
-[types.ts:206](https://github.com/lmarschall/wembat/blob/6919e5d/src/types.ts#L206)
+[types.ts:206](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L206)
 
 ***
 
@@ -26,7 +26,7 @@ The encrypted private key of the user.
 
 #### Source
 
-[types.ts:201](https://github.com/lmarschall/wembat/blob/6919e5d/src/types.ts#L201)
+[types.ts:201](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L201)
 
 ***
 
@@ -38,7 +38,7 @@ The public key of the user.
 
 #### Source
 
-[types.ts:196](https://github.com/lmarschall/wembat/blob/6919e5d/src/types.ts#L196)
+[types.ts:196](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L196)
 
 ***
 
@@ -50,7 +50,7 @@ The session ID associated with the user's session.
 
 #### Source
 
-[types.ts:191](https://github.com/lmarschall/wembat/blob/6919e5d/src/types.ts#L191)
+[types.ts:191](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L191)
 
 ***
 
@@ -62,7 +62,7 @@ The JSON Web Token (JWT) associated with the user's session.
 
 #### Source
 
-[types.ts:186](https://github.com/lmarschall/wembat/blob/6919e5d/src/types.ts#L186)
+[types.ts:186](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L186)
 
 ***
 
@@ -74,7 +74,7 @@ Indicates whether the user has been verified.
 
 #### Source
 
-[types.ts:181](https://github.com/lmarschall/wembat/blob/6919e5d/src/types.ts#L181)
+[types.ts:181](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L181)
 
 ***
 

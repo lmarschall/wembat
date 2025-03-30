@@ -2,7 +2,7 @@
     <br/>
     <br/>
     <p align="center">
-        <img width="234" src="/media/wembat_textlogo.png"/>
+        <img width="234" src="https://raw.githubusercontent.com/lmarschall/wembat/main/media/wembat_textlogo.png"/>
     </p>
 </div>
 

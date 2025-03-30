@@ -20,7 +20,7 @@ The error that occurred during the action, if any.
 
 #### Source
 
-[types.ts:52](https://github.com/lmarschall/wembat/blob/6919e5d/src/types.ts#L52)
+[types.ts:52](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L52)
 
 ***
 
@@ -32,7 +32,7 @@ The result of the action.
 
 #### Source
 
-[types.ts:57](https://github.com/lmarschall/wembat/blob/6919e5d/src/types.ts#L57)
+[types.ts:57](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L57)
 
 ***
 
@@ -44,7 +44,7 @@ Indicates whether the action was successful.
 
 #### Source
 
-[types.ts:47](https://github.com/lmarschall/wembat/blob/6919e5d/src/types.ts#L47)
+[types.ts:47](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L47)
 
 ***
 

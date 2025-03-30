@@ -8,7 +8,7 @@ Represents the types of results that can be returned by a Wembat action.
 
 ## Source
 
-[types.ts:36](https://github.com/lmarschall/wembat/blob/6919e5d/src/types.ts#L36)
+[types.ts:36](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L36)
 
 ***
 

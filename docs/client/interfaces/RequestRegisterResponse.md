@@ -12,7 +12,7 @@ Represents the response object for registering a request.
 
 #### Source
 
-[types.ts:147](https://github.com/lmarschall/wembat/blob/6919e5d/src/types.ts#L147)
+[types.ts:147](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L147)
 
 ***
 
