@@ -1,7 +1,115 @@
 [
   {
-    "text": "WembatClient",
-    "link": "/docs/client/classes/WembatClient.md",
-    "collapsed": true
+    "text": "Classes",
+    "collapsed": true,
+    "items": [
+      {
+        "text": "WembatClient",
+        "link": "/docs/client/classes/WembatClient.md",
+        "collapsed": true
+      }
+    ]
+  },
+  {
+    "text": "Interfaces",
+    "collapsed": true,
+    "items": [
+      {
+        "text": "LoginResponse",
+        "link": "/docs/client/interfaces/LoginResponse.md",
+        "collapsed": true
+      },
+      {
+        "text": "OnboardResponse",
+        "link": "/docs/client/interfaces/OnboardResponse.md",
+        "collapsed": true
+      },
+      {
+        "text": "RegisterResponse",
+        "link": "/docs/client/interfaces/RegisterResponse.md",
+        "collapsed": true
+      },
+      {
+        "text": "RequestLinkResponse",
+        "link": "/docs/client/interfaces/RequestLinkResponse.md",
+        "collapsed": true
+      },
+      {
+        "text": "RequestLoginResponse",
+        "link": "/docs/client/interfaces/RequestLoginResponse.md",
+        "collapsed": true
+      },
+      {
+        "text": "RequestOnboardResponse",
+        "link": "/docs/client/interfaces/RequestOnboardResponse.md",
+        "collapsed": true
+      },
+      {
+        "text": "RequestRegisterResponse",
+        "link": "/docs/client/interfaces/RequestRegisterResponse.md",
+        "collapsed": true
+      },
+      {
+        "text": "TokenResponse",
+        "link": "/docs/client/interfaces/TokenResponse.md",
+        "collapsed": true
+      },
+      {
+        "text": "WembatActionResponse",
+        "link": "/docs/client/interfaces/WembatActionResponse.md",
+        "collapsed": true
+      },
+      {
+        "text": "WembatClientToken",
+        "link": "/docs/client/interfaces/WembatClientToken.md",
+        "collapsed": true
+      },
+      {
+        "text": "WembatError",
+        "link": "/docs/client/interfaces/WembatError.md",
+        "collapsed": true
+      },
+      {
+        "text": "WembatLinkResult",
+        "link": "/docs/client/interfaces/WembatLinkResult.md",
+        "collapsed": true
+      },
+      {
+        "text": "WembatLoginResult",
+        "link": "/docs/client/interfaces/WembatLoginResult.md",
+        "collapsed": true
+      },
+      {
+        "text": "WembatMessage",
+        "link": "/docs/client/interfaces/WembatMessage.md",
+        "collapsed": true
+      },
+      {
+        "text": "WembatOnboardResult",
+        "link": "/docs/client/interfaces/WembatOnboardResult.md",
+        "collapsed": true
+      },
+      {
+        "text": "WembatRegisterResult",
+        "link": "/docs/client/interfaces/WembatRegisterResult.md",
+        "collapsed": true
+      },
+      {
+        "text": "WembatToken",
+        "link": "/docs/client/interfaces/WembatToken.md",
+        "collapsed": true
+      }
+    ]
+  },
+  {
+    "text": "Type Aliases",
+    "collapsed": true,
+    "items": [
+      {
+        "text": "WembatResult",
+        "link": "/docs/client/type-aliases/WembatResult.md",
+        "collapsed": true
+      }
+    ]
   }
 ]

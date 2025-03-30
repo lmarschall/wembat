@@ -75,7 +75,7 @@ class WembatClient {
 	}
 
 	/**
-	 * Registers a user with the provided email address.
+	 * Registers a user device with the provided email address.
 	 * 
 	 * @param userMail - The email address of the user to register.
 	 * @returns A Promise that resolves to a WembatActionResponse containing the registration result.
@@ -99,14 +99,26 @@ class WembatClient {
 		return loginResult;
 	}
 
+	/**
+	 * Onboards the new user device linked to the active wembat session.
+	 * @returns A promise that resolves to a WembatActionResponse containing the onboard result.
+	 */
 	public async onboard (): Promise<WembatActionResponse<WembatRegisterResult>> {
 		return await onboard(this.#axiosClient, this.#publicKey, this.#privateKey);
 	}
 
+	/**
+	 * Links the new user device to the active wembat session.
+	 * @returns A promise that resolves to a WembatActionResponse containing the link result.
+	 */
 	public async link (): Promise<WembatActionResponse<WembatRegisterResult>> {
 		return await link(this.#axiosClient);
 	}
 
+	/**
+	 * Retrieves the token for the current session.
+	 * @returns A promise that resolves to a WembatActionResponse containing the token.
+	 */
 	public async token (): Promise<WembatActionResponse<WembatToken>> {
 		return await token(this.#axiosClient, this.#jwt);
 	}

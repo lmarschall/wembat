@@ -22,7 +22,7 @@ Creates an instance of WembatClient.
 
 #### Source
 
-[index.ts:26](https://github.com/lmarschall/wembat/blob/aa738ce/src/index.ts#L26)
+[index.ts:29](https://github.com/lmarschall/wembat/blob/1453072/src/index.ts#L29)
 
 ## Properties
 
@@ -32,7 +32,7 @@ Creates an instance of WembatClient.
 
 #### Source
 
-[index.ts:16](https://github.com/lmarschall/wembat/blob/aa738ce/src/index.ts#L16)
+[index.ts:19](https://github.com/lmarschall/wembat/blob/1453072/src/index.ts#L19)
 
 ***
 
@@ -42,7 +42,7 @@ Creates an instance of WembatClient.
 
 #### Source
 
-[index.ts:17](https://github.com/lmarschall/wembat/blob/aa738ce/src/index.ts#L17)
+[index.ts:20](https://github.com/lmarschall/wembat/blob/1453072/src/index.ts#L20)
 
 ***
 
@@ -52,7 +52,7 @@ Creates an instance of WembatClient.
 
 #### Source
 
-[index.ts:18](https://github.com/lmarschall/wembat/blob/aa738ce/src/index.ts#L18)
+[index.ts:21](https://github.com/lmarschall/wembat/blob/1453072/src/index.ts#L21)
 
 ***
 
@@ -62,7 +62,7 @@ Creates an instance of WembatClient.
 
 #### Source
 
-[index.ts:20](https://github.com/lmarschall/wembat/blob/aa738ce/src/index.ts#L20)
+[index.ts:23](https://github.com/lmarschall/wembat/blob/1453072/src/index.ts#L23)
 
 ***
 
@@ -72,19 +72,19 @@ Creates an instance of WembatClient.
 
 #### Source
 
-[index.ts:19](https://github.com/lmarschall/wembat/blob/aa738ce/src/index.ts#L19)
+[index.ts:22](https://github.com/lmarschall/wembat/blob/1453072/src/index.ts#L22)
 
 ## Methods
 
 ### decrypt()
 
-> **decrypt**(`wembatMessage`, `publicKey`): `Promise`\<`WembatActionResponse`\<`WembatMessage`\>\>
+> **decrypt**(`wembatMessage`, `publicKey`): `Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\<[`WembatMessage`](../interfaces/WembatMessage.md)\>\>
 
 Decrypts a Wembat message using the provided public key.
 
 #### Parameters
 
-• **wembatMessage**: `WembatMessage`
+• **wembatMessage**: [`WembatMessage`](../interfaces/WembatMessage.md)
 
 The Wembat message to decrypt.
 
@@ -94,25 +94,25 @@ The public key used for decryption.
 
 #### Returns
 
-`Promise`\<`WembatActionResponse`\<`WembatMessage`\>\>
+`Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\<[`WembatMessage`](../interfaces/WembatMessage.md)\>\>
 
 A promise that resolves to a WembatActionResponse containing the decrypted Wembat message.
 
 #### Source
 
-[index.ts:67](https://github.com/lmarschall/wembat/blob/aa738ce/src/index.ts#L67)
+[index.ts:73](https://github.com/lmarschall/wembat/blob/1453072/src/index.ts#L73)
 
 ***
 
 ### encrypt()
 
-> **encrypt**(`wembatMessage`, `publicKey`): `Promise`\<`WembatActionResponse`\<`WembatMessage`\>\>
+> **encrypt**(`wembatMessage`, `publicKey`): `Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\<[`WembatMessage`](../interfaces/WembatMessage.md)\>\>
 
 Encrypts a Wembat message using the provided public key.
 
 #### Parameters
 
-• **wembatMessage**: `WembatMessage`
+• **wembatMessage**: [`WembatMessage`](../interfaces/WembatMessage.md)
 
 The Wembat message to encrypt.
 
@@ -122,13 +122,13 @@ The public key to use for encryption.
 
 #### Returns
 
-`Promise`\<`WembatActionResponse`\<`WembatMessage`\>\>
+`Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\<[`WembatMessage`](../interfaces/WembatMessage.md)\>\>
 
 A promise that resolves to a WembatActionResponse containing the encrypted Wembat message.
 
 #### Source
 
-[index.ts:56](https://github.com/lmarschall/wembat/blob/aa738ce/src/index.ts#L56)
+[index.ts:62](https://github.com/lmarschall/wembat/blob/1453072/src/index.ts#L62)
 
 ***
 
@@ -146,13 +146,31 @@ The crypto public key.
 
 #### Source
 
-[index.ts:108](https://github.com/lmarschall/wembat/blob/aa738ce/src/index.ts#L108)
+[index.ts:130](https://github.com/lmarschall/wembat/blob/1453072/src/index.ts#L130)
+
+***
+
+### link()
+
+> **link**(): `Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\<[`WembatRegisterResult`](../interfaces/WembatRegisterResult.md)\>\>
+
+Links the new user device to the active wembat session.
+
+#### Returns
+
+`Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\<[`WembatRegisterResult`](../interfaces/WembatRegisterResult.md)\>\>
+
+A promise that resolves to a WembatActionResponse containing the link result.
+
+#### Source
+
+[index.ts:114](https://github.com/lmarschall/wembat/blob/1453072/src/index.ts#L114)
 
 ***
 
 ### login()
 
-> **login**(`userMail`): `Promise`\<`WembatActionResponse`\<`WembatLoginResult`\>\>
+> **login**(`userMail`, `autoLogin`): `Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\<[`WembatLoginResult`](../interfaces/WembatLoginResult.md)\>\>
 
 Logs in the user with the specified email address.
 
@@ -162,37 +180,43 @@ Logs in the user with the specified email address.
 
 The email address of the user.
 
+• **autoLogin**: `boolean`= `false`
+
 #### Returns
 
-`Promise`\<`WembatActionResponse`\<`WembatLoginResult`\>\>
+`Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\<[`WembatLoginResult`](../interfaces/WembatLoginResult.md)\>\>
 
 A promise that resolves to a WembatActionResponse containing the login result.
 
 #### Source
 
-[index.ts:86](https://github.com/lmarschall/wembat/blob/aa738ce/src/index.ts#L86)
+[index.ts:92](https://github.com/lmarschall/wembat/blob/1453072/src/index.ts#L92)
 
 ***
 
 ### onboard()
 
-> **onboard**(): `Promise`\<`WembatActionResponse`\<`WembatRegisterResult`\>\>
+> **onboard**(): `Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\<[`WembatRegisterResult`](../interfaces/WembatRegisterResult.md)\>\>
+
+Onboards the new user device linked to the active wembat session.
 
 #### Returns
 
-`Promise`\<`WembatActionResponse`\<`WembatRegisterResult`\>\>
+`Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\<[`WembatRegisterResult`](../interfaces/WembatRegisterResult.md)\>\>
+
+A promise that resolves to a WembatActionResponse containing the onboard result.
 
 #### Source
 
-[index.ts:96](https://github.com/lmarschall/wembat/blob/aa738ce/src/index.ts#L96)
+[index.ts:106](https://github.com/lmarschall/wembat/blob/1453072/src/index.ts#L106)
 
 ***
 
 ### register()
 
-> **register**(`userMail`): `Promise`\<`WembatActionResponse`\<`WembatRegisterResult`\>\>
+> **register**(`userMail`, `autoRegister`): `Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\<[`WembatRegisterResult`](../interfaces/WembatRegisterResult.md)\>\>
 
-Registers a user with the provided email address.
+Registers a user device with the provided email address.
 
 #### Parameters
 
@@ -200,29 +224,35 @@ Registers a user with the provided email address.
 
 The email address of the user to register.
 
+• **autoRegister**: `boolean`= `false`
+
 #### Returns
 
-`Promise`\<`WembatActionResponse`\<`WembatRegisterResult`\>\>
+`Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\<[`WembatRegisterResult`](../interfaces/WembatRegisterResult.md)\>\>
 
 A Promise that resolves to a WembatActionResponse containing the registration result.
 
 #### Source
 
-[index.ts:77](https://github.com/lmarschall/wembat/blob/aa738ce/src/index.ts#L77)
+[index.ts:83](https://github.com/lmarschall/wembat/blob/1453072/src/index.ts#L83)
 
 ***
 
 ### token()
 
-> **token**(): `Promise`\<`WembatActionResponse`\<`WembatToken`\>\>
+> **token**(): `Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\<[`WembatToken`](../interfaces/WembatToken.md)\>\>
+
+Retrieves the token for the current session.
 
 #### Returns
 
-`Promise`\<`WembatActionResponse`\<`WembatToken`\>\>
+`Promise`\<[`WembatActionResponse`](../interfaces/WembatActionResponse.md)\<[`WembatToken`](../interfaces/WembatToken.md)\>\>
+
+A promise that resolves to a WembatActionResponse containing the token.
 
 #### Source
 
-[index.ts:100](https://github.com/lmarschall/wembat/blob/aa738ce/src/index.ts#L100)
+[index.ts:122](https://github.com/lmarschall/wembat/blob/1453072/src/index.ts#L122)
 
 ***
 

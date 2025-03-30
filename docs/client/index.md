@@ -1,21 +1,39 @@
-# Wembat
+<div align="center">
+    <br/>
+    <br/>
+    <p align="center">
+    <img width="234" src="/media/wembat_textlogo.png"/>
+    </p>
+</div>
+
+<p align="center">
+    <strong>
+    Start using Wembat at <a href="https://wembat.dev">wembat.dev</a>
+    <br/>
+    See <a href="https://wembat.dev/introduction.html">Documentation</a>
+    <br/>
+ 
+</strong>
+
+### The Wembat project enables developers to authenticate their users and encrypt their data via WebAuthn across all platforms.
+
+***The Wembat Backend is an API server to handle calls from the client library and hosts the dashboard. The client library provides all the frontend functionalities.***
+
+**Simple Authentication and Encryption**.
+Wembat allows your users to authenticate using their biometrics. You can encrypt sensitive data locally in your browser without the need to care about handling key pairs. Everything is handled for you.
 
 Based on the awesome work of [SimpleWebAuthn](https://github.com/MasterKale/SimpleWebAuthn)
 
-### This client library can be used to authenticate users and encrypt data locally via the largeBlob extension of webauthn.
-
-Authenticate. Wembat allows user to authenticate using their biometrics
-
-Encrypt. Wembat allows user to encrypt sensitive data 
-
-Simple. 
-
 ## Dashboard
+
+Manage your applications with an intuitive dashboard.
+
+![alt text](docs/dashboard.png)
 
 ## Quickstart
 
-- Setup Wembat with the documentation at https://wembat.dev/setup
-- Getting started with the documentation at https://wembat.dev/getting-started
+- Setup Wembat backend with the documentation at https://wembat.dev/setup
+- Getting started in your application with the documentation at https://wembat.dev/getting-started
 
 ## Join
 

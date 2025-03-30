@@ -78,8 +78,24 @@ async function encryptMessage() {
 ## Onboard Device
 
 ::: info
-Onboarding a new device enables you to authenticate and encrypt data with multiple devices. The onboard process can only be started in an active authenticated session. The device to onboard your credentials to must be registered at first hand.
+Onboarding a new device enables you to authenticate and encrypt data with multiple devices. The onboard process can only be started in an active authenticated session. The device to onboard your credentials to must be registered at first hand. To register a new device to an active session use the link function.
 :::
+
+1. Call the link function and selec the device you want to onboard the user session
+
+```ts{2}
+async function link() {
+  const linkResponse = await wembatClient.link();
+  if(linkResponse.success) {
+    appendAlert("Linking successful", "success");
+  } else {
+    const errorResult = linkResponse.error;
+    appendAlert(errorResult.error, "danger");
+  }
+}
+```
+
+2. Onboard the linked device to transfer the active user session and enabled authentication and encryption on the new device.
 
 ```ts{2}
 async function onboard() {
