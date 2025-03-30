@@ -12,7 +12,7 @@ Represents the response object for a login request.
 
 #### Source
 
-[types.ts:171](https://github.com/lmarschall/wembat/blob/1453072/src/types.ts#L171)
+[types.ts:171](https://github.com/lmarschall/wembat/blob/6919e5d/src/types.ts#L171)
 
 ***
 

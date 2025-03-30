@@ -12,7 +12,7 @@ Represents the response object for a request to onboard.
 
 #### Source
 
-[types.ts:213](https://github.com/lmarschall/wembat/blob/1453072/src/types.ts#L213)
+[types.ts:213](https://github.com/lmarschall/wembat/blob/6919e5d/src/types.ts#L213)
 
 ***
 

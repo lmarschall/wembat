@@ -12,7 +12,7 @@ Represents the response object for linking a request.
 
 #### Source
 
-[types.ts:154](https://github.com/lmarschall/wembat/blob/1453072/src/types.ts#L154)
+[types.ts:154](https://github.com/lmarschall/wembat/blob/6919e5d/src/types.ts#L154)
 
 ***
 

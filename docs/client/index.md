@@ -2,18 +2,18 @@
     <br/>
     <br/>
     <p align="center">
-    <img width="234" src="/media/wembat_textlogo.png"/>
+        <img width="234" src="/media/wembat_textlogo.png"/>
     </p>
 </div>
 
 <p align="center">
     <strong>
-    Start using Wembat at <a href="https://wembat.dev">wembat.dev</a>
-    <br/>
-    See <a href="https://wembat.dev/introduction.html">Documentation</a>
-    <br/>
- 
-</strong>
+        Start using Wembat at <a href="https://wembat.dev">wembat.dev</a>
+        <br/>
+        See <a href="https://wembat.dev/introduction.html">Documentation</a>
+        <br/>
+    </strong>
+</p>
 
 ### The Wembat project enables developers to authenticate their users and encrypt their data via WebAuthn across all platforms.
 

@@ -14,7 +14,7 @@ Indicates whether the registration was successful.
 
 #### Source
 
-[types.ts:105](https://github.com/lmarschall/wembat/blob/1453072/src/types.ts#L105)
+[types.ts:105](https://github.com/lmarschall/wembat/blob/6919e5d/src/types.ts#L105)
 
 ***
 
