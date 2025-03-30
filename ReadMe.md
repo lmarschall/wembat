@@ -1,6 +1,22 @@
-# Wembat
+<div align="center">
+    <br/>
+    <br/>
+    <p align="center">
+    <img width="234" src="/media/wembat_textlogo.png"/>
+    </p>
+</div>
 
-### The Wembat project provides an easy to setup and simple to use authentication and encryption framework to handle user authentication and data encryption for your web projects.
+
+<p align="center">
+    <strong>
+    Start using Wembat at <a href="https://wembat.dev">wembat.dev</a>
+    <br/>
+    See <a href="https://wembat.dev/introduction.html">Documentation</a>
+    <br/>
+ 
+</strong>
+
+### The Wembat project enables developers to authenticate their users and encrypt their data via WebAuthn across all platforms.
 
 ***The Wembat Backend is an API server to handle calls from the client library and hosts the dashboard. The client library provides all the frontend functionalities.***
 
@@ -12,7 +28,7 @@ Based on the awesome work of [SimpleWebAuthn](https://github.com/MasterKale/Simp
 
 ## Dashboard
 
-Manage your applications with an intuitive view.
+Manage your applications with an intuitive dashboard.
 
 ![alt text](docs/dashboard.png)
 
