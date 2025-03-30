@@ -14,7 +14,7 @@ The error message.
 
 #### Source
 
-[types.ts:67](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L67)
+[types.ts:67](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/types.ts#L67)
 
 ***
 

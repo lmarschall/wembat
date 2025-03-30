@@ -14,7 +14,7 @@ The domain of the Wembat application.
 
 #### Source
 
-[types.ts:10](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L10)
+[types.ts:10](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/types.ts#L10)
 
 ***
 
@@ -26,7 +26,7 @@ The unique identifier of the Wembat application.
 
 #### Source
 
-[types.ts:15](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L15)
+[types.ts:15](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/types.ts#L15)
 
 ***
 
@@ -38,7 +38,7 @@ The audience of the token.
 
 #### Source
 
-[types.ts:20](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L20)
+[types.ts:20](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/types.ts#L20)
 
 ***
 
@@ -50,7 +50,7 @@ The issued at timestamp of the token.
 
 #### Source
 
-[types.ts:25](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L25)
+[types.ts:25](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/types.ts#L25)
 
 ***
 
@@ -62,7 +62,7 @@ The issuer of the token.
 
 #### Source
 
-[types.ts:30](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L30)
+[types.ts:30](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/types.ts#L30)
 
 ***
 

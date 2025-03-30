@@ -22,7 +22,7 @@ Creates an instance of WembatClient.
 
 #### Source
 
-[index.ts:29](https://github.com/lmarschall/wembat/blob/65a69c8/src/index.ts#L29)
+[index.ts:29](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/index.ts#L29)
 
 ## Properties
 
@@ -32,7 +32,7 @@ Creates an instance of WembatClient.
 
 #### Source
 
-[index.ts:19](https://github.com/lmarschall/wembat/blob/65a69c8/src/index.ts#L19)
+[index.ts:19](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/index.ts#L19)
 
 ***
 
@@ -42,7 +42,7 @@ Creates an instance of WembatClient.
 
 #### Source
 
-[index.ts:20](https://github.com/lmarschall/wembat/blob/65a69c8/src/index.ts#L20)
+[index.ts:20](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/index.ts#L20)
 
 ***
 
@@ -52,7 +52,7 @@ Creates an instance of WembatClient.
 
 #### Source
 
-[index.ts:21](https://github.com/lmarschall/wembat/blob/65a69c8/src/index.ts#L21)
+[index.ts:21](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/index.ts#L21)
 
 ***
 
@@ -62,7 +62,7 @@ Creates an instance of WembatClient.
 
 #### Source
 
-[index.ts:23](https://github.com/lmarschall/wembat/blob/65a69c8/src/index.ts#L23)
+[index.ts:23](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/index.ts#L23)
 
 ***
 
@@ -72,7 +72,7 @@ Creates an instance of WembatClient.
 
 #### Source
 
-[index.ts:22](https://github.com/lmarschall/wembat/blob/65a69c8/src/index.ts#L22)
+[index.ts:22](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/index.ts#L22)
 
 ## Methods
 
@@ -100,7 +100,7 @@ A promise that resolves to a WembatActionResponse containing the decrypted Wemba
 
 #### Source
 
-[index.ts:73](https://github.com/lmarschall/wembat/blob/65a69c8/src/index.ts#L73)
+[index.ts:73](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/index.ts#L73)
 
 ***
 
@@ -128,7 +128,7 @@ A promise that resolves to a WembatActionResponse containing the encrypted Wemba
 
 #### Source
 
-[index.ts:62](https://github.com/lmarschall/wembat/blob/65a69c8/src/index.ts#L62)
+[index.ts:62](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/index.ts#L62)
 
 ***
 
@@ -146,7 +146,7 @@ The crypto public key.
 
 #### Source
 
-[index.ts:130](https://github.com/lmarschall/wembat/blob/65a69c8/src/index.ts#L130)
+[index.ts:130](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/index.ts#L130)
 
 ***
 
@@ -164,7 +164,7 @@ A promise that resolves to a WembatActionResponse containing the link result.
 
 #### Source
 
-[index.ts:114](https://github.com/lmarschall/wembat/blob/65a69c8/src/index.ts#L114)
+[index.ts:114](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/index.ts#L114)
 
 ***
 
@@ -190,7 +190,7 @@ A promise that resolves to a WembatActionResponse containing the login result.
 
 #### Source
 
-[index.ts:92](https://github.com/lmarschall/wembat/blob/65a69c8/src/index.ts#L92)
+[index.ts:92](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/index.ts#L92)
 
 ***
 
@@ -208,7 +208,7 @@ A promise that resolves to a WembatActionResponse containing the onboard result.
 
 #### Source
 
-[index.ts:106](https://github.com/lmarschall/wembat/blob/65a69c8/src/index.ts#L106)
+[index.ts:106](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/index.ts#L106)
 
 ***
 
@@ -234,7 +234,7 @@ A Promise that resolves to a WembatActionResponse containing the registration re
 
 #### Source
 
-[index.ts:83](https://github.com/lmarschall/wembat/blob/65a69c8/src/index.ts#L83)
+[index.ts:83](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/index.ts#L83)
 
 ***
 
@@ -252,7 +252,7 @@ A promise that resolves to a WembatActionResponse containing the token.
 
 #### Source
 
-[index.ts:122](https://github.com/lmarschall/wembat/blob/65a69c8/src/index.ts#L122)
+[index.ts:122](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/index.ts#L122)
 
 ***
 

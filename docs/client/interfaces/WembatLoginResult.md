@@ -14,7 +14,7 @@ The JSON Web Token (JWT) associated with the user's session.
 
 #### Source
 
-[types.ts:130](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L130)
+[types.ts:130](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/types.ts#L130)
 
 ***
 
@@ -26,7 +26,7 @@ Indicates whether the login was successful.
 
 #### Source
 
-[types.ts:125](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L125)
+[types.ts:125](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/types.ts#L125)
 
 ***
 

@@ -12,7 +12,7 @@ The JWT token.
 
 #### Source
 
-[types.ts:95](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L95)
+[types.ts:95](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/types.ts#L95)
 
 ***
 

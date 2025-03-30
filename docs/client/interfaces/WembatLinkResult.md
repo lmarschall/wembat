@@ -14,7 +14,7 @@ Indicates whether the link was successful.
 
 #### Source
 
-[types.ts:115](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L115)
+[types.ts:115](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/types.ts#L115)
 
 ***
 

@@ -14,7 +14,7 @@ The encrypted message.
 
 #### Source
 
-[types.ts:88](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L88)
+[types.ts:88](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/types.ts#L88)
 
 ***
 
@@ -26,7 +26,7 @@ The initialization vector used for encryption.
 
 #### Source
 
-[types.ts:78](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L78)
+[types.ts:78](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/types.ts#L78)
 
 ***
 
@@ -38,7 +38,7 @@ The original message before encryption.
 
 #### Source
 
-[types.ts:83](https://github.com/lmarschall/wembat/blob/65a69c8/src/types.ts#L83)
+[types.ts:83](https://github.com/lmarschall/wembat/blob/fa7ae5e/src/types.ts#L83)
 
 ***
 
