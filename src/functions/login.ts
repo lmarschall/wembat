@@ -221,7 +221,7 @@ export async function login(
 				error: error.message,
 			};
 			console.error(error);
-			return actionResponse;
+			return [actionResponse, null, null, null];
 		} else {
 			throw Error("Unknown Error:");
 		}

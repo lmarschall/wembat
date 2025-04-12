@@ -17,6 +17,7 @@
 - register new device with already registered devices there (done)
 
 ## Version 1.0
+- test app config at the beginning and return error message if config fails
 - finish tests (frontend) (done)
 - finish documentations 
 - login page for dashboard
