@@ -24,7 +24,7 @@ import { AxiosInstance } from "axios";
  * @returns A promise that resolves to a `WembatActionResponse` containing the registration result.
  */
 export async function link(
-	axiosClient: AxiosInstance,
+	axiosClient: AxiosInstance
 ): Promise<WembatActionResponse<WembatRegisterResult>> {
 	const actionResponse: WembatActionResponse<WembatRegisterResult> = {
 		success: false,
@@ -38,8 +38,7 @@ export async function link(
 
 		const requestLinkResponse = await axiosClient.post<string>(
 			`/request-link`,
-			{
-			}
+			{}
 		);
 
 		if (requestLinkResponse.status !== 200) {
@@ -78,9 +77,7 @@ export async function link(
 			throw Error(linkResponse.data);
 		}
 
-		const linkResponseData: RegisterResponse = JSON.parse(
-			linkResponse.data
-		);
+		const linkResponseData: RegisterResponse = JSON.parse(linkResponse.data);
 
 		const linkResult: WembatLinkResult = {
 			verified: linkResponseData.verified,
