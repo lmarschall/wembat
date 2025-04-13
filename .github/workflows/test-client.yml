@@ -18,6 +18,6 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run tests
+      - name: Run tests in client workspace
         run: npm run test
         working-directory: "./workspaces/client"

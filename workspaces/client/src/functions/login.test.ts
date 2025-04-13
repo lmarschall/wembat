@@ -31,7 +31,7 @@ describe("login", () => {
 	it("wirft Fehler, wenn WebAuthn nicht unterstützt wird", async () => {
 		(browserSupportsWebAuthn as Mock).mockReturnValue(false);
 
-		const result = await login(mockAxiosClient as any, "test@user.com");
+		const [result, , , ] = await login(mockAxiosClient as any, "test@user.com");
 		expect(result.success).toBe(false);
 		expect(result.error.error).toBe(
 			"WebAuthn is not supported on this browser!"
@@ -44,7 +44,7 @@ describe("login", () => {
 			data: "Bad request",
 		});
 
-		const result = await login(mockAxiosClient as any, "test@user.com");
+		const [result, , , ] = await login(mockAxiosClient as any, "test@user.com");
 		expect(result.success).toBe(false);
 		expect(result.error.error).toBe("Bad request");
 	});
@@ -70,7 +70,7 @@ describe("login", () => {
 			data: JSON.stringify({ verified: false }),
 		});
 
-		const result = await login(mockAxiosClient as any, "test@user.com");
+		const [result, , , ] = await login(mockAxiosClient as any, "test@user.com");
 		expect(result.success).toBe(false);
 		expect(result.error.error).toBe("Login not verified");
 	});
@@ -106,7 +106,7 @@ describe("login", () => {
 			data: "Updated",
 		});
 
-		const [actionResponse, privateKey, publicKey, token, refreshToken] =
+		const [actionResponse, , , token] =
 			await login(mockAxiosClient as any, "test@user.com");
 		expect(actionResponse.success).toBe(true);
 		expect(token).toBe("testToken");
