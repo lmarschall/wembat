@@ -1,31 +1,7 @@
 {
-  "name": "@wembat/client",
-  "version": "0.9.0",
-  "author": "Lukas Marschall <mail@lmarschall.com>",
-  "main": "./dist/wembat-client.umd.js",
-  "module": "./dist/wembat-client.mjs",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/wembat-client.mjs",
-      "require": "./dist/wembat-client.umd.js"
-    }
-  },
-  "files": [
-    "dist"
-  ],
-  "license": "MIT",
-  "keywords": [
-    "webauthn"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/lmarschall/wembat.git"
-  },
-  "homepage": "https://github.com/lmarschall/wembat",
-  "publishConfig": {
-    "access": "public"
-  },
+  "name": "wembat",
+  "private": true,
+  "workspaces": ["workspaces/*"],
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -39,10 +15,6 @@
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"
-  },
-  "dependencies": {
-    "@simplewebauthn/browser": "^11.0.0",
-    "axios": "^1.6.1"
   },
   "devDependencies": {
     "@simplewebauthn/types": "^11.0.0",
