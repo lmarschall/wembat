@@ -23,7 +23,7 @@ services:
     dashboard:
         image: wembat-dashboard
         build:
-            context: ./dashboard
+            context: ./../dashboard
             dockerfile: Dockerfile                
         restart: unless-stopped
         logging:

@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
 
 import ApplicationsItem from '../components/ApplicationsItem.vue'
-import UsersItem from '../components/UsersItem.vue'
 
-import { useTokenStore } from '@/stores/token';
+import { useTokenStore } from '../stores/token';
 
 const tokenStore = useTokenStore();
 
@@ -90,6 +89,7 @@ a.navbar-brand {
   justify-content: flex-start;
   align-items: center;
   padding: 10px 0px 10px 20px;
+  margin: 10px 0px 10px 0px;
 }
 
 img.d-inline-block.align-text-top {
@@ -122,10 +122,6 @@ button.button-pills {
 
 div#navbarOffcanvasLg {
   width: fit-content;
-}
-
-a.navbar-brand {
-  margin: 10px 0px 10px 0px;
 }
 
 li.nav-item {

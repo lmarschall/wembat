@@ -5,10 +5,8 @@
     "workspaces/*"
   ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix ./src/**/*.ts",
-    "format": "prettier ./src/**/*.ts --write",
+    "lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix ./workspaces/**/*.ts",
+    "format": "prettier ./workspaces/**/*.ts --write",
     "test": "vitest ./src/functions/*.test.ts",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
@@ -35,6 +33,7 @@
     "vite-plugin-dts": "^4.2.4",
     "vitepress": "^1.6.3",
     "vitest": "^3.0.9",
-    "@vitejs/plugin-basic-ssl": "^2.0.0"
+    "@vitejs/plugin-basic-ssl": "^2.0.0",
+    "vue-tsc": "^0.34.7"
   }
 }

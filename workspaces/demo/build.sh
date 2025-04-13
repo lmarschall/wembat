@@ -1,3 +1,3 @@
 #!/usr/bin/bash
 
-docker build . -t wembat-vue-example
+docker build . -t wembat-demo
