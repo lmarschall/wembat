@@ -1,9 +1,9 @@
-name: test-backend
+name: test-server
 
 on: [push]
 
 jobs:
-  test-wembat-backend:
+  test-wembat-server:
     runs-on: ubuntu-latest
 
     steps:

@@ -1,9 +1,9 @@
-name: test-frontend
+name: test-client
 
 on: [push]
 
 jobs:
-  test-wembat-frontend:
+  test-wembat-client:
     runs-on: ubuntu-latest
 
     steps:
