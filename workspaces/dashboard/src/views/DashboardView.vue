@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 
-import ApplicationsItem from '../components/ApplicationsItem.vue'
+import ApplicationsItem from '@/components/ApplicationsItem.vue'
 
-import { useTokenStore } from '../stores/token';
+import { useTokenStore } from '@/stores/token';
 
 const tokenStore = useTokenStore();
 
