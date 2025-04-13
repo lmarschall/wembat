@@ -13,7 +13,7 @@ type UserWithDevices = Prisma.UserGetPayload<{
 	include: { devices: true };
 }>;
 
-export async function requestRegister(req: Request, res: Response, prisma: PrismaClient) {
+export async function requestRegister(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {
 
 		// 1 check for user info
@@ -101,6 +101,6 @@ export async function requestRegister(req: Request, res: Response, prisma: Prism
 		res.status(200).send(JSON.stringify({ options: options }));
 	} catch (error: any) {
 		console.log(error);
-		return res.status(400).send(error.message);
+		res.status(400).send(error.message);
 	}
 }

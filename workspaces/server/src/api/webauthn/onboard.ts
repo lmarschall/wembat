@@ -4,7 +4,7 @@ import { verifyAuthenticationResponse, VerifyAuthenticationResponseOpts } from "
 import { Device, PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 
-export async function onboard(req: Request, res: Response, prisma: PrismaClient) {
+export async function onboard(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {
 
 		// check for jwt token
@@ -110,13 +110,9 @@ export async function onboard(req: Request, res: Response, prisma: PrismaClient)
 				throw Error("Updating user challenge failed");
 			});
 
-		return res
-			.status(200)
-			.send(JSON.stringify({
-				success: true,
-			}));
+		res.status(200).send(JSON.stringify({success: true}));
 	} catch (error: any) {
 		console.log(error);
-		return res.status(400).send(error.message);
+		res.status(400).send(error.message);
 	}
 }

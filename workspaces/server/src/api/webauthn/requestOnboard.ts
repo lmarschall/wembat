@@ -1,9 +1,9 @@
 import { generateAuthenticationOptions, GenerateAuthenticationOptionsOpts } from "@simplewebauthn/server";
-import { UserInfo, UserWithDevices } from "../types";
+import { UserWithDevices } from "../types";
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 
-export async function requestOnboard(req: Request, res: Response, prisma: PrismaClient) {
+export async function requestOnboard(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {
 
 		// 1 check for user info
@@ -36,7 +36,7 @@ export async function requestOnboard(req: Request, res: Response, prisma: Prisma
 
 		const opts: GenerateAuthenticationOptionsOpts = {
 			timeout: 60000,
-			allowCredentials: user.devices.map((dev) => ({
+			allowCredentials: user.devices.map((dev: any) => ({
 				id: dev.credentialId,
 				transports: dev.transports as AuthenticatorTransport[],
 			})),
@@ -82,6 +82,6 @@ export async function requestOnboard(req: Request, res: Response, prisma: Prisma
 		);
 	} catch (error: any) {
 		console.log(error);
-		return res.status(400).send(error.message);
+		res.status(400).send(error.message);
 	} 
 }

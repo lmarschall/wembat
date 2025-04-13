@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { ApplicationInfo } from "../types";
 import { redisService } from "../../redis";
 
-export async function applicationDelete(req: Request, res: Response, prisma: PrismaClient) {
+export async function applicationDelete(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {
 
         if (!req.body.applicationInfo) throw Error("Application Info not present");

@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 
-export async function applicationList(req: Request, res: Response, prisma: PrismaClient) {
+export async function applicationList(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {
 
         const apps = await prisma.application.findMany();

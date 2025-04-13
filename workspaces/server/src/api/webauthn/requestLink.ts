@@ -11,7 +11,7 @@ type UserWithDevices = Prisma.UserGetPayload<{
 	include: { devices: true };
 }>;
 
-export async function requestLink(req: Request, res: Response, prisma: PrismaClient) {
+export async function requestLink(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {
 
 		// 1 check for payload
@@ -54,7 +54,7 @@ export async function requestLink(req: Request, res: Response, prisma: PrismaCli
 			userName: user.mail,
 			timeout: 60000,
 			attestationType: "none",
-			excludeCredentials: user.devices.map((dev) => ({
+			excludeCredentials: user.devices.map((dev: any) => ({
 				id: dev.credentialId,
 				transports: dev.transports as AuthenticatorTransport[],
 			})),
@@ -92,6 +92,6 @@ export async function requestLink(req: Request, res: Response, prisma: PrismaCli
 		res.status(200).send(JSON.stringify({ options: options }));
 	} catch (error: any) {
 		console.log(error);
-		return res.status(400).send(error.message);
+		res.status(400).send(error.message);
 	}
 }

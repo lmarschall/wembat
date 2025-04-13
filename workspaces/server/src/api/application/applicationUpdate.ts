@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { ApplicationInfo } from "../types";
 import { redisService } from "../../redis";
 
-export async function applicationUpdate(req: Request, res: Response, prisma: PrismaClient) {
+export async function applicationUpdate(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {
 
         if (!req.body.applicationInfo) throw Error("Application Info not present");
@@ -15,7 +15,7 @@ export async function applicationUpdate(req: Request, res: Response, prisma: Pri
 					uid: appUId
 				}
 			})
-			.catch((err) => {
+			.catch((err: any) => {
 				console.log(err);
 				throw Error("Error while updating application");
 			}) as Application;
@@ -30,7 +30,7 @@ export async function applicationUpdate(req: Request, res: Response, prisma: Pri
 					domain: appDomain,
 				}
 			})
-			.catch((err) => {
+			.catch((err: any) => {
 				console.log(err);
 				throw Error("Error while updating application");
 			}) as Application;

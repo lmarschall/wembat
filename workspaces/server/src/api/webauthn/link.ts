@@ -3,7 +3,7 @@ import { linkChallengeResponse, RegisterChallengeResponse, UserWithDevices } fro
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 
-export async function link(req: Request, res: Response, prisma: PrismaClient) {
+export async function link(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {
 
 		// 1 check for register challenge response
@@ -87,6 +87,6 @@ export async function link(req: Request, res: Response, prisma: PrismaClient) {
 		res.status(200).send(JSON.stringify({ verified: verified }));
 	} catch (error: any) {
 		console.log(error);
-		return res.status(400).send(error.message);
+		res.status(400).send(error.message);
 	}
 }

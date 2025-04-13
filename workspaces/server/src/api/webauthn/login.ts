@@ -5,7 +5,7 @@ import { Request, Response } from "express";
 import { cryptoService } from "../../crypto";
 import { redisService } from "../../redis";
 
-export async function login(req: Request, res: Response, prisma: PrismaClient) {
+export async function login(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {
 
 		// 1 check for challenge response
@@ -88,8 +88,8 @@ export async function login(req: Request, res: Response, prisma: PrismaClient) {
 		// search in user sessions for session with app id
 		// if there is already a session with the app id but not for this device id, return error
 		// because we need to onboard the device to the session first
-		const userSessionsForApp = user.sessions.filter((session) => session.appUId == appUId)
-		const userSessionsForAppAndDevice = userSessionsForApp.filter((session) => session.deviceUId == userDevice?.uid)
+		const userSessionsForApp = user.sessions.filter((session: any) => session.appUId == appUId)
+		const userSessionsForAppAndDevice = userSessionsForApp.filter((session: any) => session.deviceUId == userDevice?.uid)
 
 		let userSession: Session;
 		
@@ -127,7 +127,7 @@ export async function login(req: Request, res: Response, prisma: PrismaClient) {
 		// add self generated jwt to whitelist
 		await redisService.addToWebAuthnTokens(token);
 
-		return res
+		res
 			.status(200)
 			.cookie('refreshToken', refreshToken, {
 				httpOnly: true,        // Prevents JavaScript access to the cookie
@@ -147,6 +147,6 @@ export async function login(req: Request, res: Response, prisma: PrismaClient) {
 			}));
 	} catch (error: any) {
 		console.log(error);
-		return res.status(400).send(error.message);
+		res.status(400).send(error.message);
 	}
 }

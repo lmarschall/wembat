@@ -2,7 +2,7 @@
 volumes:
   postgres-data:
     driver: local
-  api-data:
+  server-data:
     driver: local
 
 services:
@@ -23,22 +23,24 @@ services:
     dashboard:
         image: wembat-dashboard
         build:
-            context: ./../dashboard
-            dockerfile: Dockerfile                
+            context: .
+            dockerfile: ./workspaces/dashboard/Dockerfile        
         restart: unless-stopped
         logging:
           driver: none
         ports:
             - ${DASHBOARD_SERVER_PORT}:8080
-    api:
-        image: wembat-api
-        build: "./"
+    server:
+        image: wembat-server
+        build:
+            context: .
+            dockerfile: ./workspaces/server/Dockerfile
         restart: unless-stopped
         ports:
             - ${API_SERVER_PORT}:8080
             - 5555:5555 # for local development
         volumes:
-            - api-data:/opt/data
+            - server-data:/opt/data
         environment:
             SERVER_URL: ${API_SERVER_URL}
             DATABASE_URL: ${API_DATABASE_URL}

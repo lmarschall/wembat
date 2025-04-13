@@ -3,7 +3,7 @@ import { Application, PrismaClient } from "@prisma/client";
 import { ApplicationInfo } from "../types";
 import { redisService } from "../../redis";
 
-export async function applicationCreate(req: Request, res: Response, prisma: PrismaClient) {
+export async function applicationCreate(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {
 
         if (!req.body.applicationInfo) throw Error("Application Info not present");

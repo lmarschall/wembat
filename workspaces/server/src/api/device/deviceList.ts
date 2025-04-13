@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { UserWithDevices } from "../types";
 
-export async function deviceList(req: Request, res: Response, prisma: PrismaClient) {
+export async function deviceList(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {
 
         if(!res.locals.payload) throw Error("Payload not present");

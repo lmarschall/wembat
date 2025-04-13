@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { cryptoService } from "../../crypto";
 import { ApplicationInfo } from "../types";
 
-export async function applicationToken(req: Request, res: Response, prisma: PrismaClient) {
+export async function applicationToken(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {
 
         if (!req.body.applicationInfo) throw Error("Application Info not present");

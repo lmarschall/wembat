@@ -8,7 +8,7 @@ export async function validateWebAuthnToken(
 	req: Request,
 	res: Response,
 	next: any
-) {
+): Promise<void> {
 	console.log("validate webauthn token");
 
 	try {
@@ -39,9 +39,9 @@ export async function validateWebAuthnToken(
 			algorithms: ["ES256"],
 		});
 		res.locals.payload = payload;
-		return next();
+		next();
 	} catch (error: any) {
 		console.log(error);
-		return res.status(401).send(error.message);
+		res.status(401).send(error.message);
 	}
 }

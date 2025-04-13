@@ -3,7 +3,7 @@ import { SessionInfo, UserWithDevicesAndSessions } from "../types";
 import { Request, Response } from "express";
 import { cryptoService } from "../../crypto";
 
-export async function refresh(req: Request, res: Response, prisma: PrismaClient) {
+export async function refresh(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {
 
         if (!req.cookies.refreshToken) throw Error("Refresh Token not present");
@@ -38,13 +38,9 @@ export async function refresh(req: Request, res: Response, prisma: PrismaClient)
 
         const token = await cryptoService.createSessionToken(userSession, user, expectedOrigin);
         
-        return res
-			.status(200)
-			.send(JSON.stringify({
-				token: token
-			}));
+        res.status(200).send(JSON.stringify({token: token}));
     } catch (error: any) {
         console.log(error);
-		return res.status(400).send(error.message);
+		res.status(400).send(error.message);
     }
 }

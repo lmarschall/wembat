@@ -3,7 +3,7 @@ import { UserInfo, UserWithDevicesAndSessions } from "../types";
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 
-export async function requestLogin(req: Request, res: Response, prisma: PrismaClient) {
+export async function requestLogin(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {
 
 		// 1 check for user info
@@ -85,6 +85,6 @@ export async function requestLogin(req: Request, res: Response, prisma: PrismaCl
 		);
 	} catch (error: any) {
 		console.log(error);
-		return res.status(400).send(error.message);
+		res.status(400).send(error.message);
 	}
 }

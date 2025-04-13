@@ -8,7 +8,7 @@ export async function validateApplicationToken(
 	req: Request,
 	res: Response,
 	next: any
-) {
+): Promise<void> {
 	console.log("validate application token");
 
 	try {
@@ -45,9 +45,9 @@ export async function validateApplicationToken(
 		});
 		
 		res.locals.payload = payload;
-		return next();
+		next();
 	} catch (error: any) {
 		console.log(error);
-		return res.status(401).send(error.message);
+		res.status(401).send(error.message);
 	}
 }
