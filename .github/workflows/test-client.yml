@@ -20,4 +20,4 @@ jobs:
 
       - name: Run tests
         run: npm run test
-          working-directory: "./workspaces/client"
+        working-directory: "./workspaces/client"

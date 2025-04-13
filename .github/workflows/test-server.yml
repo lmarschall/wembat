@@ -20,4 +20,4 @@ jobs:
 
       - name: Run tests in server workspace
         run: npm run test
-          working-directory: "./workspaces/server"
+        working-directory: "./workspaces/server"
