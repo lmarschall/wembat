@@ -3,6 +3,7 @@ node_modules
 coverage
 keys
 .env
+*.js.map
 
 docs/.vitepress/dist
 docs/.vitepress/cache

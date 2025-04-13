@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "esnext",
     "useDefineForClassFields": true,
-    "outDir": "./dist",
+    // "outDir": "./dist",
     "module": "esnext",
     "moduleResolution": "node",
     "strict": true,
@@ -23,6 +23,6 @@
     "includes": "src",
     "out": "docs/client"
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  // "include": ["package/src/**/*.ts", "package/src/**/*.d.ts", "package/src/**/*.tsx", "package/src/**/*.vue"],
+  // "references": [{ "path": "./tsconfig.node.json" }]
 }

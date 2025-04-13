@@ -1,0 +1,28 @@
+{
+    "compilerOptions": {
+      "target": "esnext",
+      "useDefineForClassFields": true,
+      "outDir": "./dist",
+      "module": "esnext",
+      "moduleResolution": "node",
+      "strict": true,
+      "jsx": "preserve",
+      "sourceMap": true,
+      "resolveJsonModule": true,
+      "isolatedModules": true,
+      "esModuleInterop": true,
+      "lib": ["esnext", "dom"],
+      "skipLibCheck": true
+    },
+    "typedocOptions": { 
+      "entryPoints": [ 
+        "./src/index.ts",
+      ],
+      "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
+      "theme": "vitepress",
+      "includes": "src",
+      "out": "docs/client"
+    },
+    "include": ["package/src/**/*.ts", "package/src/**/*.d.ts", "package/src/**/*.tsx", "package/src/**/*.vue"],
+    "references": [{ "path": "./tsconfig.node.json" }]
+  }

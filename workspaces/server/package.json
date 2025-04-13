@@ -1,0 +1,28 @@
+{
+  "name": "@wembat/server",
+  "version": "0.9.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/app.js",
+    "serve": "tsc && node dist/app.js",
+    "lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix ./src/**/*.ts",
+    "format": "prettier ./src/**/*.ts --write",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@prisma/client": "^3.13.0",
+    "@simplewebauthn/server": "^11.0.0",
+    "base64url": "^3.0.1",
+    "body-parser": "^1.19.2",
+    "compression": "^1.7.4",
+    "connect-history-api-fallback": "^2.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^5.0.2",
+    "jose": "^4.15.5",
+    "redis": "^4.0.6"
+  }
+}
