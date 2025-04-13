@@ -39,7 +39,7 @@ export async function requestLink(req: Request, res: Response, prisma: PrismaCli
 					devices: true,
 				},
 			})
-			.catch((err) => {
+			.catch((err: any) => {
 				console.log(err);
 				throw Error("User could not be found or created in database");
 			})) as UserWithDevices;
@@ -84,7 +84,7 @@ export async function requestLink(req: Request, res: Response, prisma: PrismaCli
 					challenge: options.challenge,
 				},
 			})
-			.catch((err) => {
+			.catch((err: any) => {
 				console.log(err);
 				throw Error("User challenge could not be updated");
 			});

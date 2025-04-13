@@ -47,7 +47,7 @@ export async function onboard(req: Request, res: Response, prisma: PrismaClient)
 					devices: true,
 				},
 			})
-			.catch((err) => {
+			.catch((err: any) => {
 				console.log(err);
 				throw Error("Could not find user for given challenge");
 			})) as UserWithDevices;
@@ -105,7 +105,7 @@ export async function onboard(req: Request, res: Response, prisma: PrismaClient)
 					nonce: nonce
 				},
 			})
-			.catch((err) => {
+			.catch((err: any) => {
 				console.log(err);
 				throw Error("Updating user challenge failed");
 			});

@@ -16,7 +16,7 @@ export async function applicationCreate(req: Request, res: Response, prisma: Pri
 					domain: appDomain,
 				}
 			})
-			.catch((err) => {
+			.catch((err: any) => {
 				console.log(err);
 				throw Error("Error while creating application");
 			}) as Application;

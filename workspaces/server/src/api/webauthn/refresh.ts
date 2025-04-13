@@ -25,14 +25,14 @@ export async function refresh(req: Request, res: Response, prisma: PrismaClient)
 					sessions: true,
 				},
 			})
-			.catch((err) => {
+			.catch((err: any) => {
 				console.log(err);
 				throw Error("User could not be found in database");
 			})) as UserWithDevicesAndSessions;
 
         if (!user) throw Error("User could not be found in database");
 
-        const userSession = user.sessions.find((session) => session.uid === sessionId);
+        const userSession = user.sessions.find((session: any) => session.uid === sessionId);
 
         if (!userSession) throw Error("User session not found");
 

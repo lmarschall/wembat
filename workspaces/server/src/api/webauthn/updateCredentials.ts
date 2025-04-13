@@ -29,7 +29,7 @@ export async function updateCredentials(req: Request, res: Response, prisma: Pri
 					nonce: nonce
 				},
 			})
-			.catch((err) => {
+			.catch((err: any) => {
 				console.log(err);
 				throw Error("Updating user challenge failed");
 			});

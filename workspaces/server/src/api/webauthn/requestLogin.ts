@@ -30,7 +30,7 @@ export async function requestLogin(req: Request, res: Response, prisma: PrismaCl
 					sessions: true,
 				},
 			})
-			.catch((err) => {
+			.catch((err: any) => {
 				console.log(err);
 				throw Error("User could not be found in database");
 			})) as UserWithDevicesAndSessions;
@@ -39,7 +39,7 @@ export async function requestLogin(req: Request, res: Response, prisma: PrismaCl
 
 		const opts: GenerateAuthenticationOptionsOpts = {
 			timeout: 60000,
-			allowCredentials: user.devices.map((dev) => ({
+			allowCredentials: user.devices.map((dev: any) => ({
 				id: dev.credentialId,
 				transports: dev.transports as AuthenticatorTransport[],
 			})),
@@ -75,7 +75,7 @@ export async function requestLogin(req: Request, res: Response, prisma: PrismaCl
 					challenge: options.challenge,
 				},
 			})
-			.catch((err) => {
+			.catch((err: any) => {
 				console.log(err);
 				throw Error("Updating user challenge failed");
 			});

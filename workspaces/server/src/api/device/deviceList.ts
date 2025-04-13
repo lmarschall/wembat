@@ -17,7 +17,7 @@ export async function deviceList(req: Request, res: Response, prisma: PrismaClie
                     devices: true,
                 },
             })
-            .catch((err) => {
+            .catch((err: any) => {
                 console.log(err);
                 throw Error("User could not be found in database");
             })) as UserWithDevices;

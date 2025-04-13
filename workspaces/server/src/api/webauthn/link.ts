@@ -34,7 +34,7 @@ export async function link(req: Request, res: Response, prisma: PrismaClient) {
 					devices: true,
 				},
 			})
-			.catch((err) => {
+			.catch((err: any) => {
 				console.log(err);
 				throw Error("Could not find user for given challenge");
 			})) as UserWithDevices;
@@ -79,7 +79,7 @@ export async function link(req: Request, res: Response, prisma: PrismaClient) {
 					transports: credentials.response.transports,
 				},
 			})
-			.catch((err) => {
+			.catch((err: any) => {
 				console.log(err);
 				throw Error("Device Regitration update or create failed");
 			});

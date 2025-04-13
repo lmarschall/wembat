@@ -49,7 +49,7 @@ export async function requestRegister(req: Request, res: Response, prisma: Prism
 					devices: true,
 				},
 			})
-			.catch((err) => {
+			.catch((err: any) => {
 				console.log(err);
 				throw Error("User could not be found or created in database");
 			})) as UserWithDevices;
@@ -63,7 +63,7 @@ export async function requestRegister(req: Request, res: Response, prisma: Prism
 			userName: user.mail,
 			timeout: 60000,
 			attestationType: "none",
-			excludeCredentials: user.devices.map((dev) => ({
+			excludeCredentials: user.devices.map((dev: any) => ({
 				id: dev.credentialId,
 				transports: dev.transports as AuthenticatorTransport[],
 			})),
@@ -93,7 +93,7 @@ export async function requestRegister(req: Request, res: Response, prisma: Prism
 					challenge: options.challenge,
 				},
 			})
-			.catch((err) => {
+			.catch((err: any) => {
 				console.log(err);
 				throw Error("User challenge could not be updated");
 			});

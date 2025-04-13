@@ -38,7 +38,7 @@ export async function login(req: Request, res: Response, prisma: PrismaClient) {
 					sessions: true
 				},
 			})
-			.catch((err) => {
+			.catch((err: any) => {
 				console.log(err);
 				throw Error("User with given challenge not found");
 			})) as UserWithDevicesAndSessions;
@@ -104,7 +104,7 @@ export async function login(req: Request, res: Response, prisma: PrismaClient) {
 					deviceUId: userDevice.uid,
 				}
 			})
-			.catch((err) => {
+			.catch((err: any) => {
 				console.log(err);
 				throw Error("Error while creating new session for user");
 			}) as Session;
