@@ -1,15 +1,42 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 
 import ApplicationsItem from '@/components/ApplicationsItem.vue'
 
 import { useTokenStore } from '@/stores/token';
+import { Toast } from "bootstrap";
+
+import { emitter } from '@/services/wembat';
+
+const toastBody = ref("");
+const isError = ref(false);
+
+emitter.on('applicationSuccess', OnWembatApplicationSuccess);
+emitter.on('applicationError', OnWembatApplicationError);
 
 const tokenStore = useTokenStore();
 
 const props = defineProps({
   token: String
 })
+
+function OnWembatApplicationSuccess(event: string) {
+  console.log("event: ", event);
+  toastBody.value = event;
+  isError.value = false;
+  const toastLiveExample = document.getElementById('liveToast')
+  const toastBootstrap = Toast.getOrCreateInstance(toastLiveExample);
+  toastBootstrap.show();
+}
+
+function OnWembatApplicationError(event: string) {
+  console.log("event: ", event);
+  toastBody.value = event;
+  isError.value = true;
+  const toastLiveExample = document.getElementById('liveToast')
+  const toastBootstrap = Toast.getOrCreateInstance(toastLiveExample);
+  toastBootstrap.show();
+}
 
 function saveToken() {
   if (props.token !== undefined)
@@ -74,6 +101,27 @@ onMounted(async () => {
         <!-- <div class="tab-pane fade" id="pills-users" role="tabpanel" aria-labelledby="pills-users-tab" tabindex="1">
           <UsersItem :userModel="userModel" :msg="msg" />
         </div> -->
+      </div>
+    </div>
+  </div>
+  <div class="toast-container position-fixed top-0 end-0 p-3">
+    <!-- <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+        <img src="..." class="rounded me-2" alt="...">
+        <strong class="me-auto">Bootstrap</strong>
+        <small>11 mins ago</small>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body">
+        {{toastBody}}
+      </div>
+    </div> -->
+    <div id="liveToast" :class="{ 'text-bg-success': isError == false, 'text-bg-danger': isError == true }" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">
+          {{toastBody}}
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
       </div>
     </div>
   </div>

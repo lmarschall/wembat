@@ -53,11 +53,9 @@
 </style>
   
 <script setup lang="ts">
-    import { WembatRequestService } from "@/services/wembat";
-    import { Modal } from "bootstrap";
     import { onMounted, ref } from "vue";
+    import { WembatRequestService } from "@/services/wembat";
 
-    const status = ref(0);
     const buttonDisabled = ref(false);
     const wembatRequestService = new WembatRequestService();
 
@@ -84,7 +82,7 @@
     }
 
     function testInputDomain(): boolean {
-        const regName = RegExp("^([a-zA-Z0-9\.\:]{5,})$");
+        const regName = RegExp("^([a-zA-Z0-9.:]{5,})$");
         inputDomain.value?.classList.remove("is-invalid", "is-valid");
 
         if (inputDomain !== null && inputDomain.value !== null && regName.test(inputDomain.value.value)) {
@@ -110,26 +108,28 @@
             validCount++;
         }
 
-        // only do sth if everything is valid
-        if (validCount == 2) {
-            status.value = 1;
-
-            const postData = {
-                applicationInfo: {
-                    appUId: "",
-                    appName: inputName.value?.value,
-                    appDomain: inputDomain.value?.value,
-                },
-            };
-
-            await sleep(1000);
-
-            if (await wembatRequestService.applicationCreate(postData)) {
-                status.value = 2;
-            } else {
-                status.value = 3;
-            }
+        if (validCount !== 2) {
+            buttonDisabled.value = false;
+            return;
         }
+
+        // only do sth if everything is valid
+        const postData = {
+            applicationInfo: {
+                appUId: "",
+                appName: inputName.value?.value,
+                appDomain: inputDomain.value?.value,
+            },
+        };
+
+        await sleep(1000);
+
+        if (await wembatRequestService.applicationCreate(postData)) {
+            console.log("Application created");
+        } else {
+            console.log("Application not created");
+        }
+
         buttonDisabled.value = false;
         closeButton.value?.click();
     }

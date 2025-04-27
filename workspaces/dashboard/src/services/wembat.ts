@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useTokenStore } from "@/stores/token";
+import mitt from 'mitt';
 
 export interface Application {
     uid: String
@@ -19,6 +20,8 @@ export interface ApplicationInfo {
     appDomain: String
 }
 
+export const emitter = mitt();
+
 export class WembatRequestService {
     private readonly tokenStore;
 
@@ -33,9 +36,11 @@ export class WembatRequestService {
                     Authorization: `Bearer ${this.tokenStore.token}`,
                 },
             });
+            emitter.emit("applicationSuccess", "Application updated successfully");
             return true;
         } catch (error) {
             console.log(error);
+            emitter.emit("applicationError", "Application updated unsuccessfully");
             return false;
         }
     }
@@ -61,9 +66,11 @@ export class WembatRequestService {
                     Authorization: `Bearer ${this.tokenStore.token}`,
                 },
             });
+            emitter.emit("applicationSuccess", "Application created successfully");
             return true;
         } catch (error) {
             console.log(error);
+            emitter.emit("applicationError", "Application created unsuccessfully");
             return false;
         }
     }
@@ -75,9 +82,11 @@ export class WembatRequestService {
                     Authorization: `Bearer ${this.tokenStore.token}`,
                 },
             });
+            emitter.emit("applicationSuccess", "Application deleted successfully");
             return true;
         } catch (error) {
             console.log(error);
+            emitter.emit("applicationError", "Application deleted unsuccessfully");
             return false;
         }
     }

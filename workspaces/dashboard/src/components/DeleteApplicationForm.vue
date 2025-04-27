@@ -80,7 +80,10 @@
       const app = applicationStore.selectedApplication;
 
       // check if inputs are valid
-      if (!testInputName()) return;
+      if (!testInputName()) {
+        buttonDisabled.value = false;
+        return;
+      }
 
       const postData = {
         applicationInfo: {
@@ -97,6 +100,7 @@
       } else {
         console.log("Application not deleted");
       }
+      
       buttonDisabled.value = false;
       closeButton.value?.click();
     }

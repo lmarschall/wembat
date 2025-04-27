@@ -145,12 +145,13 @@ async function showApplicationForm(elementId: string, app?: Application): Promis
   if (app !== undefined) applicationStore.selectedApplication = app;
 
   if (applicationFormElement) {
-    const applicationForm = new Modal(
-      applicationFormElement,
-      {
-        keyboard: false,
-      }
-    );
+    const applicationForm = Modal.getOrCreateInstance(applicationFormElement);
+    // const applicationForm = new Modal(
+    //   applicationFormElement,
+    //   {
+    //     keyboard: false,
+    //   }
+    // );
     if (applicationForm) applicationForm.show();
   }
 }

@@ -58,7 +58,6 @@
     import { WembatRequestService } from "@/services/wembat";
 
     const buttonDisabled = ref(false);
-    const status = ref(0);
     const applicationStore = useApplicationStore();
     const wembatRequestService = new WembatRequestService();
 
@@ -119,26 +118,27 @@
             validCount++;
         }
 
-        // only do sth if everything is valid
-        if (validCount == 2) {
-            status.value = 1;
-
-            const postData = {
-                applicationInfo: {
-                    appUId: applicationStore.selectedApplication.uid,
-                    appName: inputName.value?.value,
-                    appDomain: inputDomain.value?.value,
-                },
-            };
-
-            await sleep(1000);
-
-            if (await wembatRequestService.applicationUpdate(postData)) {
-                status.value = 2;
-            } else {
-                status.value = 3;
-            }
+        if (validCount !== 2) {
+            buttonDisabled.value = false;
+            return;
         }
+
+        const postData = {
+            applicationInfo: {
+                appUId: applicationStore.selectedApplication.uid,
+                appName: inputName.value?.value,
+                appDomain: inputDomain.value?.value,
+            },
+        };
+
+        await sleep(1000);
+
+        if (await wembatRequestService.applicationUpdate(postData)) {
+            console.log("Application updated");
+        } else {
+            console.log("Application not updated");
+        }
+
         buttonDisabled.value = false;
         closeButton.value?.click();
     }
