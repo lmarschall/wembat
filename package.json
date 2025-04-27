@@ -7,9 +7,6 @@
   "scripts": {
     "lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix ./workspaces/**/*.ts",
     "format": "prettier ./workspaces/**/*.ts --write",
-    "test": "vitest ./src/functions/*.test.ts",
-    "test:ui": "vitest --ui",
-    "test:run": "vitest run",
     "docs": "typedoc",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
