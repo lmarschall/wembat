@@ -15,6 +15,10 @@ COPY ./workspaces/client ./workspaces/client/
 # Install all dependencies (including devDependencies for build)
 RUN npm ci --ignore-scripts
 
+# Build the client workspace first
+WORKDIR /usr/src/build/workspaces/client
+RUN npm run build
+
 # Copy demo source and build
 WORKDIR /usr/src/build/workspaces/demo
 COPY ./workspaces/demo .
@@ -27,10 +31,6 @@ WORKDIR /usr/src/app
 COPY --from=build-stage /usr/src/build/workspaces/demo/dist/ /usr/src/app
 COPY ./workspaces/demo/Caddyfile /etc/caddy/Caddyfile
 EXPOSE 8080
-# COPY package*.json ./
-# RUN npm ci
-
-# WORKDIR /usr/src/build
 # COPY . ./workspaces/demo
 # WORKDIR /usr/src/build/workspaces/demo
 # RUN npm run build
