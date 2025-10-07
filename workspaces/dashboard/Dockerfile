@@ -1,5 +1,5 @@
 # define build stage and create gzipped files
-FROM node:20.10 as build-stage
+FROM node:22.20 as build-stage
 RUN apt-get update
 RUN apt-get install gettext-base
 WORKDIR /usr/src/build

@@ -1,5 +1,5 @@
 # build stage
-FROM node:20 AS build
+FROM node:22.20 AS build
 
 # make the 'build' folder the current working directory
 WORKDIR /usr/src/build
@@ -24,7 +24,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # run stage
-FROM node:20-bullseye-slim AS run
+FROM node:22-bullseye-slim AS run
 
 # install postgresql client
 RUN apt-get update && apt-get install -y \
@@ -46,11 +46,12 @@ USER node
 # make the 'app' folder the current working directory
 WORKDIR /usr/src/app
 
-# copy both 'package.json' and 'package-lock.json'
-COPY ./workspaces/server/package*.json /usr/src/app/
+# copy root package files for workspace support
+COPY --chown=node:node ./package*.json /usr/src/app/
+COPY --chown=node:node ./workspaces/server/package*.json /usr/src/app/workspaces/server/
 
-# install project dependencies
-RUN npm ci --omit=dev
+# install project dependencies using workspace
+RUN npm ci --workspace=@wembat/server --omit=dev
 
 # copy build files from build stage
 COPY --chown=node:node --from=build /usr/src/build/workspaces/server/dist /usr/src/app/dist

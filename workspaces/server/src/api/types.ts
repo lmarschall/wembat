@@ -44,9 +44,9 @@ export interface ExtensionsLargeBlobSupport
 }
 
 export interface ExtensionsLargeBlobWrite
-	extends AuthenticationExtensionsClientInputs {
+	extends Omit<AuthenticationExtensionsClientInputs, 'largeBlob'> {
 	largeBlob: {
-		write: Uint8Array;
+		write: BufferSource;
 	};
 }
 

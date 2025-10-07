@@ -46,4 +46,4 @@ fi
 
 # start api server
 echo "Starting API server..."
-npm run start
+node dist/app.js
