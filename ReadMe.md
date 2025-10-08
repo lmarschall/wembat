@@ -40,7 +40,7 @@ Manage your applications with an intuitive dashboard.
 
 ![alt text](docs/dashboard.png)
 
-## How to I get started?
+## How do I get started?
 
 - Setup Wembat backend with the documentation at https://wembat.dev/setup
 - Getting started in your application with the documentation at https://wembat.dev/getting-started
