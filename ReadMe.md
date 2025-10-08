@@ -9,20 +9,28 @@
 
 <p align="center">
     <strong>
-        Start using Wembat at <a href="https://wembat.dev">wembat.dev</a>
+        Try using Wembat at <a href="https://demo.wembat.dev">demo.wembat.dev</a>
         <br/>
         See <a href="https://wembat.dev/introduction.html">Documentation</a>
         <br/>
     </strong>
 </p>
 
-### The Wembat project enables developers to authenticate their users and encrypt their data via WebAuthn across all platforms.
+## What is Wembat?
 
-***The Wembat Backend is an API server to handle calls from the client library and hosts the dashboard. The client library provides all the frontend functionalities.***
+Wembat is a powerful, yet tiny framework that gives your users passkey/WebAuthn sign‑in and lets you encrypt data client‑side using the PRF extension — with an API that stays out of your way. Bring your own UI, wire up a couple of actions, and you’re done.
 
+## Why you should adopt Wembat?
 
-**Simple Authentication and Encryption**.
-Wembat allows your users to authenticate using their biometrics. You can encrypt sensitive data locally in your browser without the need to care about handling key pairs. Everything is handled for you.
+🔒 Passwordless & phishing‑resistant by design (WebAuthn + passkeys)
+
+🧪 TypeScript-first client with clean, minimal APIs
+
+🧩 Drop‑in backend with a dashboard to manage apps & keys
+
+🔐 Built‑in encryption derived from device credentials via PRF
+
+🖥️ Multi‑device onboarding & session linking out of the box
 
 Based on the awesome work of [SimpleWebAuthn](https://github.com/MasterKale/SimpleWebAuthn)
 
