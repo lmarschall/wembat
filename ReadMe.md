@@ -34,17 +34,17 @@ Wembat is a powerful, yet tiny framework that gives your users passkey/WebAuthn 
 
 Based on the awesome work of [SimpleWebAuthn](https://github.com/MasterKale/SimpleWebAuthn)
 
-## Dashboard
+## What does it look like?
 
 Manage your applications with an intuitive dashboard.
 
 ![alt text](docs/dashboard.png)
 
-## Quickstart
+## How to I get started?
 
 - Setup Wembat backend with the documentation at https://wembat.dev/setup
 - Getting started in your application with the documentation at https://wembat.dev/getting-started
 
-## Join
+## How can I be part of it?
 
 In order to provide a fully functional und updated open source project I'm very open for requests to join this project.
