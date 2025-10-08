@@ -30,9 +30,9 @@
               />
               <label for="messageInput">Encrypted Message</label>
             </div>
-            <div class="col-12 d-flex flex-row justify-content-evenly">
+            <div class="col-12 d-flex flex-column flex-md-row justify-content-evenly">
               <button
-                class="btn btn-primary"
+                class="btn btn-primary mx-auto"
                 type="submit"
                 @click="encryptMessage()"
                 :disabled="loading"
@@ -41,7 +41,7 @@
               </button>
 
               <button
-                class="btn btn-secondary"
+                class="btn btn-secondary mx-auto"
                 type="submit"
                 @click="link()"
                 :disabled="loading"
@@ -50,7 +50,7 @@
               </button>
 
               <button
-                class="btn btn-secondary"
+                class="btn btn-secondary mx-auto"
                 type="submit"
                 @click="onboard()"
                 :disabled="loading"
@@ -59,7 +59,7 @@
               </button>
 
               <button
-                class="btn btn-secondary"
+                class="btn btn-secondary mx-auto"
                 type="submit"
                 @click="token()"
                 :disabled="loading"
@@ -68,7 +68,7 @@
               </button>
 
               <button
-                class="btn btn-warning"
+                class="btn btn-warning mx-auto"
                 type="submit"
                 @click="logout()"
                 :disabled="loading"

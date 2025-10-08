@@ -45,6 +45,7 @@ import Footer from "./components/Footer.vue";
     padding: 0px 20px;
     line-height: 38px;
     font-size: 14px;
+    margin: 10px;
     border: none;
   }
 

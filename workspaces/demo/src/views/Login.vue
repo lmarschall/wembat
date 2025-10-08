@@ -32,9 +32,9 @@
               />
               <label for="floatingInput">Username</label>
             </div>
-            <div class="col-12 d-flex flex-row justify-content-evenly">
+            <div class="col-12 d-flex flex-column flex-md-row justify-content-evenly">
               <button
-                class="btn btn-primary"
+                class="btn btn-primary mx-auto"
                 type="submit"
                 @click="login()"
                 :disabled="loading"
@@ -48,7 +48,7 @@
                 Login
               </button>
               <button
-                class="btn btn-secondary"
+                class="btn btn-secondary mx-auto"
                 type="submit"
                 @click="register()"
                 :disabled="loading"
