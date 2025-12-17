@@ -103,109 +103,110 @@ export async function login(
 		const privateUserKeyEncryptedString =
 			loginReponseData.privateUserKeyEncrypted;
 
-		if (credentials.clientExtensionResults !== undefined) {
-			const credentialExtensions = credentials.clientExtensionResults as any;
 
-			const inputKeyMaterial = new Uint8Array(
-				credentialExtensions?.prf.results.first
+		if (credentials.clientExtensionResults === undefined) throw Error("Credentials not instance of PublicKeyCredential");
+
+		const credentialExtensions = credentials.clientExtensionResults as any;
+
+		const inputKeyMaterial = new Uint8Array(
+			credentialExtensions?.prf.results.first
+		);
+
+		const keyDerivationKey = await crypto.subtle.importKey(
+			"raw",
+			inputKeyMaterial,
+			"HKDF",
+			false,
+			["deriveKey"]
+		);
+
+		// wild settings here
+		const label = "encryption key";
+		const info = new TextEncoder().encode(label);
+		const salt = new Uint8Array();
+
+		const encryptionKey = await crypto.subtle.deriveKey(
+			{ name: "HKDF", info, salt, hash: "SHA-256" },
+			keyDerivationKey,
+			{ name: "AES-GCM", length: 256 },
+			false,
+			["encrypt", "decrypt"]
+		);
+
+		if (
+			publicUserKeyString !== "" &&
+			privateUserKeyEncryptedString !== ""
+		) {
+			console.log("Loading existing keys");
+			publicKey = await loadCryptoPublicKeyFromString(
+				publicUserKeyString
 			);
 
-			const keyDerivationKey = await crypto.subtle.importKey(
-				"raw",
-				inputKeyMaterial,
-				"HKDF",
-				false,
-				["deriveKey"]
+			const nonce = loginReponseData.nonce;
+			const decoder = new TextDecoder();
+
+			const decryptedPrivateUserKey = await crypto.subtle.decrypt(
+				{ name: "AES-GCM", iv: str2ab(nonce) },
+				encryptionKey,
+				str2ab(privateUserKeyEncryptedString)
 			);
 
-			// wild settings here
-			const label = "encryption key";
-			const info = new TextEncoder().encode(label);
-			const salt = new Uint8Array();
-
-			const encryptionKey = await crypto.subtle.deriveKey(
-				{ name: "HKDF", info, salt, hash: "SHA-256" },
-				keyDerivationKey,
-				{ name: "AES-GCM", length: 256 },
-				false,
-				["encrypt", "decrypt"]
+			privateKey = await loadCryptoPrivateKeyFromString(
+				decoder.decode(decryptedPrivateUserKey)
 			);
 
-			if (
-				publicUserKeyString !== "" &&
-				privateUserKeyEncryptedString !== ""
-			) {
-				console.log("Loading existing keys");
-				publicKey = await loadCryptoPublicKeyFromString(
-					publicUserKeyString
-				);
-
-				const nonce = loginReponseData.nonce;
-				const decoder = new TextDecoder();
-
-				const decryptedPrivateUserKey = await crypto.subtle.decrypt(
-					{ name: "AES-GCM", iv: str2ab(nonce) },
-					encryptionKey,
-					str2ab(privateUserKeyEncryptedString)
-				);
-
-				privateKey = await loadCryptoPrivateKeyFromString(
-					decoder.decode(decryptedPrivateUserKey)
-				);
-			} else {
-				console.log("Generating new keys");
-
-				const keyPair = await crypto.subtle.generateKey(
-					{
-						name: "ECDH",
-						namedCurve: "P-384",
-					},
-					true,
-					["deriveKey", "deriveBits"]
-				);
-
-				publicKey = keyPair.publicKey;
-				privateKey = keyPair.privateKey;
-
-				const publicKeyString = await saveCryptoKeyAsString(publicKey);
-				const privateKeyString = await saveCryptoKeyAsString(privateKey);
-
-				const nonce = crypto.getRandomValues(new Uint8Array(12));
-				const encoder = new TextEncoder();
-				const encoded = encoder.encode(privateKeyString);
-
-				const encryptedPrivateKey = await crypto.subtle.encrypt(
-					{ name: "AES-GCM", iv: nonce },
-					encryptionKey,
-					encoded
-				);
-
-				const headers = {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				};
-
-				const saveCredentialsResponse = await axiosClient.post<string>(
-					`/update-credentials`,
-					{
-						updateCredentialsRequest: {
-							privKey: ab2str(encryptedPrivateKey),
-							pubKey: publicKeyString,
-							nonce: ab2str(nonce.buffer),
-							sessionId: loginReponseData.sessionId,
-						},
-					},
-					{
-						headers: headers,
-					}
-				);
-
-				if (saveCredentialsResponse.status !== 200) {
-					throw Error(saveCredentialsResponse.data);
-				}
-			}
+			
 		} else {
-			throw Error("Credentials not instance of PublicKeyCredential");
+			console.log("Generating new keys");
+
+			const keyPair = await crypto.subtle.generateKey(
+				{
+					name: "ECDH",
+					namedCurve: "P-384",
+				},
+				true,
+				["deriveKey", "deriveBits"]
+			);
+
+			publicKey = keyPair.publicKey;
+			privateKey = keyPair.privateKey;
+
+			const publicKeyString = await saveCryptoKeyAsString(publicKey);
+			const privateKeyString = await saveCryptoKeyAsString(privateKey);
+
+			const nonce = crypto.getRandomValues(new Uint8Array(12));
+			const encoder = new TextEncoder();
+			const encoded = encoder.encode(privateKeyString);
+
+			const encryptedPrivateKey = await crypto.subtle.encrypt(
+				{ name: "AES-GCM", iv: nonce },
+				encryptionKey,
+				encoded
+			);
+
+			const headers = {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			};
+
+			const saveCredentialsResponse = await axiosClient.post<string>(
+				`/update-credentials`,
+				{
+					updateCredentialsRequest: {
+						privKey: ab2str(encryptedPrivateKey),
+						pubKey: publicKeyString,
+						nonce: ab2str(nonce.buffer),
+						sessionId: loginReponseData.sessionId,
+					},
+				},
+				{
+					headers: headers,
+				}
+			);
+
+			if (saveCredentialsResponse.status !== 200) {
+				throw Error(saveCredentialsResponse.data);
+			}
 		}
 
 		const loginResult: WembatLoginResult = {

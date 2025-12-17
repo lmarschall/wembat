@@ -143,18 +143,17 @@ export async function loadCryptoPublicKeyFromString(
 export async function loadCryptoPrivateKeyFromString(
 	privateKeyString: string
 ): Promise<CryptoKey> {
-	if (privateKeyString !== "") {
-		return await window.crypto.subtle.importKey(
-			"jwk",
-			JSON.parse(privateKeyString),
-			{
-				name: "ECDH",
-				namedCurve: "P-384",
-			},
-			true,
-			["deriveKey", "deriveBits"]
-		);
-	} else {
-		throw Error("Private Key String empty");
-	}
+
+	if (privateKeyString === "") throw Error("Private Key String empty");
+
+	return await window.crypto.subtle.importKey(
+		"jwk",
+		JSON.parse(privateKeyString),
+		{
+			name: "ECDH",
+			namedCurve: "P-384",
+		},
+		false,
+		["deriveKey", "deriveBits"]
+	);
 }
