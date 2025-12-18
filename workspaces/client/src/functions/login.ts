@@ -14,6 +14,7 @@ import { AuthenticationResponseJSON } from "@simplewebauthn/types";
 import {
 	ab2str,
 	bufferToArrayBuffer,
+	deriveEncryptionKeyFromPRF,
 	loadCryptoPrivateKeyFromString,
 	loadCryptoPublicKeyFromString,
 	saveCryptoKeyAsString,
@@ -40,6 +41,7 @@ export async function login(
 
 	let privateKey: CryptoKey | undefined = undefined;
 	let publicKey: CryptoKey | undefined = undefined;
+	let sessionKey: CryptoKey | undefined = undefined;
 	let token: string | undefined = undefined;
 
 	try {
@@ -112,48 +114,14 @@ export async function login(
 			credentialExtensions?.prf.results.first
 		);
 
-		const keyDerivationKey = await crypto.subtle.importKey(
-			"raw",
-			inputKeyMaterial,
-			"HKDF",
-			false,
-			["deriveKey"]
-		);
-
-		// wild settings here
-		const label = "encryption key";
-		const info = new TextEncoder().encode(label);
-		const salt = new Uint8Array();
-
-		const encryptionKey = await crypto.subtle.deriveKey(
-			{ name: "HKDF", info, salt, hash: "SHA-256" },
-			keyDerivationKey,
-			{ name: "AES-GCM", length: 256 },
-			false,
-			["encrypt", "decrypt"]
-		);
+		const encryptionKey = await deriveEncryptionKeyFromPRF(inputKeyMaterial);
 
 		if (
 			publicUserKeyString !== "" &&
 			privateUserKeyEncryptedString !== ""
 		) {
 			console.log("Loading existing keys");
-			publicKey = await loadCryptoPublicKeyFromString(
-				publicUserKeyString
-			);
-
-			const nonce = loginReponseData.nonce;
-			const decoder = new TextDecoder();
-
-			const decryptedPrivateUserKey = await crypto.subtle.decrypt(
-				{ name: "AES-GCM", iv: str2ab(nonce) },
-				encryptionKey,
-				str2ab(privateUserKeyEncryptedString)
-			);
-
-			privateKey = await loadCryptoPrivateKeyFromString(
-				decoder.decode(decryptedPrivateUserKey)
-			);
+			sessionKey = deriveSessionKeyFromString()
 
 			
 		} else {

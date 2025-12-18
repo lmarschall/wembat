@@ -157,3 +157,48 @@ export async function loadCryptoPrivateKeyFromString(
 		["deriveKey", "deriveBits"]
 	);
 }
+
+export async function deriveEncryptionKeyFromPRF(inputKeyMaterial: Uint8Array) {
+
+	const keyDerivationKey = await window.crypto.subtle.importKey(
+		"raw",
+		inputKeyMaterial,
+		"HKDF",
+		false,
+		["deriveKey"]
+	);
+
+	// wild settings here
+	const label = "encryption key";
+	const info = new TextEncoder().encode(label);
+	const salt = new Uint8Array();
+
+	const encryptionKey = await crypto.subtle.deriveKey(
+		{ name: "HKDF", info, salt, hash: "SHA-256" },
+		keyDerivationKey,
+		{ name: "AES-GCM", length: 256 },
+		false,
+		["encrypt", "decrypt"]
+	);
+
+	return encryptionKey;
+}
+
+export async function deriveSessionKeyFromString(publicUserKeyString: string, privateUserKeyEncryptedString: string, encryptionKey: CryptoKey) {
+	const publicKey = await loadCryptoPublicKeyFromString(
+		publicUserKeyString
+	);
+
+	const nonce = loginReponseData.nonce;
+	const decoder = new TextDecoder();
+
+	const decryptedPrivateUserKey = await crypto.subtle.decrypt(
+		{ name: "AES-GCM", iv: str2ab(nonce) },
+		encryptionKey,
+		str2ab(privateUserKeyEncryptedString)
+	);
+
+	privateKey = await loadCryptoPrivateKeyFromString(
+		decoder.decode(decryptedPrivateUserKey)
+	);
+}
