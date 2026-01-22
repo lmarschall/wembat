@@ -1,4 +1,9 @@
 import { WembatClientToken } from "../types";
+import { randomBytes } from '@noble/post-quantum/utils.js';
+import { gcm } from '@noble/ciphers/aes';
+import { hkdf } from '@noble/hashes/hkdf';
+import { sha256 } from '@noble/hashes/sha256';
+import { ml_kem768 } from '@noble/post-quantum/ml-kem';
 
 /**
  * Converts a string to an ArrayBuffer.
@@ -158,7 +163,9 @@ export async function loadCryptoPrivateKeyFromString(
 	);
 }
 
-export async function deriveEncryptionKeyFromPRF(inputKeyMaterial: Uint8Array) {
+export async function deriveEncryptionKeyFromPRF(inputKeyMaterial: Uint8Array, existingSalt = null) {
+
+	const salt = existingSalt || window.crypto.getRandomValues(new Uint8Array(32));
 
 	const keyDerivationKey = await window.crypto.subtle.importKey(
 		"raw",
@@ -168,10 +175,7 @@ export async function deriveEncryptionKeyFromPRF(inputKeyMaterial: Uint8Array) {
 		["deriveKey"]
 	);
 
-	// wild settings here
-	const label = "encryption key";
-	const info = new TextEncoder().encode(label);
-	const salt = new Uint8Array();
+	const info = new TextEncoder().encode("encryption key");
 
 	const encryptionKey = await crypto.subtle.deriveKey(
 		{ name: "HKDF", info, salt, hash: "SHA-256" },
@@ -181,7 +185,10 @@ export async function deriveEncryptionKeyFromPRF(inputKeyMaterial: Uint8Array) {
 		["encrypt", "decrypt"]
 	);
 
-	return encryptionKey;
+	return {
+		encryptionKey,
+		salt
+	}
 }
 
 export async function deriveSessionKeyFromString(publicUserKeyString: string, privateUserKeyEncryptedString: string, encryptionKey: CryptoKey) {
@@ -201,4 +208,76 @@ export async function deriveSessionKeyFromString(publicUserKeyString: string, pr
 	privateKey = await loadCryptoPrivateKeyFromString(
 		decoder.decode(decryptedPrivateUserKey)
 	);
+}
+
+export async function deriveEncryptedQuantumSeed(encryptionKey: CryptoKey)
+{
+	// 1. Generate the Quantum Seed (64 bytes for ML-KEM)
+    const seed = new Uint8Array(64);
+    window.crypto.getRandomValues(seed);
+
+    // 4. Encrypt the Seed
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+
+    const encryptedBuffer = await window.crypto.subtle.encrypt(
+        {
+            name: "AES-GCM",
+            iv: iv,
+        },
+        encryptionKey,
+        seed // <--- Encrypt the raw Uint8Array directly
+    );
+
+    return {
+        // Convert ArrayBuffer to Uint8Array for easier DB storage/handling
+        encryptedSeed: new Uint8Array(encryptedBuffer),
+        iv: iv
+    };
+}
+
+export async function deriveKeysFromEncryptedSeed(encryptionKey: CryptoKey, seedString: string, ivString: string) {
+    
+    const decryptedSeed = await crypto.subtle.decrypt(
+		{ name: "AES-GCM", iv: fromBase64(ivString) },
+		encryptionKey,
+		fromBase64(seedString)
+	);
+
+	const keyPair = ml_kem768.keygen(new Uint8Array(decryptedSeed));
+
+	return {
+		publicKey: keyPair.publicKey,
+		privateKey: keyPair.secretKey // Map 'secretKey' to your preferred name if needed
+	};
+}
+
+export function fromBase64(base64String: string): Uint8Array<ArrayBuffer> {
+  // 1. Modern Browsers (Chrome 133+, Firefox 133+, Safari 18.2+)
+  if (Uint8Array.fromBase64) {
+    return Uint8Array.fromBase64(base64String);
+  }
+
+  // 2. Legacy Fallback (Standard)
+  // 'atob' decodes the base64 string to a binary string
+  const binaryString = atob(base64String);
+  
+  // Convert binary string to byte array
+  return Uint8Array.from(binaryString, (char) => char.codePointAt(0));
+}
+
+export function toBase64(bytes: Uint8Array<ArrayBuffer>): string {
+  // 1. Modern Browsers
+  if (bytes.toBase64) {
+    return bytes.toBase64();
+  }
+
+  // 2. Legacy Fallback
+  // 'btoa' requires a binary string. 
+  // We use a safe loop to avoid stack overflow on large arrays.
+  let binaryString = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binaryString += String.fromCharCode(bytes[i]);
+  }
+  
+  return btoa(binaryString);
 }

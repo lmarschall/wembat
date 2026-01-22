@@ -14,11 +14,13 @@ import { AuthenticationResponseJSON } from "@simplewebauthn/types";
 import {
 	ab2str,
 	bufferToArrayBuffer,
+	deriveEncryptedQuantumSeed,
 	deriveEncryptionKeyFromPRF,
 	loadCryptoPrivateKeyFromString,
 	loadCryptoPublicKeyFromString,
 	saveCryptoKeyAsString,
 	str2ab,
+	toBase64,
 } from "./helper";
 import { AxiosInstance } from "axios";
 
@@ -43,6 +45,7 @@ export async function login(
 	let publicKey: CryptoKey | undefined = undefined;
 	let sessionKey: CryptoKey | undefined = undefined;
 	let token: string | undefined = undefined;
+	let seed: Uint8Array<ArrayBuffer> | undefined = undefined;
 
 	try {
 		if (!browserSupportsWebAuthn())
@@ -55,10 +58,8 @@ export async function login(
 			}
 		);
 
-		if (loginRequestResponse.status !== 200) {
-			// i guess we need to handle errors here
+		if (loginRequestResponse.status !== 200)
 			throw Error(loginRequestResponse.data);
-		}
 
 		const loginRequestResponseData: RequestLoginResponse = JSON.parse(
 			loginRequestResponse.data
@@ -91,13 +92,13 @@ export async function login(
 			}
 		);
 
-		if (loginReponse.status !== 200) {
+		if (loginReponse.status !== 200)
 			throw Error(loginReponse.data);
-		}
 
 		const loginReponseData: LoginResponse = JSON.parse(loginReponse.data);
 
-		if (!loginReponseData.verified) throw Error("Login not verified");
+		if (!loginReponseData.verified)
+			throw Error("Login not verified");
 
 		token = loginReponseData.token;
 
@@ -106,7 +107,8 @@ export async function login(
 			loginReponseData.privateUserKeyEncrypted;
 
 
-		if (credentials.clientExtensionResults === undefined) throw Error("Credentials not instance of PublicKeyCredential");
+		if (credentials.clientExtensionResults === undefined)
+			throw Error("Credentials not instance of PublicKeyCredential");
 
 		const credentialExtensions = credentials.clientExtensionResults as any;
 
@@ -114,43 +116,21 @@ export async function login(
 			credentialExtensions?.prf.results.first
 		);
 
-		const encryptionKey = await deriveEncryptionKeyFromPRF(inputKeyMaterial);
+		const { encryptionKey, salt } = await deriveEncryptionKeyFromPRF(inputKeyMaterial, loginReponseData.salt);
 
 		if (
-			publicUserKeyString !== "" &&
-			privateUserKeyEncryptedString !== ""
+			seedString !== "" &&
+			ivString !== ""
 		) {
 			console.log("Loading existing keys");
-			sessionKey = deriveSessionKeyFromString()
+			
+			// sessionKey = deriveSessionKeyFromString()
 
 			
 		} else {
 			console.log("Generating new keys");
 
-			const keyPair = await crypto.subtle.generateKey(
-				{
-					name: "ECDH",
-					namedCurve: "P-384",
-				},
-				true,
-				["deriveKey", "deriveBits"]
-			);
-
-			publicKey = keyPair.publicKey;
-			privateKey = keyPair.privateKey;
-
-			const publicKeyString = await saveCryptoKeyAsString(publicKey);
-			const privateKeyString = await saveCryptoKeyAsString(privateKey);
-
-			const nonce = crypto.getRandomValues(new Uint8Array(12));
-			const encoder = new TextEncoder();
-			const encoded = encoder.encode(privateKeyString);
-
-			const encryptedPrivateKey = await crypto.subtle.encrypt(
-				{ name: "AES-GCM", iv: nonce },
-				encryptionKey,
-				encoded
-			);
+			const { encryptedSeed, iv } = await deriveEncryptedQuantumSeed(encryptionKey);
 
 			const headers = {
 				"Content-Type": "application/json",
@@ -161,9 +141,8 @@ export async function login(
 				`/update-credentials`,
 				{
 					updateCredentialsRequest: {
-						privKey: ab2str(encryptedPrivateKey),
-						pubKey: publicKeyString,
-						nonce: ab2str(nonce.buffer),
+						seedString: toBase64(encryptedSeed),
+						ivString: toBase64(iv),
 						sessionId: loginReponseData.sessionId,
 					},
 				},
@@ -172,9 +151,8 @@ export async function login(
 				}
 			);
 
-			if (saveCredentialsResponse.status !== 200) {
+			if (saveCredentialsResponse.status !== 200)
 				throw Error(saveCredentialsResponse.data);
-			}
 		}
 
 		const loginResult: WembatLoginResult = {

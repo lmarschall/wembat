@@ -204,6 +204,8 @@ export interface LoginResponse {
 	 * A unique nonce value associated with the login request.
 	 */
 	nonce: string;
+
+	salt: any;
 }
 
 /**
