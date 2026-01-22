@@ -16,6 +16,7 @@ import {
 	bufferToArrayBuffer,
 	deriveEncryptedQuantumSeed,
 	deriveEncryptionKeyFromPRF,
+	deriveKeysFromEncryptedSeed,
 	loadCryptoPrivateKeyFromString,
 	loadCryptoPublicKeyFromString,
 	saveCryptoKeyAsString,
@@ -102,9 +103,9 @@ export async function login(
 
 		token = loginReponseData.token;
 
-		const publicUserKeyString = loginReponseData.publicUserKey;
-		const privateUserKeyEncryptedString =
-			loginReponseData.privateUserKeyEncrypted;
+		const seedString = loginReponseData.seedString;
+		const ivString =
+			loginReponseData.ivString;
 
 
 		if (credentials.clientExtensionResults === undefined)
@@ -125,6 +126,8 @@ export async function login(
 			console.log("Loading existing keys");
 			
 			// sessionKey = deriveSessionKeyFromString()
+
+			const { privKey, pubKey } = await deriveKeysFromEncryptedSeed(encryptionKey, seedString, ivString)
 
 			
 		} else {

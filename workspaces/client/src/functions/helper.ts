@@ -281,3 +281,46 @@ export function toBase64(bytes: Uint8Array<ArrayBuffer>): string {
   
   return btoa(binaryString);
 }
+
+export function createQuantumSession(recipientPublicKey) {
+    // 1. Encapsulate
+    // This function automatically:
+    //  - Generates a random "Shared Secret" (32 bytes)
+    //  - Creates the "Ciphertext" (lock) needed to send it
+    const result = ml_kem768.encapsulate(recipientPublicKey);
+
+    // result.sharedSecret -> KEEP SECRET (This is the Session Key)
+    // result.cipherText   -> SEND TO USER
+
+    // 2. KDF (Best Practice)
+    // Use HKDF to turn the raw ML-KEM secret into a usable AES key
+    const sessionKey = hkdf(
+        sha256, 
+        result.sharedSecret, 
+        undefined, 
+        'QuantumSessionKey_v1', 
+        32
+    );
+
+    return {
+        sessionKey: sessionKey,      // Use this to encrypt your actual data
+        cipherText: result.cipherText // Send this public blob to the receiver
+    };
+}
+
+export function recoverQuantumSession(cipherText, myPrivateKey) {
+    // 1. Decapsulate
+    // Uses the private key to unlock the ciphertext and reveal the SAME secret
+    const rawSecret = ml_kem768.decapsulate(cipherText, myPrivateKey);
+
+    // 2. KDF (Must match Sender exactly)
+    const sessionKey = hkdf(
+        sha256, 
+        rawSecret, 
+        undefined, 
+        'QuantumSessionKey_v1', 
+        32
+    );
+
+    return sessionKey; // This matches the Sender's key exactly
+}
