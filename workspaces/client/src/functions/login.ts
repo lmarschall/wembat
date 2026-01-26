@@ -9,6 +9,7 @@ import {
 	WembatActionResponse,
 	WembatError,
 	WembatLoginResult,
+	WorkerAction,
 } from "../types";
 import { AuthenticationResponseJSON } from "@simplewebauthn/types";
 import {
@@ -33,6 +34,7 @@ import { AxiosInstance } from "axios";
  */
 export async function login(
 	axiosClient: AxiosInstance,
+	worker: Worker,
 	userMail: string,
 	autoLogin = false
 ): Promise<any> {
@@ -101,62 +103,10 @@ export async function login(
 		if (!loginReponseData.verified)
 			throw Error("Login not verified");
 
-		token = loginReponseData.token;
 
-		const seedString = loginReponseData.seedString;
-		const ivString =
-			loginReponseData.ivString;
-
-
-		if (credentials.clientExtensionResults === undefined)
-			throw Error("Credentials not instance of PublicKeyCredential");
-
-		const credentialExtensions = credentials.clientExtensionResults as any;
-
-		const inputKeyMaterial = new Uint8Array(
-			credentialExtensions?.prf.results.first
-		);
-
-		const { encryptionKey, salt } = await deriveEncryptionKeyFromPRF(inputKeyMaterial, loginReponseData.salt);
-
-		if (
-			seedString !== "" &&
-			ivString !== ""
-		) {
-			console.log("Loading existing keys");
-			
-			// sessionKey = deriveSessionKeyFromString()
-
-			const { privKey, pubKey } = await deriveKeysFromEncryptedSeed(encryptionKey, seedString, ivString)
-
-			
-		} else {
-			console.log("Generating new keys");
-
-			const { encryptedSeed, iv } = await deriveEncryptedQuantumSeed(encryptionKey);
-
-			const headers = {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
-			};
-
-			const saveCredentialsResponse = await axiosClient.post<string>(
-				`/update-credentials`,
-				{
-					updateCredentialsRequest: {
-						seedString: toBase64(encryptedSeed),
-						ivString: toBase64(iv),
-						sessionId: loginReponseData.sessionId,
-					},
-				},
-				{
-					headers: headers,
-				}
-			);
-
-			if (saveCredentialsResponse.status !== 200)
-				throw Error(saveCredentialsResponse.data);
-		}
+		const message: WorkerAction = { type: 'INITIALIZE', loginResponse: loginReponseData };
+    
+    	worker.postMessage(message, [prfSeed.buffer]);
 
 		const loginResult: WembatLoginResult = {
 			verified: loginReponseData.verified,

@@ -18,9 +18,7 @@ export * from "./types";
 class WembatClient {
 	readonly #apiUrl: string;
 	readonly #axiosClient: AxiosInstance;
-	#jwt: string | undefined;
-	#publicKey: CryptoKey | undefined;
-	#privateKey: CryptoKey | undefined;
+	private readonly worker: Worker;
 
 	/**
 	 * Creates an instance of WembatClient.
@@ -50,6 +48,25 @@ class WembatClient {
 			`Bearer ${this.#jwt}`;
 		this.#axiosClient.defaults.headers.common["Wembat-App-Token"] =
 			`Bearer ${applicationToken}`;
+
+		this.worker = new Worker(new URL('./functio.ts', import.meta.url), {
+      		type: 'module',
+    	});
+
+    	this.worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
+      		this.handleWorkerResponse(event.data);
+    	};
+	}
+
+	private handleWorkerResponse(res: WorkerResponse) {
+		if (res.type === 'ERROR') {
+		console.error('Worker Error:', res.message);
+		} else if (res.type === 'INIT_SUCCESS') {
+		console.log('Enclave ist bereit und gesichert.');
+		} else if (res.type === 'SIGNATURE_RESULT') {
+		console.log('Signatur empfangen:', res.signature);
+		// Hier weiterverarbeiten (z.B. an API senden)
+		}
 	}
 
 	/**
@@ -60,7 +77,7 @@ class WembatClient {
 	 * @returns A promise that resolves to a WembatActionResponse containing the encrypted Wembat message.
 	 */
 	public async encrypt (wembatMessage: WembatMessage, publicKey: CryptoKey): Promise<WembatActionResponse<WembatMessage>> {
-		return await encrypt(this.#privateKey, wembatMessage, publicKey);
+		return await encrypt(this.worker, wembatMessage, publicKey);
 	}
 
 	/**
@@ -71,7 +88,7 @@ class WembatClient {
 	 * @returns A promise that resolves to a WembatActionResponse containing the decrypted Wembat message.
 	 */
 	public async decrypt (wembatMessage: WembatMessage, publicKey: CryptoKey): Promise<WembatActionResponse<WembatMessage>> {
-		return await decrypt(this.#privateKey, wembatMessage, publicKey);
+		return await decrypt(this.worker, wembatMessage, publicKey);
 	}
 
 	/**
@@ -90,10 +107,7 @@ class WembatClient {
 	 * @returns A promise that resolves to a WembatActionResponse containing the login result.
 	 */
 	public async login (userMail: string, autoLogin: boolean = false): Promise<WembatActionResponse<WembatLoginResult>> {
-		const [loginResult, privateKey, publicKey, jwt] = await login(this.#axiosClient, userMail, autoLogin);
-		this.#privateKey = privateKey;
-		this.#publicKey = publicKey;
-		this.#jwt = jwt;
+		const loginResult = await login(this.#axiosClient, this.worker, userMail, autoLogin);
 		this.#axiosClient.defaults.headers.common["Authorization"] =
 			`Bearer ${this.#jwt}`;
 		return loginResult;

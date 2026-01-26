@@ -221,3 +221,15 @@ export interface TokenResponse {
 
 export interface OnboardResponse {
 }
+
+// Aktionen, die der Worker ausführen kann
+export type WorkerAction = 
+  | { type: 'INITIALIZE'; loginResponse: LoginResponse } // Seed vom PRF übergeben
+  | { type: 'SIGN_DATA'; data: Uint8Array }  // Daten zum Signieren
+  | { type: 'CLEAR_MEMORY' };                // Logout / Panik-Button
+
+// Antworten vom Worker an den Main-Thread
+export type WorkerResponse = 
+  | { type: 'INIT_SUCCESS'; publicKey: Uint8Array }
+  | { type: 'SIGNATURE_RESULT'; signature: Uint8Array }
+  | { type: 'ERROR'; message: string };
