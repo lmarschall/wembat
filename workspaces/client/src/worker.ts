@@ -1,6 +1,6 @@
 // secure.worker.ts
 import { deriveEncryptionKeyFromPRF } from './functions/helper';
-import { LoginResponse, WorkerAction, WorkerResponse } from './types';
+import { LoginResponse, WorkerAction, WorkerActionType, WorkerResponse, WorkerResponseType } from './types';
 
 // GLOBALER ZUSTAND IM WORKER
 // Dieser Key existiert nur im RAM dieses Workers.
@@ -24,7 +24,7 @@ async function initializeWorker(loginResponse: LoginResponse) {
   const ivString = loginResponse.ivString;
 
   if (credentials.clientExtensionResults === undefined)
-    throw Error("Credentials not instance of PublicKeyCredential");
+    throw new Error("Credentials not instance of PublicKeyCredential");
 
   const credentialExtensions = credentials.clientExtensionResults as any;
 
@@ -70,7 +70,7 @@ async function initializeWorker(loginResponse: LoginResponse) {
 			);
 
 			if (saveCredentialsResponse.status !== 200)
-				throw Error(saveCredentialsResponse.data);
+				throw new Error(saveCredentialsResponse.data);
 		}
 }
 
@@ -79,10 +79,10 @@ ctx.onmessage = async (event: MessageEvent<WorkerAction>) => {
 
   try {
     switch (action.type) {
-      case 'INITIALIZE':
+      case WorkerActionType.Initialize:
 
         if (action.loginResponse === undefined)
-          throw Error("no login response");
+          throw new Error("no login response");
 
         await initializeWorker(action.loginResponse);
 
@@ -90,31 +90,33 @@ ctx.onmessage = async (event: MessageEvent<WorkerAction>) => {
         // In WebCrypto ist es schwer, den Public Key aus dem Private Key zu extrahieren, 
         // wenn er nicht exportierbar ist. Oft speichert man den Public Key separat
         // oder nutzt JWK Import. Hier vereinfacht: Wir melden nur Erfolg.
-        respond({ type: 'INIT_SUCCESS', publicKey: new Uint8Array(0) }); 
+        respond({ type: WorkerResponseType.InitSuccess, publicKey: new Uint8Array(0) }); 
         
         // WICHTIG: Original Seed aus Speicher des Events entfernen (best effort)
         // JS hat keinen direkten "memset", aber wir lassen die Variable scope verlassen.
         break;
 
-      case 'SIGN_DATA':
-        if (!signingKey) throw new Error('Key not initialized');
+      // case 'SIGN_DATA':
+      //   if (!signingKey) throw new Error('Key not initialized');
         
-        const signature = await crypto.subtle.sign(
-          { name: 'Ed25519' },
-          signingKey,
-          action.data
-        );
+      //   const signature = await crypto.subtle.sign(
+      //     { name: 'Ed25519' },
+      //     signingKey,
+      //     action.data
+      //   );
         
-        respond({ type: 'SIGNATURE_RESULT', signature: new Uint8Array(signature) });
-        break;
+      //   respond({ type: 'SIGNATURE_RESULT', signature: new Uint8Array(signature) });
+      //   break;
 
-      case 'CLEAR_MEMORY':
-        signingKey = null;
-        // Erzwinge Garbage Collection (indirekt)
-        respond({ type: 'ERROR', message: 'Memory cleared' });
+      // case 'CLEAR_MEMORY':
+      //   signingKey = null;
+      //   // Erzwinge Garbage Collection (indirekt)
+      //   respond({ type: 'ERROR', message: 'Memory cleared' });
+      //   break;
+      default:
         break;
     }
   } catch (err: any) {
-    respond({ type: 'ERROR', message: err.message });
+    respond({ type: WorkerResponseType.Error, message: err.message });
   }
 };

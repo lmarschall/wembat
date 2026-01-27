@@ -10,19 +10,11 @@ import {
 	WembatError,
 	WembatLoginResult,
 	WorkerAction,
+	WorkerActionType,
 } from "../types";
 import { AuthenticationResponseJSON } from "@simplewebauthn/types";
 import {
-	ab2str,
 	bufferToArrayBuffer,
-	deriveEncryptedQuantumSeed,
-	deriveEncryptionKeyFromPRF,
-	deriveKeysFromEncryptedSeed,
-	loadCryptoPrivateKeyFromString,
-	loadCryptoPublicKeyFromString,
-	saveCryptoKeyAsString,
-	str2ab,
-	toBase64,
 } from "./helper";
 import { AxiosInstance } from "axios";
 
@@ -52,7 +44,7 @@ export async function login(
 
 	try {
 		if (!browserSupportsWebAuthn())
-			throw Error("WebAuthn is not supported on this browser!");
+			throw new Error("WebAuthn is not supported on this browser!");
 
 		const loginRequestResponse = await axiosClient.post<string>(
 			`/request-login`,
@@ -62,7 +54,7 @@ export async function login(
 		);
 
 		if (loginRequestResponse.status !== 200)
-			throw Error(loginRequestResponse.data);
+			throw new Error(loginRequestResponse.data);
 
 		const loginRequestResponseData: RequestLoginResponse = JSON.parse(
 			loginRequestResponse.data
@@ -79,7 +71,7 @@ export async function login(
 				optionsJSON: challengeOptions,
 			}
 		).catch((err: string) => {
-			throw Error(err);
+			throw new Error(err);
 		});
 
 		const loginReponse = await axiosClient.post<string>(
@@ -96,15 +88,14 @@ export async function login(
 		);
 
 		if (loginReponse.status !== 200)
-			throw Error(loginReponse.data);
+			throw new Error(loginReponse.data);
 
 		const loginReponseData: LoginResponse = JSON.parse(loginReponse.data);
 
 		if (!loginReponseData.verified)
-			throw Error("Login not verified");
+			throw new Error("Login not verified");
 
-
-		const message: WorkerAction = { type: 'INITIALIZE', loginResponse: loginReponseData };
+		const message: WorkerAction = { type: WorkerActionType.Initialize, loginResponse: loginReponseData };
     
     	worker.postMessage(message, [prfSeed.buffer]);
 
@@ -123,7 +114,7 @@ export async function login(
 			console.error(error);
 			return [actionResponse, null, null, null];
 		} else {
-			throw Error("Unknown Error:");
+			throw new Error("Unknown Error");
 		}
 	}
 }

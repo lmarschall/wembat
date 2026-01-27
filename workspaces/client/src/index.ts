@@ -49,7 +49,7 @@ class WembatClient {
 		this.#axiosClient.defaults.headers.common["Wembat-App-Token"] =
 			`Bearer ${applicationToken}`;
 
-		this.worker = new Worker(new URL('./functio.ts', import.meta.url), {
+		this.worker = new Worker(new URL('./worker.ts', import.meta.url), {
       		type: 'module',
     	});
 

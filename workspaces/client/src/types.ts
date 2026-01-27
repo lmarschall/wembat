@@ -222,14 +222,27 @@ export interface TokenResponse {
 export interface OnboardResponse {
 }
 
+export enum WorkerActionType {
+	Initialize = 0,
+	SignData = 1,
+	ClearMemory = 2
+}
+
 // Aktionen, die der Worker ausführen kann
 export type WorkerAction = 
-  | { type: 'INITIALIZE'; loginResponse: LoginResponse } // Seed vom PRF übergeben
-  | { type: 'SIGN_DATA'; data: Uint8Array }  // Daten zum Signieren
-  | { type: 'CLEAR_MEMORY' };                // Logout / Panik-Button
+  | { type: WorkerActionType.Initialize; loginResponse: LoginResponse } // Seed vom PRF übergeben
+  | { type: WorkerActionType.SignData; data: Uint8Array }  // Daten zum Signieren
+  | { type: WorkerActionType.ClearMemory };                // Logout / Panik-Button
+
+
+export enum WorkerResponseType {
+	InitSuccess = 0,
+	SignatureResult = 1,
+	Error = 2
+}
 
 // Antworten vom Worker an den Main-Thread
 export type WorkerResponse = 
-  | { type: 'INIT_SUCCESS'; publicKey: Uint8Array }
-  | { type: 'SIGNATURE_RESULT'; signature: Uint8Array }
-  | { type: 'ERROR'; message: string };
+  | { type: WorkerResponseType.InitSuccess; publicKey: Uint8Array }
+  | { type: WorkerResponseType.SignatureResult; signature: Uint8Array }
+  | { type: WorkerResponseType.Error; message: string };
