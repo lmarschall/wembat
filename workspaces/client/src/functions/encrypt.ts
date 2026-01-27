@@ -21,7 +21,7 @@ export async function encrypt(
 	};
 
 	try {
-		if (privateKey == undefined) throw Error("Private Key undefined!");
+		if (privateKey == undefined) throw new Error("Private Key undefined!");
 
 		const encryptionKey = await deriveEncryptionKey(privateKey, publicKey);
 		const iv = window.crypto.getRandomValues(new Uint8Array(12));

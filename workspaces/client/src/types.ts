@@ -222,15 +222,25 @@ export interface TokenResponse {
 export interface OnboardResponse {
 }
 
+export interface PendingRequest {
+	resolve: (value: any) => void;
+	reject: (reason?: any) => void;
+	timer: any; // Timer ID für Timeout
+}
+
 export enum WorkerActionType {
 	Initialize = 0,
-	SignData = 1,
-	ClearMemory = 2
+	Encrypt = 1,
+	Decrypt = 2,
+	SignData = 3,
+	ClearMemory = 4
 }
 
 // Aktionen, die der Worker ausführen kann
 export type WorkerAction = 
   | { type: WorkerActionType.Initialize; loginResponse: LoginResponse } // Seed vom PRF übergeben
+  | { type: WorkerActionType.Encrypt; loginResponse: LoginResponse } // Seed vom PRF übergeben
+  | { type: WorkerActionType.Decrypt; loginResponse: LoginResponse } // Seed vom PRF übergeben
   | { type: WorkerActionType.SignData; data: Uint8Array }  // Daten zum Signieren
   | { type: WorkerActionType.ClearMemory };                // Logout / Panik-Button
 
