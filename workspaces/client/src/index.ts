@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from "axios";
 
-import { PendingRequest, WembatActionResponse, WembatClientToken, WembatLoginResult, WembatMessage, WembatRegisterResult, WembatToken, WorkerResponseType } from "./types";
+import { ActionContent, PendingRequest, UUIdString, WembatActionResponse, WembatClientToken, WembatLoginResult, WembatMessage, WembatRegisterResult, WembatToken, WorkerAction, WorkerActionType, WorkerRequest, WorkerResponse, WorkerResponseType } from "./types";
 import { register } from "./functions/register";
 import { decrypt } from "./functions/decrypt";
 import { login } from "./functions/login";
@@ -19,7 +19,7 @@ class WembatClient {
 	readonly #apiUrl: string;
 	readonly #axiosClient: AxiosInstance;
 	private readonly worker: Worker;
-	private pendingRequests = new Map<string, PendingRequest>();
+	private readonly pendingRequests = new Map<string, PendingRequest>();
 
 	/**
 	 * Creates an instance of WembatClient.
@@ -54,32 +54,21 @@ class WembatClient {
       		type: 'module',
     	});
 
-    	this.worker.onmessage = (event: MessageEvent<WorkerResponseType>) => {
-      		this.handleWorkerResponse(event.data);
+    	this.worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
+      		this.handleResponse(event.data);
     	};
 	}
 
-	private handleWorkerResponse(res: WorkerResponseType) {
-		// if (res.type === 'ERROR') {
-		// console.error('Worker Error:', res.message);
-		// } else if (res.type === 'INIT_SUCCESS') {
-		// console.log('Enclave ist bereit und gesichert.');
-		// } else if (res.type === 'SIGNATURE_RESULT') {
-		// console.log('Signatur empfangen:', res.signature);
-		// // Hier weiterverarbeiten (z.B. an API senden)
-		// }
-	}
-
 	private sendRequest(
-		msg: Omit<WorkerRequest, 'id'>, 
-		timeoutMs: number
+		action: WorkerAction,
+		timeoutMs: number = 5000
 		): Promise<any> {
 
 		return new Promise((resolve, reject) => {
-			// 1. Erzeuge Unique ID (UUID oder einfach random string)
-			const id = crypto.randomUUID();
+			// create unique request id
+			const id: UUIdString = crypto.randomUUID();
 
-			// 2. Setze Timeout-Timer
+			// start timer for request timeout
 			const timer = setTimeout(() => {
 			if (this.pendingRequests.has(id)) {
 				this.pendingRequests.delete(id);
@@ -87,19 +76,22 @@ class WembatClient {
 			}
 			}, timeoutMs);
 
-			// 3. Speichere resolve/reject in der Map
+			// save request to map
 			this.pendingRequests.set(id, { resolve, reject, timer });
 
-			// 4. Sende an Worker (mit ID!)
-			const request: WorkerRequest = { ...msg, id };
+			// send request to worker
+			const request: WorkerRequest = { 
+				...action, 
+				id: id 
+			};
 			this.worker.postMessage(request);
 		});
 	}
 
-	private handleMessage(response: WorkerResponse) {
+	private handleResponse(response: WorkerResponse) {
 		const { id, type } = response;
 
-		// Haben wir einen offenen Request für diese ID?
+		// search for request by id
 		const pending = this.pendingRequests.get(id);
 		
 		if (!pending) {
@@ -107,14 +99,14 @@ class WembatClient {
 			return;
 		}
 
-		// Timer stoppen, da Antwort da ist
+		// stop request time out error
 		clearTimeout(pending.timer);
 
-		// Map bereinigen
+		// delete request from map
 		this.pendingRequests.delete(id);
 
-		// Promise auflösen oder ablehnen
-		if (type === 'SUCCESS') {
+		// resolve or reject request
+		if (type === WorkerResponseType.Success) {
 			pending.resolve(response.result);
 		} else {
 			pending.reject(new Error(response.error));
@@ -129,8 +121,9 @@ class WembatClient {
 	 * @returns A promise that resolves to a WembatActionResponse containing the encrypted Wembat message.
 	 */
 	public async encrypt (wembatMessage: WembatMessage, publicKey: CryptoKey): Promise<WembatActionResponse<WembatMessage>> {
-		const message: WorkerAction = { type: WorkerActionType.Initialize, loginResponse: loginReponseData };
-		return this.sendRequest({type: WembatActionType.Encrypt})
+		const content: ActionContent = { message: wembatMessage, key: publicKey };
+		const action: WorkerAction = { type: WorkerActionType.Encrypt, content: content };
+		return this.sendRequest(action);
 	}
 
 	/**
@@ -141,6 +134,7 @@ class WembatClient {
 	 * @returns A promise that resolves to a WembatActionResponse containing the decrypted Wembat message.
 	 */
 	public async decrypt (wembatMessage: WembatMessage, publicKey: CryptoKey): Promise<WembatActionResponse<WembatMessage>> {
+		const action: WorkerAction = { type: WorkerActionType.Decrypt, message: wembatMessage, key: publicKey };
 		return await decrypt(this.worker, wembatMessage, publicKey);
 	}
 

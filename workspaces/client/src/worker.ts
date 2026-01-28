@@ -1,6 +1,7 @@
 // secure.worker.ts
+import { encrypt } from './functions/encrypt';
 import { deriveEncryptionKeyFromPRF } from './functions/helper';
-import { LoginResponse, WorkerAction, WorkerActionType, WorkerResponse, WorkerResponseType } from './types';
+import { EncryptAction, LoginResponse, WembatMessage, WorkerAction, WorkerActionType, WorkerResponse, WorkerResponseType } from './types';
 
 // GLOBALER ZUSTAND IM WORKER
 // Dieser Key existiert nur im RAM dieses Workers.
@@ -90,11 +91,15 @@ ctx.onmessage = async (event: MessageEvent<WorkerAction>) => {
         // In WebCrypto ist es schwer, den Public Key aus dem Private Key zu extrahieren, 
         // wenn er nicht exportierbar ist. Oft speichert man den Public Key separat
         // oder nutzt JWK Import. Hier vereinfacht: Wir melden nur Erfolg.
-        respond({ type: WorkerResponseType.InitSuccess, publicKey: new Uint8Array(0) }); 
+        // respond({ type: WorkerResponseType.InitSuccess, publicKey: new Uint8Array(0) }); 
         
         // WICHTIG: Original Seed aus Speicher des Events entfernen (best effort)
         // JS hat keinen direkten "memset", aber wir lassen die Variable scope verlassen.
         break;
+      
+      case WorkerActionType.Encrypt:
+        await encrypt(privateKey, action.content.message, action.content.key);
+        respond()
 
       // case 'SIGN_DATA':
       //   if (!signingKey) throw new Error('Key not initialized');

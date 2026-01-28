@@ -236,23 +236,28 @@ export enum WorkerActionType {
 	ClearMemory = 4
 }
 
-// Aktionen, die der Worker ausführen kann
-export type WorkerAction = 
-  | { type: WorkerActionType.Initialize; loginResponse: LoginResponse } // Seed vom PRF übergeben
-  | { type: WorkerActionType.Encrypt; loginResponse: LoginResponse } // Seed vom PRF übergeben
-  | { type: WorkerActionType.Decrypt; loginResponse: LoginResponse } // Seed vom PRF übergeben
-  | { type: WorkerActionType.SignData; data: Uint8Array }  // Daten zum Signieren
-  | { type: WorkerActionType.ClearMemory };                // Logout / Panik-Button
+export type ActionContent = EncryptAction | DecryptAction;
 
+export interface EncryptAction {
+	message: WembatMessage;
+	key: CryptoKey;
+}
+
+export interface DecryptAction {
+	message: WembatMessage;
+	key: CryptoKey;
+}
+
+export type WorkerAction = { type: WorkerActionType; content: ActionContent }
+
+export type UUIdString = `${string}-${string}-${string}-${string}-${string}`
+
+export type WorkerRequest = WorkerAction & { id: UUIdString };
 
 export enum WorkerResponseType {
-	InitSuccess = 0,
-	SignatureResult = 1,
+	Unknown = 0,
+	Success = 1,
 	Error = 2
 }
 
-// Antworten vom Worker an den Main-Thread
-export type WorkerResponse = 
-  | { type: WorkerResponseType.InitSuccess; publicKey: Uint8Array }
-  | { type: WorkerResponseType.SignatureResult; signature: Uint8Array }
-  | { type: WorkerResponseType.Error; message: string };
+export type WorkerResponse = { id: UUIdString, type: WorkerResponseType; response: WembatActionResponse }
