@@ -26,10 +26,9 @@ import { AxiosInstance } from "axios";
  */
 export async function login(
 	axiosClient: AxiosInstance,
-	worker: Worker,
 	userMail: string,
 	autoLogin = false
-): Promise<any> {
+): Promise<WembatActionResponse<WembatLoginResult>> {
 	const actionResponse: WembatActionResponse<WembatLoginResult> = {
 		success: false,
 		error: {} as WembatError,
@@ -95,13 +94,18 @@ export async function login(
 		if (!loginReponseData.verified)
 			throw new Error("Login not verified");
 
-		const message: WorkerAction = { type: WorkerActionType.Initialize, loginResponse: loginReponseData };
-    
-    	worker.postMessage(message, [prfSeed.buffer]);
+		if (credentials.clientExtensionResults === undefined)
+			throw new Error("Credentials not instance of PublicKeyCredential");
+		
+		const credentialExtensions = credentials.clientExtensionResults as any;
+	
+		const inputKeyMaterial = new Uint8Array(
+			credentialExtensions?.prf.results.first
+		);
 
 		const loginResult: WembatLoginResult = {
-			verified: loginReponseData.verified,
-			token: token,
+			loginResponse: loginReponseData,
+			keyMaterial: inputKeyMaterial
 		};
 		actionResponse.result = loginResult;
 		actionResponse.success = true;
@@ -109,7 +113,7 @@ export async function login(
 	} catch (error: Error | unknown) {
 		if (error instanceof Error) {
 			actionResponse.error = {
-				error: error.message,
+				message: error.message,
 			};
 			console.error(error);
 			return [actionResponse, null, null, null];

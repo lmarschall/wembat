@@ -35,7 +35,7 @@ export async function register(
 
 	try {
 		if (!browserSupportsWebAuthn())
-			throw Error("WebAuthn is not supported on this browser!");
+			throw new Error("WebAuthn is not supported on this browser!");
 
 		const requestRegisterResponse = await axiosClient.post<string>(
 			`/request-register`,
@@ -46,7 +46,7 @@ export async function register(
 
 		if (requestRegisterResponse.status !== 200) {
 			// i guess we need to handle errors here
-			throw Error(requestRegisterResponse.data);
+			throw new Error(requestRegisterResponse.data);
 		}
 
 		const requestRegisterResponseData: RequestRegisterResponse = JSON.parse(
@@ -57,14 +57,14 @@ export async function register(
 			optionsJSON: requestRegisterResponseData.options,
 			useAutoRegister: autoRegister,
 		}).catch((err: string) => {
-			throw Error(err);
+			throw new Error(err);
 		});
 
 		if (credentials.clientExtensionResults !== undefined) {
 			const credentialExtensions = credentials.clientExtensionResults as any;
 
 			if (credentialExtensions.prf?.enabled == false) {
-				throw Error("PRF extension disabled");
+				throw new Error("PRF extension disabled");
 			}
 		}
 
@@ -77,7 +77,7 @@ export async function register(
 
 		if (registerResponse.status !== 200) {
 			// i guess we need to handle errors here
-			throw Error(registerResponse.data);
+			throw new Error(registerResponse.data);
 		}
 
 		const registerResponseData: RegisterResponse = JSON.parse(
@@ -93,12 +93,12 @@ export async function register(
 	} catch (error: Error | unknown) {
 		if (error instanceof Error) {
 			actionResponse.error = {
-				error: error.message,
+				message: error.message,
 			};
 			console.error(error);
 			return actionResponse;
 		} else {
-			throw Error("Unknown Error:");
+			throw new Error("Unknown Error:");
 		}
 	}
 }

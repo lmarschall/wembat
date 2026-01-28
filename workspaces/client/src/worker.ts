@@ -1,7 +1,8 @@
 // secure.worker.ts
+import axios, { AxiosInstance } from 'axios';
 import { encrypt } from './functions/encrypt';
 import { deriveEncryptionKeyFromPRF } from './functions/helper';
-import { EncryptAction, LoginResponse, WembatMessage, WorkerAction, WorkerActionType, WorkerResponse, WorkerResponseType } from './types';
+import { EncryptAction, LoginResponse, WembatMessage, WorkerAction, WorkerActionType, WorkerRequest, WorkerResponse, WorkerResponseType } from './types';
 
 // GLOBALER ZUSTAND IM WORKER
 // Dieser Key existiert nur im RAM dieses Workers.
@@ -10,6 +11,22 @@ let signingKey: CryptoKey | null = null;
 let jwt: string | undefined;
 let publicKey: CryptoKey | undefined;
 let privateKey: CryptoKey | undefined;
+
+let apiUrl: string = "";
+let axiosClient: AxiosInstance;
+axiosClient = axios.create({
+  baseURL: `${apiUrl}/api/webauthn`,
+  validateStatus: function (status) {
+    return status == 200 || status == 400;
+  },
+  transformResponse: (res) => res,
+  responseType: "text",
+});
+
+axiosClient.defaults.headers.common["Content-Type"] =
+  "application/json";
+// axiosClient.defaults.headers.common["Authorization"] =
+//   `Bearer ${this.#jwt}`;
 
 const ctx: Worker = self as any;
 
@@ -23,15 +40,6 @@ async function initializeWorker(loginResponse: LoginResponse) {
   const token = loginResponse.token;
   const seedString = loginResponse.seedString;
   const ivString = loginResponse.ivString;
-
-  if (credentials.clientExtensionResults === undefined)
-    throw new Error("Credentials not instance of PublicKeyCredential");
-
-  const credentialExtensions = credentials.clientExtensionResults as any;
-
-  const inputKeyMaterial = new Uint8Array(
-    credentialExtensions?.prf.results.first
-  );
 
   const { encryptionKey, salt } = await deriveEncryptionKeyFromPRF(inputKeyMaterial, loginReponseData.salt);
 
@@ -75,49 +83,26 @@ async function initializeWorker(loginResponse: LoginResponse) {
 		}
 }
 
-ctx.onmessage = async (event: MessageEvent<WorkerAction>) => {
+ctx.onmessage = async (event: MessageEvent<WorkerRequest>) => {
   const action = event.data;
 
   try {
     switch (action.type) {
-      case WorkerActionType.Initialize:
-
+      case WorkerActionType.Initialize: {
         if (action.loginResponse === undefined)
           throw new Error("no login response");
-
+  
         await initializeWorker(action.loginResponse);
-
-        // 3. (Optional) Public Key ableiten/zurückgeben zur Verifikation
-        // In WebCrypto ist es schwer, den Public Key aus dem Private Key zu extrahieren, 
-        // wenn er nicht exportierbar ist. Oft speichert man den Public Key separat
-        // oder nutzt JWK Import. Hier vereinfacht: Wir melden nur Erfolg.
-        // respond({ type: WorkerResponseType.InitSuccess, publicKey: new Uint8Array(0) }); 
-        
-        // WICHTIG: Original Seed aus Speicher des Events entfernen (best effort)
-        // JS hat keinen direkten "memset", aber wir lassen die Variable scope verlassen.
         break;
+      }
       
-      case WorkerActionType.Encrypt:
-        await encrypt(privateKey, action.content.message, action.content.key);
-        respond()
+      case WorkerActionType.Encrypt: { 
+        const actionResponse = await encrypt(privateKey, action.content.message, action.content.key);
+        const response: WorkerResponse = {id: action.id, actionResponse: actionResponse };
+        respond(response);
+        break;
+      }
 
-      // case 'SIGN_DATA':
-      //   if (!signingKey) throw new Error('Key not initialized');
-        
-      //   const signature = await crypto.subtle.sign(
-      //     { name: 'Ed25519' },
-      //     signingKey,
-      //     action.data
-      //   );
-        
-      //   respond({ type: 'SIGNATURE_RESULT', signature: new Uint8Array(signature) });
-      //   break;
-
-      // case 'CLEAR_MEMORY':
-      //   signingKey = null;
-      //   // Erzwinge Garbage Collection (indirekt)
-      //   respond({ type: 'ERROR', message: 'Memory cleared' });
-      //   break;
       default:
         break;
     }

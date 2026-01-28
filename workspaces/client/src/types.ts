@@ -64,7 +64,7 @@ export interface WembatError {
 	/**
 	 * The error message.
 	 */
-	error: string;
+	message: string;
 }
 
 
@@ -122,12 +122,12 @@ export interface WembatLoginResult {
 	/**
 	 * Indicates whether the login was successful.
 	 */
-	verified: boolean;
+	loginResponse: LoginResponse;
 
 	/**
 	 * The JSON Web Token (JWT) associated with the user's session.
 	 */
-	token: string;
+	keyMaterial: any;
 }
 
 /**
@@ -229,14 +229,14 @@ export interface PendingRequest {
 }
 
 export enum WorkerActionType {
-	Initialize = 0,
+	Login = 0,
 	Encrypt = 1,
 	Decrypt = 2,
 	SignData = 3,
 	ClearMemory = 4
 }
 
-export type ActionContent = EncryptAction | DecryptAction;
+export type ActionContent = EncryptAction | DecryptAction | LoginAction | OnboardAction | LinkAction | TokenAction;
 
 export interface EncryptAction {
 	message: WembatMessage;
@@ -248,16 +248,19 @@ export interface DecryptAction {
 	key: CryptoKey;
 }
 
+export interface LoginAction {
+	loginResponse: LoginResponse;
+	keyMaterial: any
+}
+
+export interface OnboardAction {
+
+}
+
 export type WorkerAction = { type: WorkerActionType; content: ActionContent }
 
 export type UUIdString = `${string}-${string}-${string}-${string}-${string}`
 
 export type WorkerRequest = WorkerAction & { id: UUIdString };
 
-export enum WorkerResponseType {
-	Unknown = 0,
-	Success = 1,
-	Error = 2
-}
-
-export type WorkerResponse = { id: UUIdString, type: WorkerResponseType; response: WembatActionResponse }
+export type WorkerResponse = { id: UUIdString; actionResponse: WembatActionResponse<WembatResult> }
