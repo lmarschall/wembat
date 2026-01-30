@@ -9,6 +9,7 @@ import { onboard } from "./functions/onboard";
 import { jwtDecode } from "./functions/helper";
 import { token } from "./functions/token";
 import { link } from "./functions/link";
+import { Bridge } from "./bridge";
 
 export * from "./types";
 
@@ -16,10 +17,9 @@ export * from "./types";
  * Represents a client for interacting with the Wembat API.
  */
 class WembatClient {
-	readonly #apiUrl: string;
-	readonly #axiosClient: AxiosInstance;
 	private readonly worker: Worker;
 	private readonly pendingRequests = new Map<string, PendingRequest>();
+	private bridge: Bridge;
 
 	/**
 	 * Creates an instance of WembatClient.
@@ -33,28 +33,11 @@ class WembatClient {
 			throw new Error("Invalid application token");
 		}
 
-		this.#apiUrl = tokenPayload.iss;
-		this.#axiosClient = axios.create({
-			baseURL: `${this.#apiUrl}/api/webauthn`,
-			validateStatus: function (status) {
-				return status == 200 || status == 400;
-			},
-			transformResponse: (res) => res,
-			responseType: "text",
-		});
-
-		this.#axiosClient.defaults.headers.common["Content-Type"] =
-			"application/json";
-		this.#axiosClient.defaults.headers.common["Wembat-App-Token"] =
-			`Bearer ${applicationToken}`;
-
 		this.worker = new Worker(new URL('./worker.ts', import.meta.url), {
       		type: 'module',
     	});
 
-    	this.worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
-      		this.handleResponse(event.data);
-    	};
+		this.bridge = new Bridge(this.worker);
 	}
 
 	/**
@@ -67,6 +50,7 @@ class WembatClient {
 	public async encrypt (wembatMessage: WembatMessage, publicKey: CryptoKey): Promise<WembatActionResponse<WembatMessage>> {
 		const content: ActionContent = { message: wembatMessage, key: publicKey };
 		const action: WorkerAction = { type: WorkerActionType.Encrypt, content: content };
+		await this.bridge.invoke('process-image', hugeData, [hugeData.buffer]);
 		return this.sendRequest(action);
 	}
 
@@ -150,60 +134,6 @@ class WembatClient {
 		// return this.#publicKey;
 		let blob: any;
 		return blob;
-	}
-
-	private sendRequest(
-		action: WorkerAction,
-		timeoutMs: number = 5000
-		): Promise<any> {
-
-		return new Promise((resolve, reject) => {
-			// create unique request id
-			const id: UUIdString = crypto.randomUUID();
-
-			// start timer for request timeout
-			const timer = setTimeout(() => {
-			if (this.pendingRequests.has(id)) {
-				this.pendingRequests.delete(id);
-				reject(new Error(`Worker request timed out after ${timeoutMs}ms`));
-			}
-			}, timeoutMs);
-
-			// save request to map
-			this.pendingRequests.set(id, { resolve, reject, timer });
-
-			// send request to worker
-			const request: WorkerRequest = { 
-				...action, 
-				id: id 
-			};
-			this.worker.postMessage(request);
-		});
-	}
-
-	private handleResponse(response: WorkerResponse) {
-		const { id, actionResponse } = response;
-
-		// search for request by id
-		const pending = this.pendingRequests.get(id);
-		
-		if (!pending) {
-			console.warn(`Received response for unknown or timed-out ID: ${id}`);
-			return;
-		}
-
-		// stop request time out error
-		clearTimeout(pending.timer);
-
-		// delete request from map
-		this.pendingRequests.delete(id);
-
-		// resolve or reject request
-		if (actionResponse.success) {
-			pending.resolve(actionResponse.result);
-		} else {
-			pending.reject(new Error(actionResponse.error.message));
-		}
 	}
 }
 

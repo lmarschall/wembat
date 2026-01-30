@@ -2,6 +2,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { encrypt } from './functions/encrypt';
 import { deriveEncryptionKeyFromPRF } from './functions/helper';
+import { Bridge } from './bridge';
 import { EncryptAction, LoginResponse, WembatMessage, WorkerAction, WorkerActionType, WorkerRequest, WorkerResponse, WorkerResponseType } from './types';
 
 // GLOBALER ZUSTAND IM WORKER
@@ -11,6 +12,8 @@ let signingKey: CryptoKey | null = null;
 let jwt: string | undefined;
 let publicKey: CryptoKey | undefined;
 let privateKey: CryptoKey | undefined;
+
+const bridge = new Bridge(self as any);
 
 let apiUrl: string = "";
 let axiosClient: AxiosInstance;
@@ -29,11 +32,6 @@ axiosClient.defaults.headers.common["Content-Type"] =
 //   `Bearer ${this.#jwt}`;
 
 const ctx: Worker = self as any;
-
-// Hilfsfunktion: Antwort senden
-function respond(response: WorkerResponse) {
-  ctx.postMessage(response);
-}
 
 async function initializeWorker(loginResponse: LoginResponse) {
 
@@ -110,3 +108,15 @@ ctx.onmessage = async (event: MessageEvent<WorkerRequest>) => {
     respond({ type: WorkerResponseType.Error, message: err.message });
   }
 };
+
+bridge.on('process-image', (data: Uint8Array) => {
+    // Modify data (or create new)
+    const processed = new Uint8Array(data.byteLength); 
+    // ... do work ...
+
+    // To transfer back, return this specific object:
+    return {
+        payload: processed,
+        transfer: [processed.buffer] 
+    };
+});
