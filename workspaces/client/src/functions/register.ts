@@ -3,8 +3,10 @@ import {
 	startRegistration,
 } from "@simplewebauthn/browser";
 import {
+	BridgeMessageType,
 	RegisterResponse,
 	RequestRegisterResponse,
+	StartRegistrationContent,
 	WembatActionResponse,
 	WembatError,
 	WembatRegisterResult,
@@ -14,6 +16,7 @@ import {
 	RegistrationResponseJSON,
 } from "@simplewebauthn/types";
 import { AxiosInstance } from "axios";
+import { Bridge } from "../bridge";
 
 /**
  * Registers a user with the specified user ID.
@@ -24,6 +27,7 @@ import { AxiosInstance } from "axios";
  */
 export async function register(
 	axiosClient: AxiosInstance,
+	bridge: Bridge,
 	userMail: string,
 	autoRegister = false
 ): Promise<WembatActionResponse<WembatRegisterResult>> {
@@ -53,12 +57,8 @@ export async function register(
 			requestRegisterResponse.data
 		);
 
-		const credentials: RegistrationResponseJSON = await startRegistration({
-			optionsJSON: requestRegisterResponseData.options,
-			useAutoRegister: autoRegister,
-		}).catch((err: string) => {
-			throw new Error(err);
-		});
+		const content: StartRegistrationContent = { challengeOptions: requestRegisterResponseData };
+		const credentials: RegistrationResponseJSON = await bridge.invoke(BridgeMessageType.StartRegistration, content);
 
 		if (credentials.clientExtensionResults !== undefined) {
 			const credentialExtensions = credentials.clientExtensionResults as any;

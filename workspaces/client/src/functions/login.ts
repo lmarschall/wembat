@@ -1,22 +1,26 @@
 import {
 	browserSupportsWebAuthn,
 	browserSupportsWebAuthnAutofill,
-	startAuthentication,
 } from "@simplewebauthn/browser";
 import {
+	BridgeMessageType,
 	LoginResponse,
 	RequestLoginResponse,
+	StartAuthenticationContent,
 	WembatActionResponse,
 	WembatError,
 	WembatLoginResult,
-	WorkerAction,
-	WorkerActionType,
 } from "../types";
 import { AuthenticationResponseJSON } from "@simplewebauthn/types";
 import {
 	bufferToArrayBuffer,
+	deriveEncryptedQuantumSeed,
+	deriveEncryptionKeyFromPRF,
+	deriveKeysFromEncryptedSeed,
+	toBase64,
 } from "./helper";
 import { AxiosInstance } from "axios";
+import { Bridge } from "../bridge";
 
 /**
  * Logs in the user using WebAuthn authentication.
@@ -24,8 +28,9 @@ import { AxiosInstance } from "axios";
  * @param userMail - The email address of the user.
  * @returns A Promise that resolves to an array containing the action response, private key, public key, and JWT.
  */
-export async function login(
+export async function login(this: any, 
 	axiosClient: AxiosInstance,
+	bridge: Bridge,
 	userMail: string,
 	autoLogin = false
 ): Promise<WembatActionResponse<WembatLoginResult>> {
@@ -65,13 +70,8 @@ export async function login(
 			challengeOptions.extensions.prf.eval.first
 		);
 
-		const credentials: AuthenticationResponseJSON = await startAuthentication(
-			{
-				optionsJSON: challengeOptions,
-			}
-		).catch((err: string) => {
-			throw new Error(err);
-		});
+		const content: StartAuthenticationContent = { challengeOptions: challengeOptions };
+		const credentials: AuthenticationResponseJSON = await this.bridge.invoke(BridgeMessageType.StartAuthentication, content);
 
 		const loginReponse = await axiosClient.post<string>(
 			`/login`,
@@ -102,6 +102,50 @@ export async function login(
 		const inputKeyMaterial = new Uint8Array(
 			credentialExtensions?.prf.results.first
 		);
+
+		const token = loginReponseData.token;
+  		const seedString = loginReponseData.seedString;
+  		const ivString = loginReponseData.ivString;
+
+  		const { encryptionKey, salt } = await deriveEncryptionKeyFromPRF(inputKeyMaterial, loginReponseData.salt);
+
+		if (
+			seedString !== "" &&
+			ivString !== ""
+		) {
+			console.log("Loading existing keys");
+			
+			// sessionKey = deriveSessionKeyFromString()
+
+			{ privateKey, publicKey } = await deriveKeysFromEncryptedSeed(encryptionKey, seedString, ivString)
+
+		} else {
+			console.log("Generating new keys");
+
+			const { encryptedSeed, iv } = await deriveEncryptedQuantumSeed(encryptionKey);
+
+			const headers = {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			};
+
+			const saveCredentialsResponse = await axiosClient.post<string>(
+				`/update-credentials`,
+				{
+					updateCredentialsRequest: {
+						seedString: toBase64(encryptedSeed),
+						ivString: toBase64(iv),
+						sessionId: loginReponseData.sessionId,
+					},
+				},
+				{
+					headers: headers,
+				}
+			);
+
+			if (saveCredentialsResponse.status !== 200)
+				throw new Error(saveCredentialsResponse.data);
+		}
 
 		const loginResult: WembatLoginResult = {
 			loginResponse: loginReponseData,

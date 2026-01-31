@@ -1,8 +1,3 @@
-import { WembatClientToken } from "../types";
-import { randomBytes } from '@noble/post-quantum/utils.js';
-import { gcm } from '@noble/ciphers/aes';
-import { hkdf } from '@noble/hashes/hkdf';
-import { sha256 } from '@noble/hashes/sha256';
 import { ml_kem768 } from '@noble/post-quantum/ml-kem';
 
 /**
@@ -192,22 +187,22 @@ export async function deriveEncryptionKeyFromPRF(inputKeyMaterial: Uint8Array, e
 }
 
 export async function deriveSessionKeyFromString(publicUserKeyString: string, privateUserKeyEncryptedString: string, encryptionKey: CryptoKey) {
-	const publicKey = await loadCryptoPublicKeyFromString(
-		publicUserKeyString
-	);
+	// const publicKey = await loadCryptoPublicKeyFromString(
+	// 	publicUserKeyString
+	// );
 
-	const nonce = loginReponseData.nonce;
-	const decoder = new TextDecoder();
+	// const nonce = loginReponseData.nonce;
+	// const decoder = new TextDecoder();
 
-	const decryptedPrivateUserKey = await crypto.subtle.decrypt(
-		{ name: "AES-GCM", iv: str2ab(nonce) },
-		encryptionKey,
-		str2ab(privateUserKeyEncryptedString)
-	);
+	// const decryptedPrivateUserKey = await crypto.subtle.decrypt(
+	// 	{ name: "AES-GCM", iv: str2ab(nonce) },
+	// 	encryptionKey,
+	// 	str2ab(privateUserKeyEncryptedString)
+	// );
 
-	privateKey = await loadCryptoPrivateKeyFromString(
-		decoder.decode(decryptedPrivateUserKey)
-	);
+	// privateKey = await loadCryptoPrivateKeyFromString(
+	// 	decoder.decode(decryptedPrivateUserKey)
+	// );
 }
 
 export async function deriveEncryptedQuantumSeed(encryptionKey: CryptoKey)

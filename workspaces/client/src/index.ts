@@ -1,15 +1,8 @@
-import axios, { AxiosInstance } from "axios";
-
-import { ActionContent, PendingRequest, UUIdString, WembatActionResponse, WembatClientToken, WembatLoginResult, WembatMessage, WembatRegisterResult, WembatResult, WembatToken, WorkerAction, WorkerActionType, WorkerRequest, WorkerResponse, WorkerResponseType } from "./types";
-import { register } from "./functions/register";
-import { decrypt } from "./functions/decrypt";
-import { login } from "./functions/login";
-import { encrypt } from "./functions/encrypt";
-import { onboard } from "./functions/onboard";
+import { BridgeMessageType, DecryptContent, EncryptContent, LoginContent, RegisterContent, StartAuthenticationContent, StartRegistrationContent, WembatActionResponse, WembatClientToken, WembatLoginResult, WembatMessage, WembatRegisterResult, WembatToken } from "./types";
 import { jwtDecode } from "./functions/helper";
-import { token } from "./functions/token";
-import { link } from "./functions/link";
 import { Bridge } from "./bridge";
+import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
+import { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/types";
 
 export * from "./types";
 
@@ -18,8 +11,7 @@ export * from "./types";
  */
 class WembatClient {
 	private readonly worker: Worker;
-	private readonly pendingRequests = new Map<string, PendingRequest>();
-	private bridge: Bridge;
+	private readonly bridge: Bridge;
 
 	/**
 	 * Creates an instance of WembatClient.
@@ -38,6 +30,27 @@ class WembatClient {
     	});
 
 		this.bridge = new Bridge(this.worker);
+
+		this.bridge.on(BridgeMessageType.Encrypt, async (content: StartAuthenticationContent) => {
+			const credentials: AuthenticationResponseJSON = await startAuthentication(
+				{
+					optionsJSON: content.challengeOptions,
+				}
+			).catch((err: string) => {
+				throw new Error(err);
+			});
+			return credentials;
+		});
+
+		this.bridge.on(BridgeMessageType.Encrypt, async (content: StartRegistrationContent) => {
+			const credentials: RegistrationResponseJSON = await startRegistration({
+				optionsJSON: content.challengeOptions,
+				useAutoRegister: false,
+			}).catch((err: string) => {
+				throw new Error(err);
+			});
+			return credentials;
+		});
 	}
 
 	/**
@@ -48,10 +61,8 @@ class WembatClient {
 	 * @returns A promise that resolves to a WembatActionResponse containing the encrypted Wembat message.
 	 */
 	public async encrypt (wembatMessage: WembatMessage, publicKey: CryptoKey): Promise<WembatActionResponse<WembatMessage>> {
-		const content: ActionContent = { message: wembatMessage, key: publicKey };
-		const action: WorkerAction = { type: WorkerActionType.Encrypt, content: content };
-		await this.bridge.invoke('process-image', hugeData, [hugeData.buffer]);
-		return this.sendRequest(action);
+		const content: EncryptContent = { message: wembatMessage, key: publicKey };
+		return this.bridge.invoke<WembatActionResponse<WembatMessage>>(BridgeMessageType.Encrypt, content);
 	}
 
 	/**
@@ -62,9 +73,8 @@ class WembatClient {
 	 * @returns A promise that resolves to a WembatActionResponse containing the decrypted Wembat message.
 	 */
 	public async decrypt (wembatMessage: WembatMessage, publicKey: CryptoKey): Promise<WembatActionResponse<WembatMessage>> {
-		const content: ActionContent = { message: wembatMessage, key: publicKey };
-		const action: WorkerAction = { type: WorkerActionType.Decrypt, content: content };
-		return this.sendRequest(action);
+		const content: DecryptContent = { message: wembatMessage, key: publicKey };
+		return this.bridge.invoke<WembatActionResponse<WembatMessage>>(BridgeMessageType.Decrypt, content);
 	}
 
 	/**
@@ -74,7 +84,8 @@ class WembatClient {
 	 * @returns A Promise that resolves to a WembatActionResponse containing the registration result.
 	 */
 	public async register (userMail: string, autoRegister: boolean = false): Promise<WembatActionResponse<WembatRegisterResult>> {
-		return await register(this.#axiosClient, userMail, autoRegister);
+		const content: RegisterContent = { userMail, autoRegister };
+		return this.bridge.invoke<WembatActionResponse<WembatRegisterResult>>(BridgeMessageType.Register, content);
 	}
 
 	/**
@@ -83,11 +94,8 @@ class WembatClient {
 	 * @returns A promise that resolves to a WembatActionResponse containing the login result.
 	 */
 	public async login (userMail: string, autoLogin: boolean = false): Promise<WembatActionResponse<WembatLoginResult>> {
-		let loginResult = await login(this.#axiosClient, userMail, autoLogin);
-		const content: ActionContent = { loginResponse: loginResult.result.loginResponse, keyMaterial: loginResult.result.keyMaterial };
-		const action: WorkerAction = { type: WorkerActionType.Login, content: content };
-		loginResult = await this.sendRequest(action);
-		return loginResult;
+		const content: LoginContent = { userMail, autoLogin };
+		return this.bridge.invoke<WembatActionResponse<WembatLoginResult>>(BridgeMessageType.Login, content);
 	}
 
 	/**

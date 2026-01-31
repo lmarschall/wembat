@@ -1,4 +1,4 @@
-import { ab2str, deriveEncryptionKey } from "./helper";
+import { ab2str, deriveEncryptionKey, toBase64 } from "./helper";
 import { WembatActionResponse, WembatError, WembatMessage } from "../types";
 
 /**
@@ -24,11 +24,11 @@ export async function encrypt(
 		if (privateKey == undefined) throw new Error("Private Key undefined!");
 
 		const encryptionKey = await deriveEncryptionKey(privateKey, publicKey);
-		const iv = window.crypto.getRandomValues(new Uint8Array(12));
+		const iv = crypto.getRandomValues(new Uint8Array(12));
 
 		const encoder = new TextEncoder();
 		const encoded = encoder.encode(wembatMessage.message);
-		const encrypted = await window.crypto.subtle.encrypt(
+		const encrypted = await crypto.subtle.encrypt(
 			{
 				name: "AES-GCM",
 				iv: iv,
@@ -38,8 +38,8 @@ export async function encrypt(
 		);
 
 		const message: WembatMessage = {
-			encrypted: ab2str(encrypted),
-			iv: ab2str(iv),
+			encrypted: toBase64(new Uint8Array(encrypted)),
+			iv: toBase64(iv),
 			message: "",
 		};
 		actionResponse.result = message;
@@ -48,12 +48,12 @@ export async function encrypt(
 	} catch (error: Error | unknown) {
 		if (error instanceof Error) {
 			actionResponse.error = {
-				error: error.message,
+				message: error.message,
 			};
 			console.error(error);
 			return actionResponse;
 		} else {
-			throw Error("Unknown Error:");
+			throw new Error("Unknown Error:");
 		}
 	}
 }

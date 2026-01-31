@@ -1,9 +1,11 @@
 // secure.worker.ts
 import axios, { AxiosInstance } from 'axios';
 import { encrypt } from './functions/encrypt';
-import { deriveEncryptionKeyFromPRF } from './functions/helper';
 import { Bridge } from './bridge';
-import { EncryptAction, LoginResponse, WembatMessage, WorkerAction, WorkerActionType, WorkerRequest, WorkerResponse, WorkerResponseType } from './types';
+import { BridgeMessageType, DecryptContent, EncryptContent, LoginContent, RegisterContent } from './types';
+import { decrypt } from './functions/decrypt';
+import { login } from './functions/login';
+import { register } from './functions/register';
 
 // GLOBALER ZUSTAND IM WORKER
 // Dieser Key existiert nur im RAM dieses Workers.
@@ -33,90 +35,18 @@ axiosClient.defaults.headers.common["Content-Type"] =
 
 const ctx: Worker = self as any;
 
-async function initializeWorker(loginResponse: LoginResponse) {
+bridge.on(BridgeMessageType.Encrypt, async (content: EncryptContent) => {
+  return encrypt(privateKey, content.message, content.key);
+});
 
-  const token = loginResponse.token;
-  const seedString = loginResponse.seedString;
-  const ivString = loginResponse.ivString;
+bridge.on(BridgeMessageType.Decrypt, async (content: DecryptContent) => {
+  return decrypt(privateKey, content.message, content.key);
+});
 
-  const { encryptionKey, salt } = await deriveEncryptionKeyFromPRF(inputKeyMaterial, loginReponseData.salt);
+bridge.on(BridgeMessageType.Register, async (content: RegisterContent) => {
+  return register(axiosClient, bridge, content.userMail, content.autoRegister);
+});
 
-  if (
-			seedString !== "" &&
-			ivString !== ""
-		) {
-			console.log("Loading existing keys");
-			
-			// sessionKey = deriveSessionKeyFromString()
-
-			const { privKey, pubKey } = await deriveKeysFromEncryptedSeed(encryptionKey, seedString, ivString)
-
-			
-		} else {
-			console.log("Generating new keys");
-
-			const { encryptedSeed, iv } = await deriveEncryptedQuantumSeed(encryptionKey);
-
-			const headers = {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
-			};
-
-			const saveCredentialsResponse = await axiosClient.post<string>(
-				`/update-credentials`,
-				{
-					updateCredentialsRequest: {
-						seedString: toBase64(encryptedSeed),
-						ivString: toBase64(iv),
-						sessionId: loginReponseData.sessionId,
-					},
-				},
-				{
-					headers: headers,
-				}
-			);
-
-			if (saveCredentialsResponse.status !== 200)
-				throw new Error(saveCredentialsResponse.data);
-		}
-}
-
-ctx.onmessage = async (event: MessageEvent<WorkerRequest>) => {
-  const action = event.data;
-
-  try {
-    switch (action.type) {
-      case WorkerActionType.Initialize: {
-        if (action.loginResponse === undefined)
-          throw new Error("no login response");
-  
-        await initializeWorker(action.loginResponse);
-        break;
-      }
-      
-      case WorkerActionType.Encrypt: { 
-        const actionResponse = await encrypt(privateKey, action.content.message, action.content.key);
-        const response: WorkerResponse = {id: action.id, actionResponse: actionResponse };
-        respond(response);
-        break;
-      }
-
-      default:
-        break;
-    }
-  } catch (err: any) {
-    respond({ type: WorkerResponseType.Error, message: err.message });
-  }
-};
-
-bridge.on('process-image', (data: Uint8Array) => {
-    // Modify data (or create new)
-    const processed = new Uint8Array(data.byteLength); 
-    // ... do work ...
-
-    // To transfer back, return this specific object:
-    return {
-        payload: processed,
-        transfer: [processed.buffer] 
-    };
+bridge.on(BridgeMessageType.Login, async (content: LoginContent) => {
+  return login(axiosClient, bridge, content.userMail, content.autoLogin);
 });

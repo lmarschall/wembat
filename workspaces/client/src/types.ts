@@ -222,45 +222,41 @@ export interface TokenResponse {
 export interface OnboardResponse {
 }
 
-export interface PendingRequest {
-	resolve: (value: any) => void;
-	reject: (reason?: any) => void;
-	timer: any; // Timer ID für Timeout
+export enum BridgeMessageType {
+	Register = 'register-message',
+	Login = 'login-message',
+	Encrypt = 'encrypt-message',
+	Decrypt = 'decrypt-message',
+	StartAuthentication = 'start-authentication-message',
+	StartRegistration = 'start-registration-message',
 }
 
-export enum WorkerActionType {
-	Login = 0,
-	Encrypt = 1,
-	Decrypt = 2,
-	SignData = 3,
-	ClearMemory = 4
-}
+export type BridgeMessageContent = EncryptContent | DecryptContent | StartAuthenticationContent;
 
-export type ActionContent = EncryptAction | DecryptAction | LoginAction | OnboardAction | LinkAction | TokenAction;
-
-export interface EncryptAction {
+export interface EncryptContent {
 	message: WembatMessage;
 	key: CryptoKey;
 }
 
-export interface DecryptAction {
+export interface DecryptContent {
 	message: WembatMessage;
 	key: CryptoKey;
 }
 
-export interface LoginAction {
-	loginResponse: LoginResponse;
-	keyMaterial: any
+export interface RegisterContent {
+	userMail: string;
+	autoRegister: boolean
 }
 
-export interface OnboardAction {
-
+export interface LoginContent {
+	userMail: string;
+	autoLogin: boolean
 }
 
-export type WorkerAction = { type: WorkerActionType; content: ActionContent }
+export interface StartAuthenticationContent {
+	challengeOptions: any
+}
 
-export type UUIdString = `${string}-${string}-${string}-${string}-${string}`
-
-export type WorkerRequest = WorkerAction & { id: UUIdString };
-
-export type WorkerResponse = { id: UUIdString; actionResponse: WembatActionResponse<WembatResult> }
+export interface StartRegistrationContent {
+	challengeOptions: any
+}

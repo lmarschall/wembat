@@ -21,7 +21,7 @@ export async function decrypt(
 	};
 
 	try {
-		if (privateKey == undefined) throw Error("Private Key undefined!");
+		if (privateKey == undefined) throw new Error("Private Key undefined!");
 
 		const encryptionKey = await deriveEncryptionKey(privateKey, publicKey);
 		const iv = wembatMessage.iv;
@@ -47,12 +47,12 @@ export async function decrypt(
 	} catch (error: Error | unknown) {
 		if (error instanceof Error) {
 			actionResponse.error = {
-				error: error.message,
+				message: error.message,
 			};
 			console.error(error);
 			return actionResponse;
 		} else {
-			throw Error("Unknown Error:");
+			throw new Error("Unknown Error:");
 		}
 	}
 }
