@@ -191,21 +191,9 @@ export interface LoginResponse {
 	sessionId: string;
 
 	/**
-	 * The public key of the user.
+	 * Secret string containing the iv, salt and seed
 	 */
-	publicUserKey: string;
-
-	/**
-	 * The encrypted private key of the user.
-	 */
-	privateUserKeyEncrypted: string;
-
-	/**
-	 * A unique nonce value associated with the login request.
-	 */
-	nonce: string;
-
-	salt: any;
+	secretString: string;
 }
 
 /**

@@ -6,20 +6,13 @@ import { BridgeMessageType, DecryptContent, EncryptContent, LoginContent, Regist
 import { decrypt } from './functions/decrypt';
 import { login } from './functions/login';
 import { register } from './functions/register';
-
-// GLOBALER ZUSTAND IM WORKER
-// Dieser Key existiert nur im RAM dieses Workers.
-// Sobald der Worker terminiert wird, ist der Key weg.
-let signingKey: CryptoKey | null = null;
-let jwt: string | undefined;
-let publicKey: CryptoKey | undefined;
-let privateKey: CryptoKey | undefined;
+import { Store } from './store';
 
 const bridge = new Bridge(self as any);
+const store = new Store();
 
-let apiUrl: string = "";
-let axiosClient: AxiosInstance;
-axiosClient = axios.create({
+const apiUrl: string = "";
+const axiosClient: AxiosInstance = axios.create({
   baseURL: `${apiUrl}/api/webauthn`,
   validateStatus: function (status) {
     return status == 200 || status == 400;
@@ -48,5 +41,5 @@ bridge.on(BridgeMessageType.Register, async (content: RegisterContent) => {
 });
 
 bridge.on(BridgeMessageType.Login, async (content: LoginContent) => {
-  return login(axiosClient, bridge, content.userMail, content.autoLogin);
+  return login(axiosClient, bridge, store, content.userMail, content.autoLogin);
 });

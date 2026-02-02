@@ -1,30 +1,4 @@
-import { ml_kem768 } from '@noble/post-quantum/ml-kem';
-
-/**
- * Converts a string to an ArrayBuffer.
- *
- * @param str - The string to convert.
- * @returns The converted ArrayBuffer.
- */
-export function str2ab(str: string): ArrayBuffer {
-	str = atob(str);
-	const buf = new ArrayBuffer(str.length);
-	const bufView = new Uint8Array(buf);
-	for (let i = 0, strLen = str.length; i < strLen; i++) {
-		bufView[i] = str.charCodeAt(i);
-	}
-	return buf;
-}
-
-/**
- * Converts an ArrayBuffer to a string using base64 encoding.
- *
- * @param buf - The ArrayBuffer to convert.
- * @returns The base64 encoded string.
- */
-export function ab2str(buf: ArrayBuffer): string {
-	return btoa(String.fromCharCode.apply(null, [...new Uint8Array(buf)]));
-}
+import { ml_kem768 } from '@noble/post-quantum/ml-kem.js';
 
 /**
  * Decodes a JSON Web Token (JWT) and returns the decoded payload.
@@ -78,7 +52,7 @@ export async function deriveEncryptionKey(
 	publicKey: CryptoKey
 ): Promise<CryptoKey> {
 	if (privateKey !== undefined && publicKey !== undefined) {
-		const encryptionKey = await window.crypto.subtle.deriveKey(
+		const encryptionKey = await globalThis.crypto.subtle.deriveKey(
 			{
 				name: "ECDH",
 				public: publicKey,
@@ -93,7 +67,7 @@ export async function deriveEncryptionKey(
 		);
 		return encryptionKey;
 	} else {
-		throw Error("Could not derive Encryption Key");
+		throw new Error("Could not derive Encryption Key");
 	}
 }
 
@@ -118,20 +92,19 @@ export async function saveCryptoKeyAsString(
 export async function loadCryptoPublicKeyFromString(
 	pubKeyString: string
 ): Promise<CryptoKey> {
-	if (pubKeyString !== "") {
-		return await window.crypto.subtle.importKey(
-			"jwk",
-			JSON.parse(pubKeyString),
-			{
-				name: "ECDH",
-				namedCurve: "P-384",
-			},
-			true,
-			[]
-		);
-	} else {
-		throw Error("Public Key String empty");
-	}
+
+	if (pubKeyString === "") throw new Error("Public Key String empty");
+	
+	return await globalThis.crypto.subtle.importKey(
+		"jwk",
+		JSON.parse(pubKeyString),
+		{
+			name: "ECDH",
+			namedCurve: "P-384",
+		},
+		true,
+		[]
+	);
 }
 
 /**
@@ -144,9 +117,9 @@ export async function loadCryptoPrivateKeyFromString(
 	privateKeyString: string
 ): Promise<CryptoKey> {
 
-	if (privateKeyString === "") throw Error("Private Key String empty");
+	if (privateKeyString === "") throw new Error("Private Key String empty");
 
-	return await window.crypto.subtle.importKey(
+	return await globalThis.crypto.subtle.importKey(
 		"jwk",
 		JSON.parse(privateKeyString),
 		{
@@ -158,11 +131,11 @@ export async function loadCryptoPrivateKeyFromString(
 	);
 }
 
-export async function deriveEncryptionKeyFromPRF(inputKeyMaterial: Uint8Array, existingSalt = null) {
+export async function deriveEncryptionKeyFromPRF(inputKeyMaterial: Uint8Array<any>, existingSalt = "") {
 
-	const salt = existingSalt || window.crypto.getRandomValues(new Uint8Array(32));
+	const salt = existingSalt == "" ? globalThis.crypto.getRandomValues(new Uint8Array(32)) : fromBase64(existingSalt);
 
-	const keyDerivationKey = await window.crypto.subtle.importKey(
+	const keyDerivationKey = await globalThis.crypto.subtle.importKey(
 		"raw",
 		inputKeyMaterial,
 		"HKDF",
@@ -186,45 +159,38 @@ export async function deriveEncryptionKeyFromPRF(inputKeyMaterial: Uint8Array, e
 	}
 }
 
-export async function deriveSessionKeyFromString(publicUserKeyString: string, privateUserKeyEncryptedString: string, encryptionKey: CryptoKey) {
-	// const publicKey = await loadCryptoPublicKeyFromString(
-	// 	publicUserKeyString
-	// );
+export function createQuantumSeed() {
 
-	// const nonce = loginReponseData.nonce;
-	// const decoder = new TextDecoder();
+	const seed = new Uint8Array(64);
+    globalThis.crypto.getRandomValues(seed);
 
-	// const decryptedPrivateUserKey = await crypto.subtle.decrypt(
-	// 	{ name: "AES-GCM", iv: str2ab(nonce) },
-	// 	encryptionKey,
-	// 	str2ab(privateUserKeyEncryptedString)
-	// );
-
-	// privateKey = await loadCryptoPrivateKeyFromString(
-	// 	decoder.decode(decryptedPrivateUserKey)
-	// );
+	return seed;
 }
 
-export async function deriveEncryptedQuantumSeed(encryptionKey: CryptoKey)
-{
-	// 1. Generate the Quantum Seed (64 bytes for ML-KEM)
-    const seed = new Uint8Array(64);
-    window.crypto.getRandomValues(seed);
+export function deriveKeysFromSeed(seed: Uint8Array<ArrayBuffer>) {
 
-    // 4. Encrypt the Seed
-    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+	const keyPair = ml_kem768.keygen(seed);
 
-    const encryptedBuffer = await window.crypto.subtle.encrypt(
+	return {
+		publicKey: keyPair.publicKey,
+		privateKey: keyPair.secretKey
+	};
+}
+
+export async function deriveEncryptedQuantumSeed(encryptionKey: CryptoKey, seed: Uint8Array<ArrayBuffer>) {
+
+    const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
+
+    const encryptedBuffer = await globalThis.crypto.subtle.encrypt(
         {
             name: "AES-GCM",
             iv: iv,
         },
         encryptionKey,
-        seed // <--- Encrypt the raw Uint8Array directly
+        seed
     );
 
     return {
-        // Convert ArrayBuffer to Uint8Array for easier DB storage/handling
         encryptedSeed: new Uint8Array(encryptedBuffer),
         iv: iv
     };
@@ -242,80 +208,100 @@ export async function deriveKeysFromEncryptedSeed(encryptionKey: CryptoKey, seed
 
 	return {
 		publicKey: keyPair.publicKey,
-		privateKey: keyPair.secretKey // Map 'secretKey' to your preferred name if needed
+		privateKey: keyPair.secretKey
 	};
 }
 
 export function fromBase64(base64String: string): Uint8Array<ArrayBuffer> {
-  // 1. Modern Browsers (Chrome 133+, Firefox 133+, Safari 18.2+)
-  if (Uint8Array.fromBase64) {
-    return Uint8Array.fromBase64(base64String);
-  }
-
-  // 2. Legacy Fallback (Standard)
-  // 'atob' decodes the base64 string to a binary string
-  const binaryString = atob(base64String);
   
-  // Convert binary string to byte array
-  return Uint8Array.from(binaryString, (char) => char.codePointAt(0));
+	// modern browsers
+	if ((Uint8Array as any).fromBase64) {
+		return (Uint8Array as any).fromBase64(base64String);
+	}
+
+	// legacy fallback
+	const binaryString = atob(base64String);
+	const len = binaryString.length;
+	const bytes = new Uint8Array(len);
+
+	// Direct loop is faster than Uint8Array.from() with a callback
+	for (let i = 0; i < len; i++) {
+		bytes[i] = binaryString.charCodeAt(i);
+	}
+
+	return bytes;
 }
 
 export function toBase64(bytes: Uint8Array<ArrayBuffer>): string {
-  // 1. Modern Browsers
-  if (bytes.toBase64) {
-    return bytes.toBase64();
-  }
 
-  // 2. Legacy Fallback
-  // 'btoa' requires a binary string. 
-  // We use a safe loop to avoid stack overflow on large arrays.
-  let binaryString = "";
-  for (let i = 0; i < bytes.length; i++) {
-    binaryString += String.fromCharCode(bytes[i]);
-  }
+	// modern browsers
+	if ((bytes as any).toBase64) {
+		return (bytes as any).toBase64();
+	}
+
+	// legacy fallback
+	const binaryString = Array.from(bytes, (byte) => String.fromCharCode(byte)).join("");
   
-  return btoa(binaryString);
+  	return btoa(binaryString);
 }
 
-export function createQuantumSession(recipientPublicKey) {
-    // 1. Encapsulate
-    // This function automatically:
-    //  - Generates a random "Shared Secret" (32 bytes)
-    //  - Creates the "Ciphertext" (lock) needed to send it
-    const result = ml_kem768.encapsulate(recipientPublicKey);
+/**
+ * Safely parses the secret string into 5 parts.
+ * Returns 5 empty strings if the input is invalid or empty.
+ */
+export function parseSecretString(safeSecret = "") {
+  
+	// split the string
+	const parts = safeSecret.split('|');
 
-    // result.sharedSecret -> KEEP SECRET (This is the Session Key)
-    // result.cipherText   -> SEND TO USER
+	// if we have exactly 5 parts
+	if (parts.length === 5) {
+		return parts;
+	}
 
-    // 2. KDF (Best Practice)
-    // Use HKDF to turn the raw ML-KEM secret into a usable AES key
-    const sessionKey = hkdf(
-        sha256, 
-        result.sharedSecret, 
-        undefined, 
-        'QuantumSessionKey_v1', 
-        32
-    );
-
-    return {
-        sessionKey: sessionKey,      // Use this to encrypt your actual data
-        cipherText: result.cipherText // Send this public blob to the receiver
-    };
+	// fFallback rReturn array of 5 empty strings
+	return ["", "", "", "", ""];
 }
 
-export function recoverQuantumSession(cipherText, myPrivateKey) {
-    // 1. Decapsulate
-    // Uses the private key to unlock the ciphertext and reveal the SAME secret
-    const rawSecret = ml_kem768.decapsulate(cipherText, myPrivateKey);
+// export function createQuantumSession(recipientPublicKey) {
+//     // 1. Encapsulate
+//     // This function automatically:
+//     //  - Generates a random "Shared Secret" (32 bytes)
+//     //  - Creates the "Ciphertext" (lock) needed to send it
+//     const result = ml_kem768.encapsulate(recipientPublicKey);
 
-    // 2. KDF (Must match Sender exactly)
-    const sessionKey = hkdf(
-        sha256, 
-        rawSecret, 
-        undefined, 
-        'QuantumSessionKey_v1', 
-        32
-    );
+//     // result.sharedSecret -> KEEP SECRET (This is the Session Key)
+//     // result.cipherText   -> SEND TO USER
 
-    return sessionKey; // This matches the Sender's key exactly
-}
+//     // 2. KDF (Best Practice)
+//     // Use HKDF to turn the raw ML-KEM secret into a usable AES key
+//     const sessionKey = hkdf(
+//         sha256, 
+//         result.sharedSecret, 
+//         undefined, 
+//         'QuantumSessionKey_v1', 
+//         32
+//     );
+
+//     return {
+//         sessionKey: sessionKey,      // Use this to encrypt your actual data
+//         cipherText: result.cipherText // Send this public blob to the receiver
+//     };
+// }
+
+// export function recoverQuantumSession(cipherText, myPrivateKey) {
+//     // 1. Decapsulate
+//     // Uses the private key to unlock the ciphertext and reveal the SAME secret
+//     const rawSecret = ml_kem768.decapsulate(cipherText, myPrivateKey);
+
+//     // 2. KDF (Must match Sender exactly)
+//     const sessionKey = hkdf(
+//         sha256, 
+//         rawSecret, 
+//         undefined, 
+//         'QuantumSessionKey_v1', 
+//         32
+//     );
+
+//     return sessionKey; // This matches the Sender's key exactly
+// }

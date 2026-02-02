@@ -1,4 +1,4 @@
-import { deriveEncryptionKey, str2ab } from "./helper";
+import { deriveEncryptionKey, fromBase64, str2ab, toBase64 } from "./helper";
 import { WembatActionResponse, WembatError, WembatMessage } from "../types";
 
 /**
@@ -29,10 +29,10 @@ export async function decrypt(
 		const decrypted = await window.crypto.subtle.decrypt(
 			{
 				name: "AES-GCM",
-				iv: str2ab(iv),
+				iv: fromBase64(iv),
 			},
 			encryptionKey,
-			str2ab(wembatMessage.encrypted)
+			fromBase64(wembatMessage.encrypted)
 		);
 
 		const decoder = new TextDecoder();

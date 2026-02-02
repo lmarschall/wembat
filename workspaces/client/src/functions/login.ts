@@ -14,13 +14,17 @@ import {
 import { AuthenticationResponseJSON } from "@simplewebauthn/types";
 import {
 	bufferToArrayBuffer,
+	createQuantumSeed,
 	deriveEncryptedQuantumSeed,
 	deriveEncryptionKeyFromPRF,
 	deriveKeysFromEncryptedSeed,
+	deriveKeysFromSeed,
+	parseSecretString,
 	toBase64,
 } from "./helper";
 import { AxiosInstance } from "axios";
 import { Bridge } from "../bridge";
+import { Store } from "../store"
 
 /**
  * Logs in the user using WebAuthn authentication.
@@ -31,6 +35,7 @@ import { Bridge } from "../bridge";
 export async function login(this: any, 
 	axiosClient: AxiosInstance,
 	bridge: Bridge,
+	store: Store,
 	userMail: string,
 	autoLogin = false
 ): Promise<WembatActionResponse<WembatLoginResult>> {
@@ -39,12 +44,6 @@ export async function login(this: any,
 		error: {} as WembatError,
 		result: {} as WembatLoginResult,
 	};
-
-	let privateKey: CryptoKey | undefined = undefined;
-	let publicKey: CryptoKey | undefined = undefined;
-	let sessionKey: CryptoKey | undefined = undefined;
-	let token: string | undefined = undefined;
-	let seed: Uint8Array<ArrayBuffer> | undefined = undefined;
 
 	try {
 		if (!browserSupportsWebAuthn())
@@ -71,7 +70,7 @@ export async function login(this: any,
 		);
 
 		const content: StartAuthenticationContent = { challengeOptions: challengeOptions };
-		const credentials: AuthenticationResponseJSON = await this.bridge.invoke(BridgeMessageType.StartAuthentication, content);
+		const credentials: AuthenticationResponseJSON = await bridge.invoke(BridgeMessageType.StartAuthentication, content);
 
 		const loginReponse = await axiosClient.post<string>(
 			`/login`,
@@ -103,38 +102,44 @@ export async function login(this: any,
 			credentialExtensions?.prf.results.first
 		);
 
-		const token = loginReponseData.token;
-  		const seedString = loginReponseData.seedString;
-  		const ivString = loginReponseData.ivString;
+		const token = loginReponseData.token
+		store.setToken(token);
 
-  		const { encryptionKey, salt } = await deriveEncryptionKeyFromPRF(inputKeyMaterial, loginReponseData.salt);
+		const [ver, algo, saltString, ivString, seedString] = parseSecretString(loginReponseData.secretString);
+
+  		const { encryptionKey, salt } = await deriveEncryptionKeyFromPRF(inputKeyMaterial, saltString);
 
 		if (
 			seedString !== "" &&
 			ivString !== ""
 		) {
 			console.log("Loading existing keys");
-			
-			// sessionKey = deriveSessionKeyFromString()
 
-			{ privateKey, publicKey } = await deriveKeysFromEncryptedSeed(encryptionKey, seedString, ivString)
+			const keys = await deriveKeysFromEncryptedSeed(encryptionKey, seedString, ivString);
+			store.setKeys(keys.privateKey, keys.publicKey);
 
 		} else {
 			console.log("Generating new keys");
 
-			const { encryptedSeed, iv } = await deriveEncryptedQuantumSeed(encryptionKey);
+			const seed = createQuantumSeed();
+			const keys = deriveKeysFromSeed(seed);
+			store.setKeys(keys.privateKey, keys.publicKey);
+
+			const { encryptedSeed, iv } = await deriveEncryptedQuantumSeed(encryptionKey, seed);
 
 			const headers = {
 				"Content-Type": "application/json",
 				Authorization: `Bearer ${token}`,
 			};
 
+			// Constructing the string
+			const secretString = `v1|aes-gcm|${toBase64(salt)}|${toBase64(iv)}|${toBase64(encryptedSeed)}`;
+
 			const saveCredentialsResponse = await axiosClient.post<string>(
 				`/update-credentials`,
 				{
 					updateCredentialsRequest: {
-						seedString: toBase64(encryptedSeed),
-						ivString: toBase64(iv),
+						secretString: secretString,
 						sessionId: loginReponseData.sessionId,
 					},
 				},
@@ -153,14 +158,14 @@ export async function login(this: any,
 		};
 		actionResponse.result = loginResult;
 		actionResponse.success = true;
-		return [actionResponse, privateKey, publicKey, token];
+		return actionResponse;
 	} catch (error: Error | unknown) {
 		if (error instanceof Error) {
 			actionResponse.error = {
 				message: error.message,
 			};
 			console.error(error);
-			return [actionResponse, null, null, null];
+			return actionResponse;
 		} else {
 			throw new Error("Unknown Error");
 		}
