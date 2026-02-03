@@ -1,52 +1,51 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client"
+  output        = "../src/api/generated/prisma"
   binaryTargets = ["native", "debian-openssl-1.1.x", "linux-arm64-openssl-1.1.x"]
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
-  uid String @id @default(cuid())
-  mail String @unique
-  salt Bytes
-  challenge String @unique @default("")
-  sessions Session[]
-  devices Device[]
+  uid       String    @id @default(cuid())
+  mail      String    @unique
+  salt      Bytes
+  challenge String    @unique @default("")
+  devices   Device[]
+  sessions  Session[]
 }
 
 model Device {
-  uid String @id @default(cuid())
-  userUId String
+  uid                 String    @id @default(cuid())
+  userUId             String
   credentialPublicKey Bytes
-  credentialId String @unique
-  counter Int @default(0)
-  transports String[]
-  user User @relation(fields: [userUId], references: [uid])
-  sessions Session[]
+  credentialId        String    @unique
+  counter             Int       @default(0)
+  transports          String[]
+  user                User      @relation(fields: [userUId], references: [uid])
+  sessions            Session[]
 }
 
 model Application {
-  uid String @id @default(cuid())
-  name String @default("")
-  domain String @unique
-  publicKey String @default("")
-  privateKey String @default("")
-  sessions Session[]
+  uid        String    @id @default(cuid())
+  name       String    @default("")
+  domain     String    @unique
+  publicKey  String    @default("")
+  privateKey String    @default("")
+  sessions   Session[]
 }
 
-// one session per user device
 model Session {
-  uid String @id @default(cuid())
-  appUId String
-  userUId String
-  deviceUId String
-  publicKey String @default("")
-  privateKey String @default("")
-  nonce String @default("")
-  user User @relation(fields: [userUId], references: [uid])
-  device Device @relation(fields: [deviceUId], references: [uid])
+  uid         String      @id @default(cuid())
+  appUId      String
+  userUId     String
+  deviceUId   String
+  publicKey   String      @default("")
+  privateKey  String      @default("")
+  cipherBlob  String      @default("")
   application Application @relation(fields: [appUId], references: [uid])
+  device      Device      @relation(fields: [deviceUId], references: [uid])
+  user        User        @relation(fields: [userUId], references: [uid])
 }

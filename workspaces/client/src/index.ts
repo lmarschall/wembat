@@ -1,8 +1,9 @@
-import { BridgeMessageType, DecryptContent, EncryptContent, LoginContent, RegisterContent, StartAuthenticationContent, StartRegistrationContent, WembatActionResponse, WembatClientToken, WembatLoginResult, WembatMessage, WembatRegisterResult, WembatToken } from "./types";
+import { BridgeMessageType, DecryptContent, EncryptContent, InitContent, LoginContent, RegisterContent, StartAuthenticationContent, StartRegistrationContent, WembatActionResponse, WembatClientToken, WembatLoginResult, WembatMessage, WembatRegisterResult, WembatToken } from "./types";
 import { jwtDecode } from "./functions/helper";
 import { Bridge } from "./bridge";
-import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
+import { browserSupportsWebAuthn, browserSupportsWebAuthnAutofill, startAuthentication, startRegistration } from "@simplewebauthn/browser";
 import { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/types";
+import WorkerClass from './worker.ts?worker&inline';
 
 export * from "./types";
 
@@ -25,13 +26,20 @@ class WembatClient {
 			throw new Error("Invalid application token");
 		}
 
-		this.worker = new Worker(new URL('./worker.ts', import.meta.url), {
-      		type: 'module',
-    	});
+		if (!browserSupportsWebAuthn())
+			throw new Error("WebAuthn is not supported on this browser!");
 
+		// const conditionalUISupported = await browserSupportsWebAuthnAutofill();
+
+		const content: InitContent = {token: applicationToken, tokenPayload: tokenPayload};
+
+		this.worker = new WorkerClass();
 		this.bridge = new Bridge(this.worker);
+		this.bridge.invoke(BridgeMessageType.Init, content);
 
-		this.bridge.on(BridgeMessageType.Encrypt, async (content: StartAuthenticationContent) => {
+		this.bridge.on(BridgeMessageType.StartAuthentication, async (content: StartAuthenticationContent) => {
+			console.log("start login");
+			console.log(content);
 			const credentials: AuthenticationResponseJSON = await startAuthentication(
 				{
 					optionsJSON: content.challengeOptions,
@@ -42,13 +50,17 @@ class WembatClient {
 			return credentials;
 		});
 
-		this.bridge.on(BridgeMessageType.Encrypt, async (content: StartRegistrationContent) => {
+		this.bridge.on(BridgeMessageType.StartRegistration, async (content: StartRegistrationContent) => {
+			console.log("start registration");
+			console.log(content);
 			const credentials: RegistrationResponseJSON = await startRegistration({
-				optionsJSON: content.challengeOptions,
+				optionsJSON: content.challengeOptions.options,
 				useAutoRegister: false,
 			}).catch((err: string) => {
+				console.error(err);
 				throw new Error(err);
 			});
+			console.log("finished registration");
 			return credentials;
 		});
 	}
@@ -94,6 +106,7 @@ class WembatClient {
 	 * @returns A promise that resolves to a WembatActionResponse containing the login result.
 	 */
 	public async login (userMail: string, autoLogin: boolean = false): Promise<WembatActionResponse<WembatLoginResult>> {
+		console.log("start login");
 		const content: LoginContent = { userMail, autoLogin };
 		return this.bridge.invoke<WembatActionResponse<WembatLoginResult>>(BridgeMessageType.Login, content);
 	}

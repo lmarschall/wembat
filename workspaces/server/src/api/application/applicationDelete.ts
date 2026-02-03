@@ -1,4 +1,4 @@
-import { Application, PrismaClient } from "@prisma/client";
+import { Application, PrismaClient } from "./../generated/prisma/client";
 import { Request, Response } from "express";
 import { ApplicationInfo } from "../types";
 import { redisService } from "../../redis";

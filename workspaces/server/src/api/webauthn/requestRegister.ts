@@ -1,5 +1,5 @@
 import { randomBytes } from 'crypto'
-import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaClient, Prisma } from "./../generated/prisma/client";
 
 import {
 	generateRegistrationOptions,

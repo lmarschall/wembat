@@ -56,7 +56,6 @@ RUN npm ci --workspace=@wembat/server --omit=dev
 # copy build files from build stage
 COPY --chown=node:node --from=build /usr/src/build/workspaces/server/dist /usr/src/app/dist
 COPY --chown=node:node --from=build /usr/src/build/workspaces/server/prisma /usr/src/app/prisma
-COPY --chown=node:node --from=build /usr/src/build/node_modules/.prisma /usr/src/app/node_modules/.prisma
 COPY --chown=node:node --from=build /usr/src/build/workspaces/server/entrypoint.sh /usr/src/app/entrypoint.sh
 
 # expose api port

@@ -1,9 +1,9 @@
 export class Store {
-    private privateKey: Uint8Array | undefined;
-    private publicKey: Uint8Array | undefined;
+    private privateKey: CryptoKey | undefined;
+    private publicKey: CryptoKey | undefined;
     private token: string | undefined;
 
-    public setKeys(privateKey: Uint8Array, publicKey: Uint8Array) {
+    public setKeys(privateKey: CryptoKey, publicKey: CryptoKey) {
         this.privateKey = privateKey;
         this.publicKey = publicKey;
     }

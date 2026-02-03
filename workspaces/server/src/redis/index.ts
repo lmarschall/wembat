@@ -1,5 +1,11 @@
-import { PrismaClient } from "@prisma/client";
 import { createClient } from "redis";
+
+import "dotenv/config";
+import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from './../api/generated/prisma/client'
+
+const connectionString = `${process.env.DATABASE_URL}`
+const adapter = new PrismaPg({ connectionString })
 
 // redis set for storing issued json web tokens
 // aims to whitelist all self generated json web tokens
@@ -26,7 +32,7 @@ export class RedisService {
 
 	private redisurl = `redis://${this.host}:${this.port}`;
 	private client = createClient({ url: this.redisurl });
-	private prisma = new PrismaClient();
+	private prisma = new PrismaClient({adapter});
 
 	constructor() {
 		this.client.on("connect", () => {

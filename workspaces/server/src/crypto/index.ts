@@ -8,8 +8,9 @@ import {
 	generateKeyPair,
 	GenerateKeyPairResult,
 } from "jose";
-import { Application, Session, User } from "@prisma/client";
+import { Application, Session, User } from "./../api/generated/prisma/client"
 import { readFileSync } from "fs";
+import { join } from 'path';
 
 interface KeyPair {
 	privateKey: KeyLike;
@@ -21,9 +22,9 @@ export let cryptoService: CryptoService;
 export async function initCrypto(): Promise<boolean> {
 	try {
 		const algorithm = "ES256";
-		const pkcs8 = readFileSync("/opt/data/keys/privateKey.pem", "utf8");
+		const pkcs8 = readFileSync(join(__dirname, "../../keys/privateKey.pem"), "utf8");
 		const ecPrivateKey = await importPKCS8(pkcs8, algorithm);
-		const spki = readFileSync("/opt/data/keys/publicKey.pem", "utf8");
+		const spki = readFileSync(join(__dirname, "../../keys/publicKey.pem"), "utf8");
 		const ecPublicKey = await importSPKI(spki, algorithm);
 
 		cryptoService = new CryptoService(ecPrivateKey, ecPublicKey);

@@ -114,14 +114,24 @@ export async function loadCryptoPublicKeyFromString(
  * @throws {Error} If the private key string is empty.
  */
 export async function loadCryptoPrivateKeyFromString(
-	privateKeyString: string
+	privateKeyString: string,
+	encryptionKey: CryptoKey,
+	ivString: string
 ): Promise<CryptoKey> {
 
 	if (privateKeyString === "") throw new Error("Private Key String empty");
 
+	const decoder = new TextDecoder();
+
+	const decryptedPrivateUserKey = await crypto.subtle.decrypt(
+		{ name: "AES-GCM", iv: fromBase64(ivString) },
+		encryptionKey,
+		fromBase64(privateKeyString)
+	);
+
 	return await globalThis.crypto.subtle.importKey(
 		"jwk",
-		JSON.parse(privateKeyString),
+		JSON.parse(decoder.decode(decryptedPrivateUserKey)),
 		{
 			name: "ECDH",
 			namedCurve: "P-384",
@@ -131,7 +141,7 @@ export async function loadCryptoPrivateKeyFromString(
 	);
 }
 
-export async function deriveEncryptionKeyFromPRF(inputKeyMaterial: Uint8Array<any>, existingSalt = "") {
+export async function deriveEncryptionKeyFromPRF(inputKeyMaterial: Uint8Array<any>, version: string, existingSalt = "") {
 
 	const salt = existingSalt == "" ? globalThis.crypto.getRandomValues(new Uint8Array(32)) : fromBase64(existingSalt);
 
@@ -159,6 +169,23 @@ export async function deriveEncryptionKeyFromPRF(inputKeyMaterial: Uint8Array<an
 	}
 }
 
+export async function deriveEllipticKeypair() {
+
+	const keyPair = await crypto.subtle.generateKey(
+		{
+			name: "ECDH",
+			namedCurve: "P-384",
+		},
+		true,
+		["deriveKey", "deriveBits"]
+	);
+
+	return {
+		publicKey: keyPair.publicKey,
+		privateKey: keyPair.privateKey
+	};
+}
+
 export function createQuantumSeed() {
 
 	const seed = new Uint8Array(64);
@@ -179,7 +206,7 @@ export function deriveKeysFromSeed(seed: Uint8Array<ArrayBuffer>) {
 
 export async function deriveEncryptedQuantumSeed(encryptionKey: CryptoKey, seed: Uint8Array<ArrayBuffer>) {
 
-    const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
 
     const encryptedBuffer = await globalThis.crypto.subtle.encrypt(
         {
@@ -249,18 +276,39 @@ export function toBase64(bytes: Uint8Array<ArrayBuffer>): string {
  * Safely parses the secret string into 5 parts.
  * Returns 5 empty strings if the input is invalid or empty.
  */
-export function parseSecretString(safeSecret = "") {
+export function parseSecretString(safeSecret: string) {
+
+	// new session
+	if (safeSecret === "") {
+		return ["", "", ""];
+	}
   
 	// split the string
 	const parts = safeSecret.split('|');
 
-	// if we have exactly 5 parts
-	if (parts.length === 5) {
+	// if we have exactly 3 parts
+	if (parts.length === 3) {
 		return parts;
+	} else {
+		throw new Error("Failed to parse cipher blob");
 	}
+}
 
-	// fFallback rReturn array of 5 empty strings
-	return ["", "", "", "", ""];
+export async function encryptPrivateKeyString(privateKeyString: string, encryptionKey: CryptoKey) {
+	const iv = crypto.getRandomValues(new Uint8Array(12));
+	const encoder = new TextEncoder();
+	const encoded = encoder.encode(privateKeyString);
+
+	const encryptedBuffer = await crypto.subtle.encrypt(
+		{ name: "AES-GCM", iv: iv },
+		encryptionKey,
+		encoded
+	);
+
+	return {
+		encryptedBuffer,
+		iv
+	}
 }
 
 // export function createQuantumSession(recipientPublicKey) {

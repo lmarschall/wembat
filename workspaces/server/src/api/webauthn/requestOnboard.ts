@@ -1,7 +1,7 @@
 import { generateAuthenticationOptions, GenerateAuthenticationOptionsOpts } from "@simplewebauthn/server";
 import { UserWithDevices } from "../types";
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "./../generated/prisma/client";
 
 export async function requestOnboard(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {

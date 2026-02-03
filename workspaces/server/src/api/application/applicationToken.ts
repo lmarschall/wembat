@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "./../generated/prisma/client";
 import { Request, Response } from "express";
 import { cryptoService } from "../../crypto";
 import { ApplicationInfo } from "../types";

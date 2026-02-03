@@ -1,4 +1,4 @@
-import { Device, PrismaClient, Session } from "@prisma/client";
+import { Device, Session, PrismaClient } from "./../generated/prisma/client";
 import { verifyAuthenticationResponse, VerifyAuthenticationResponseOpts } from "@simplewebauthn/server";
 import { LoginChallengeResponse, UserWithDevicesAndSessions } from "../types";
 import { Request, Response } from "express";
@@ -143,7 +143,7 @@ export async function login(req: Request, res: Response, prisma: PrismaClient): 
 				sessionId: userSession.uid,
 				publicUserKey: userSession.publicKey,
 				privateUserKeyEncrypted: userSession.privateKey,
-				nonce: userSession.nonce
+				cipherBlob: userSession.cipherBlob
 			}));
 	} catch (error: any) {
 		console.log(error);

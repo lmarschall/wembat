@@ -14,12 +14,13 @@ import {
 import { AuthenticationResponseJSON } from "@simplewebauthn/types";
 import {
 	bufferToArrayBuffer,
-	createQuantumSeed,
-	deriveEncryptedQuantumSeed,
+	deriveEllipticKeypair,
 	deriveEncryptionKeyFromPRF,
-	deriveKeysFromEncryptedSeed,
-	deriveKeysFromSeed,
+	encryptPrivateKeyString,
+	loadCryptoPrivateKeyFromString,
+	loadCryptoPublicKeyFromString,
 	parseSecretString,
+	saveCryptoKeyAsString,
 	toBase64,
 } from "./helper";
 import { AxiosInstance } from "axios";
@@ -46,8 +47,7 @@ export async function login(this: any,
 	};
 
 	try {
-		if (!browserSupportsWebAuthn())
-			throw new Error("WebAuthn is not supported on this browser!");
+		console.log("request login");
 
 		const loginRequestResponse = await axiosClient.post<string>(
 			`/request-login`,
@@ -63,7 +63,6 @@ export async function login(this: any,
 			loginRequestResponse.data
 		);
 		const challengeOptions = loginRequestResponseData.options as any;
-		const conditionalUISupported = await browserSupportsWebAuthnAutofill();
 
 		challengeOptions.extensions.prf.eval.first = bufferToArrayBuffer(
 			challengeOptions.extensions.prf.eval.first
@@ -105,27 +104,29 @@ export async function login(this: any,
 		const token = loginReponseData.token
 		store.setToken(token);
 
-		const [ver, algo, saltString, ivString, seedString] = parseSecretString(loginReponseData.secretString);
+		const [version, saltString, ivString] = parseSecretString(loginReponseData.cipherBlob);
 
-  		const { encryptionKey, salt } = await deriveEncryptionKeyFromPRF(inputKeyMaterial, saltString);
+  		const { encryptionKey, salt } = await deriveEncryptionKeyFromPRF(inputKeyMaterial, version, saltString);
 
 		if (
-			seedString !== "" &&
+			saltString !== "" &&
 			ivString !== ""
 		) {
 			console.log("Loading existing keys");
-
-			const keys = await deriveKeysFromEncryptedSeed(encryptionKey, seedString, ivString);
-			store.setKeys(keys.privateKey, keys.publicKey);
+			const publicKey = await loadCryptoPublicKeyFromString(loginReponseData.publicUserKey);
+			const privateKey = await loadCryptoPrivateKeyFromString(loginReponseData.privateUserKeyEncrypted, encryptionKey, ivString);
+			store.setKeys(privateKey, publicKey);
 
 		} else {
 			console.log("Generating new keys");
 
-			const seed = createQuantumSeed();
-			const keys = deriveKeysFromSeed(seed);
+			const keys = await deriveEllipticKeypair();
 			store.setKeys(keys.privateKey, keys.publicKey);
 
-			const { encryptedSeed, iv } = await deriveEncryptedQuantumSeed(encryptionKey, seed);
+			const publicKeyString = await saveCryptoKeyAsString(keys.publicKey);
+			const privateKeyString = await saveCryptoKeyAsString(keys.privateKey);
+
+			const { encryptedBuffer, iv } = await encryptPrivateKeyString(privateKeyString, encryptionKey);
 
 			const headers = {
 				"Content-Type": "application/json",
@@ -133,13 +134,15 @@ export async function login(this: any,
 			};
 
 			// Constructing the string
-			const secretString = `v1|aes-gcm|${toBase64(salt)}|${toBase64(iv)}|${toBase64(encryptedSeed)}`;
+			const cipherBlob = `v1|${toBase64(salt)}|${toBase64(iv)}`;
 
 			const saveCredentialsResponse = await axiosClient.post<string>(
 				`/update-credentials`,
 				{
 					updateCredentialsRequest: {
-						secretString: secretString,
+						privKey: toBase64(new Uint8Array(encryptedBuffer)),
+						pubKey: publicKeyString,
+						cipherBlob: cipherBlob,
 						sessionId: loginReponseData.sessionId,
 					},
 				},

@@ -17,14 +17,19 @@ import { validateWebAuthnToken } from "./validate/validateWebAuthn";
 import { validateApplicationToken } from "./validate/validateApplication";
 import { validateAdminToken } from "./validate/validateAdmin";
 import { serverExportPublicKey } from "./server/serverExportPublicKey";
-import { PrismaClient } from "@prisma/client";
 import { deviceList } from "./device/deviceList";
 import { requestLink } from "./webauthn/requestLink";
 import { link } from "./webauthn/link";
 
-export const apiRouter = Router();
+import "dotenv/config";
+import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from './generated/prisma/client'
 
-const prisma = new PrismaClient();
+const connectionString = `${process.env.DATABASE_URL}`
+const adapter = new PrismaPg({ connectionString })
+
+export const apiRouter = Router();
+export const prisma = new PrismaClient({ adapter });
 
 apiRouter.get(
 	"/application/list",

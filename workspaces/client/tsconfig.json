@@ -23,6 +23,6 @@
       "includes": "src",
       "out": "docs/client"
     },
-    "include": ["package/src/**/*.ts", "package/src/**/*.d.ts", "package/src/**/*.tsx", "package/src/**/*.vue"],
+    "include": ["src/**/*.d.ts"],
     "references": [{ "path": "./tsconfig.node.json" }]
   }

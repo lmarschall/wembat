@@ -190,10 +190,14 @@ export interface LoginResponse {
 	 */
 	sessionId: string;
 
+	publicUserKey: string;
+
+	privateUserKeyEncrypted: string;
+
 	/**
 	 * Secret string containing the iv, salt and seed
 	 */
-	secretString: string;
+	cipherBlob: string;
 }
 
 /**
@@ -211,6 +215,7 @@ export interface OnboardResponse {
 }
 
 export enum BridgeMessageType {
+	Init = 'init',
 	Register = 'register-message',
 	Login = 'login-message',
 	Encrypt = 'encrypt-message',
@@ -219,7 +224,12 @@ export enum BridgeMessageType {
 	StartRegistration = 'start-registration-message',
 }
 
-export type BridgeMessageContent = EncryptContent | DecryptContent | StartAuthenticationContent;
+export type BridgeMessageContent = InitContent | EncryptContent | DecryptContent | StartAuthenticationContent;
+
+export interface InitContent {
+	token: string,
+	tokenPayload: WembatClientToken
+}
 
 export interface EncryptContent {
 	message: WembatMessage;

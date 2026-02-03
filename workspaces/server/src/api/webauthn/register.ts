@@ -1,7 +1,7 @@
 import { verifyRegistrationResponse, VerifyRegistrationResponseOpts } from "@simplewebauthn/server";
 import { RegisterChallengeResponse, UserWithDevices } from "../types";
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "./../generated/prisma/client";
 
 export async function register(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {

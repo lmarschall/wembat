@@ -20,6 +20,8 @@ services:
     redis:
         image: redis:6.2-alpine
         restart: unless-stopped
+        ports:
+          - ${REDIS_PORT}:6379 # for local development
     dashboard:
         image: wembat-dashboard
         build:
