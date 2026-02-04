@@ -1,20 +1,20 @@
 // secure.worker.ts
 import axios, { AxiosInstance } from 'axios';
 import { encrypt } from './functions/encrypt';
-import { Bridge } from './bridge';
-import { BridgeMessageType, DecryptContent, EncryptContent, InitContent, LoginContent, RegisterContent } from './types';
+import { Bridge, BridgeMessageType, LinkContent, OnboardContent } from './bridge';
+import { DecryptContent, EncryptContent, InitContent, LoginContent, RegisterContent } from './types';
 import { decrypt } from './functions/decrypt';
 import { login } from './functions/login';
 import { register } from './functions/register';
 import { Store } from './store';
+import { onboard } from './functions/onboard';
+import { link } from './functions/link';
 
 const bridge = new Bridge(self as any);
 const store = new Store();
 
 let axiosClient: AxiosInstance | undefined;
 
-// axiosClient.defaults.headers.common["Authorization"] =
-//   `Bearer ${this.#jwt}`;
 bridge.on(BridgeMessageType.Init, async (content: InitContent) => {
   console.log("init worker");
   
@@ -30,16 +30,15 @@ bridge.on(BridgeMessageType.Init, async (content: InitContent) => {
   axiosClient.defaults.headers.common["Content-Type"] =
     "application/json";
   axiosClient.defaults.headers.common["Wembat-App-Token"] =
-			`Bearer ${content.token}`;
-  //return encrypt(privateKey, content.message, content.key);
+    `Bearer ${content.token}`;
 });
 
 bridge.on(BridgeMessageType.Encrypt, async (content: EncryptContent) => {
-  //return encrypt(privateKey, content.message, content.key);
+  return encrypt(store, content.message, content.key);
 });
 
 bridge.on(BridgeMessageType.Decrypt, async (content: DecryptContent) => {
-  //return decrypt(privateKey, content.message, content.key);
+  return decrypt(store, content.message, content.key);
 });
 
 bridge.on(BridgeMessageType.Register, async (content: RegisterContent) => {
@@ -48,7 +47,16 @@ bridge.on(BridgeMessageType.Register, async (content: RegisterContent) => {
 });
 
 bridge.on(BridgeMessageType.Login, async (content: LoginContent) => {
-  console.log("start worker login");
-    if (axiosClient == undefined) return null;
+  if (axiosClient == undefined) return null;
   return login(axiosClient, bridge, store, content.userMail, content.autoLogin);
+});
+
+bridge.on(BridgeMessageType.Link, async (content: LinkContent) => {
+  if (axiosClient == undefined) return null;
+  return link(axiosClient, bridge);
+});
+
+bridge.on(BridgeMessageType.Onboard, async (content: OnboardContent) => {
+  if (axiosClient == undefined) return null;
+  return onboard(axiosClient, bridge, store);
 });

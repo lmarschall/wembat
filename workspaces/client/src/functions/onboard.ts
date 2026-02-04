@@ -11,13 +11,15 @@ import {
 	WembatRegisterResult,
 } from "../types";
 import { AuthenticationResponseJSON } from "@simplewebauthn/types";
-import { ab2str, bufferToArrayBuffer, saveCryptoKeyAsString } from "./helper";
+import { bufferToArrayBuffer, saveCryptoKeyAsString } from "./helper";
 import { AxiosInstance } from "axios";
+import { Store } from "../store";
+import { Bridge } from "../bridge";
 
 export async function onboard(
 	axiosClient: AxiosInstance,
-	publicKey: CryptoKey | undefined,
-	privateKey: CryptoKey | undefined
+	bridge: Bridge,
+	store: Store
 ): Promise<WembatActionResponse<WembatRegisterResult>> {
 	const actionResponse: WembatActionResponse<WembatOnboardResult> = {
 		success: false,
@@ -28,6 +30,9 @@ export async function onboard(
 	try {
 		if (!browserSupportsWebAuthn())
 			throw Error("WebAuthn is not supported on this browser!");
+
+		const publicKey = store.getPublicKey();
+		const privateKey = store.getPrivateKey();
 
 		if (axiosClient == undefined) throw Error("Axiso Client undefined!");
 		if (publicKey == undefined) throw Error("Public Key undefined!");

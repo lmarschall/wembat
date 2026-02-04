@@ -122,12 +122,12 @@ export interface WembatLoginResult {
 	/**
 	 * Indicates whether the login was successful.
 	 */
-	loginResponse: LoginResponse;
+	verified: boolean;
 
 	/**
 	 * The JSON Web Token (JWT) associated with the user's session.
 	 */
-	keyMaterial: any;
+	publicKey: string | undefined;
 }
 
 /**
@@ -212,49 +212,4 @@ export interface TokenResponse {
 }
 
 export interface OnboardResponse {
-}
-
-export enum BridgeMessageType {
-	Init = 'init',
-	Register = 'register-message',
-	Login = 'login-message',
-	Encrypt = 'encrypt-message',
-	Decrypt = 'decrypt-message',
-	StartAuthentication = 'start-authentication-message',
-	StartRegistration = 'start-registration-message',
-}
-
-export type BridgeMessageContent = InitContent | EncryptContent | DecryptContent | StartAuthenticationContent;
-
-export interface InitContent {
-	token: string,
-	tokenPayload: WembatClientToken
-}
-
-export interface EncryptContent {
-	message: WembatMessage;
-	key: CryptoKey;
-}
-
-export interface DecryptContent {
-	message: WembatMessage;
-	key: CryptoKey;
-}
-
-export interface RegisterContent {
-	userMail: string;
-	autoRegister: boolean
-}
-
-export interface LoginContent {
-	userMail: string;
-	autoLogin: boolean
-}
-
-export interface StartAuthenticationContent {
-	challengeOptions: any
-}
-
-export interface StartRegistrationContent {
-	challengeOptions: any
 }

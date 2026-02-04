@@ -75,7 +75,7 @@ import { ref, inject } from "vue";
 import { useRouter } from "vue-router";
 import { WembatClient } from "@wembat/client";
 
-import TokenService from "../services/token";
+import KeyService from "../services/key";
 
 const loading = ref(false);
 const router = useRouter();
@@ -119,9 +119,11 @@ async function login() {
   if(loginResponse.success) {
     const loginResult = loginResponse.result;
 
+    console.log(loginResult);
+
     if (loginResult.verified) {
       appendAlert("Login successful", "success");
-      TokenService.setToken(loginResult.token);
+      KeyService.setKey(loginResult.publicKey);
       router.push("/");
     }
   } else {

@@ -23,6 +23,6 @@
       "includes": "src",
       "out": "docs/client"
     },
-    "include": ["src/**/*.d.ts"],
+    "include": ["src/**/*.d.ts", "src/**/*.ts"],
     "references": [{ "path": "./tsconfig.node.json" }]
   }

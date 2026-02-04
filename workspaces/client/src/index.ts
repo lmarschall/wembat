@@ -1,7 +1,7 @@
-import { BridgeMessageType, DecryptContent, EncryptContent, InitContent, LoginContent, RegisterContent, StartAuthenticationContent, StartRegistrationContent, WembatActionResponse, WembatClientToken, WembatLoginResult, WembatMessage, WembatRegisterResult, WembatToken } from "./types";
+import { WembatActionResponse, WembatClientToken, WembatLoginResult, WembatMessage, WembatRegisterResult, WembatLinkResult, WembatToken } from "./types";
 import { jwtDecode } from "./functions/helper";
-import { Bridge } from "./bridge";
-import { browserSupportsWebAuthn, browserSupportsWebAuthnAutofill, startAuthentication, startRegistration } from "@simplewebauthn/browser";
+import { Bridge, BridgeMessageType, LinkContent, LoginContent, DecryptContent, EncryptContent, InitContent, StartRegistrationContent, StartAuthenticationContent, RegisterContent } from "./bridge";
+import { browserSupportsWebAuthn, startAuthentication, startRegistration } from "@simplewebauthn/browser";
 import { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/types";
 import WorkerClass from './worker.ts?worker&inline';
 
@@ -106,7 +106,6 @@ class WembatClient {
 	 * @returns A promise that resolves to a WembatActionResponse containing the login result.
 	 */
 	public async login (userMail: string, autoLogin: boolean = false): Promise<WembatActionResponse<WembatLoginResult>> {
-		console.log("start login");
 		const content: LoginContent = { userMail, autoLogin };
 		return this.bridge.invoke<WembatActionResponse<WembatLoginResult>>(BridgeMessageType.Login, content);
 	}
@@ -128,11 +127,8 @@ class WembatClient {
 	 * @returns A promise that resolves to a WembatActionResponse containing the link result.
 	 */
 	public async link (): Promise<WembatActionResponse<WembatRegisterResult>> {
-		// const content: ActionContent = { message: wembatMessage, key: publicKey };
-		// const action: WorkerAction = { type: WorkerActionType.Decrypt, content: content };
-		// return this.sendRequest(action);
-		let blob: any;
-		return blob;
+		const content: LinkContent = {};
+		return this.bridge.invoke<WembatActionResponse<WembatLinkResult>>(BridgeMessageType.Link, content);
 	}
 
 	/**

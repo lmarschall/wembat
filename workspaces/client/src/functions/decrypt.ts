@@ -1,5 +1,6 @@
-import { deriveEncryptionKey, fromBase64, str2ab, toBase64 } from "./helper";
+import { deriveEncryptionKey, fromBase64 } from "./helper";
 import { WembatActionResponse, WembatError, WembatMessage } from "../types";
+import { Store } from "../store";
 
 /**
  * Decrypts a WembatMessage using the provided publicKey.
@@ -10,7 +11,7 @@ import { WembatActionResponse, WembatError, WembatMessage } from "../types";
  * @returns A Promise that resolves to a WembatActionResponse containing the decrypted message.
  */
 export async function decrypt(
-	privateKey: CryptoKey | undefined,
+	store: Store,
 	wembatMessage: WembatMessage,
 	publicKey: CryptoKey
 ): Promise<WembatActionResponse<WembatMessage>> {
@@ -21,12 +22,13 @@ export async function decrypt(
 	};
 
 	try {
+		const privateKey = store.getPrivateKey();
 		if (privateKey == undefined) throw new Error("Private Key undefined!");
 
 		const encryptionKey = await deriveEncryptionKey(privateKey, publicKey);
 		const iv = wembatMessage.iv;
 
-		const decrypted = await window.crypto.subtle.decrypt(
+		const decrypted = await crypto.subtle.decrypt(
 			{
 				name: "AES-GCM",
 				iv: fromBase64(iv),

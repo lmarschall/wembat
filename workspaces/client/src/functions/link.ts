@@ -1,21 +1,16 @@
 import {
-	browserSupportsWebAuthn,
-	startRegistration,
-} from "@simplewebauthn/browser";
-import {
 	RegisterResponse,
 	RequestLinkResponse,
-	RequestRegisterResponse,
 	WembatActionResponse,
 	WembatError,
 	WembatLinkResult,
 	WembatRegisterResult,
 } from "../types";
 import {
-	PublicKeyCredentialCreationOptionsJSON,
 	RegistrationResponseJSON,
 } from "@simplewebauthn/types";
 import { AxiosInstance } from "axios";
+import { Bridge, BridgeMessageType, StartRegistrationContent } from "../bridge";
 
 /**
  * Links a new device to the user's account.
@@ -24,7 +19,8 @@ import { AxiosInstance } from "axios";
  * @returns A promise that resolves to a `WembatActionResponse` containing the registration result.
  */
 export async function link(
-	axiosClient: AxiosInstance
+	axiosClient: AxiosInstance,
+	bridge: Bridge
 ): Promise<WembatActionResponse<WembatRegisterResult>> {
 	const actionResponse: WembatActionResponse<WembatRegisterResult> = {
 		success: false,
@@ -33,36 +29,24 @@ export async function link(
 	};
 
 	try {
-		if (!browserSupportsWebAuthn())
-			throw Error("WebAuthn is not supported on this browser!");
-
 		const requestLinkResponse = await axiosClient.post<string>(
 			`/request-link`,
 			{}
 		);
 
-		if (requestLinkResponse.status !== 200) {
-			// i guess we need to handle errors here
-			throw Error(requestLinkResponse.data);
-		}
+		if (requestLinkResponse.status !== 200) throw new Error(requestLinkResponse.data);
 
 		const requestLinkResponseData: RequestLinkResponse = JSON.parse(
 			requestLinkResponse.data
 		);
 
-		const credentials: RegistrationResponseJSON = await startRegistration({
-			optionsJSON: requestLinkResponseData.options,
-			useAutoRegister: false,
-		}).catch((err: string) => {
-			throw Error(err);
-		});
+		const content: StartRegistrationContent = { challengeOptions: requestLinkResponseData };
+		const credentials: RegistrationResponseJSON = await bridge.invoke(BridgeMessageType.StartRegistration, content);
 
 		if (credentials.clientExtensionResults !== undefined) {
 			const credentialExtensions = credentials.clientExtensionResults as any;
 
-			if (credentialExtensions.prf?.enabled == false) {
-				throw Error("PRF extension disabled");
-			}
+			if (!credentialExtensions.prf?.enabled) throw new Error("PRF extension disabled");
 		}
 
 		const linkResponse = await axiosClient.post<string>(`/link`, {
@@ -72,10 +56,7 @@ export async function link(
 			},
 		});
 
-		if (linkResponse.status !== 200) {
-			// i guess we need to handle errors here
-			throw Error(linkResponse.data);
-		}
+		if (linkResponse.status !== 200) throw new Error(linkResponse.data);
 
 		const linkResponseData: RegisterResponse = JSON.parse(linkResponse.data);
 
@@ -88,12 +69,12 @@ export async function link(
 	} catch (error: Error | unknown) {
 		if (error instanceof Error) {
 			actionResponse.error = {
-				error: error.message,
+				message: error.message,
 			};
 			console.error(error);
 			return actionResponse;
 		} else {
-			throw Error("Unknown Error:");
+			throw new Error("Unknown Error:");
 		}
 	}
 }

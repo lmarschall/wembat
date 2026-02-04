@@ -95,9 +95,8 @@ import { useRouter } from "vue-router";
 import { ref, onMounted, inject } from "vue";
 import { WembatClient, WembatMessage, WembatRegisterResult } from "@wembat/client";
 
-import TokenService from "../services/token";
+import KeyService from "../services/key";
 import MessageService from "../services/message";
-import axios from "axios";
 
 const loading = ref(false);
 const router = useRouter();
@@ -105,9 +104,8 @@ const message = ref("" as string);
 const wembatClient: WembatClient = inject('wembatClient') as WembatClient
 
 onMounted(async () => {
-  if(TokenService.hasToken() && wembatClient.getCryptoPublicKey() !== undefined) {
+  if(KeyService.hasKey()) {
     await decryptMessage();
-    await devices();
   } else {
     router.push("/login");
   }
@@ -127,7 +125,7 @@ function appendAlert(message: string, type: string) {
 }
 
 async function logout() {
-  TokenService.resetToken();
+  KeyService.resetKey();
   router.push("/login");
 }
 
@@ -169,7 +167,7 @@ async function encryptMessage() {
     encrypted: ""
   } 
 
-  const publicKey = wembatClient.getCryptoPublicKey();
+  const publicKey = KeyService.getKey();
   const encryptionResult = await wembatClient.encrypt(encryptMessage, publicKey);
   if(encryptionResult.success) {
     MessageService.setEncryptedMessage(JSON.stringify(encryptionResult.result));
@@ -181,8 +179,7 @@ async function encryptMessage() {
 }
 
 async function decryptMessage() {
-  // TODO make functions only private accessable
-  const publicKey = wembatClient.getCryptoPublicKey();
+  const publicKey = KeyService.getKey();
   const encryptedMessage = MessageService.getEncryptedMessage();
   if (encryptedMessage != "") {
     const decryptionResult = await wembatClient.decrypt(JSON.parse(encryptedMessage), publicKey);
@@ -193,43 +190,6 @@ async function decryptMessage() {
       const errorResult = decryptionResult.error;
       appendAlert(errorResult.error, "danger");
     }
-  }
-}
-
-function getApiUrl() {
-  const appToken = import.meta.env.VITE_APP_TOKEN || "";
-  const parts = appToken.split('.');
-  
-  if (parts.length !== 3) {
-    throw new Error('Invalid JWT token format');
-  }
-
-  // Decode the payload (second part of the token)
-  const payloadBase64 = parts[1];
-  const payloadJson = atob(payloadBase64); // Decode from Base64 to JSON string
-  const payload = JSON.parse(payloadJson); // Parse JSON string to an object
-  
-  console.log('Decoded token:', payload);
-
-  const apiUrl = payload.iss || "";
-  return apiUrl;
-}
-
-async function devices() {
-  try {
-    const apiUrl = getApiUrl();
-    const token = TokenService.getToken();
-    // Sende GET-Request an /api/devices mit Authorization-Header
-    const response = await axios.get(apiUrl + "/api/device/list", {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-    console.log("Devices:", response.data);
-    appendAlert(response.data.length + " User Devices loaded", "success");
-  } catch (error: any) {
-    console.error(error);
-    appendAlert("Error loading devices", "danger");
   }
 }
 </script>

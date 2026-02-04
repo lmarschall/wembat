@@ -1,12 +1,6 @@
 import {
-	browserSupportsWebAuthn,
-	browserSupportsWebAuthnAutofill,
-} from "@simplewebauthn/browser";
-import {
-	BridgeMessageType,
 	LoginResponse,
 	RequestLoginResponse,
-	StartAuthenticationContent,
 	WembatActionResponse,
 	WembatError,
 	WembatLoginResult,
@@ -24,7 +18,7 @@ import {
 	toBase64,
 } from "./helper";
 import { AxiosInstance } from "axios";
-import { Bridge } from "../bridge";
+import { Bridge, BridgeMessageType, StartAuthenticationContent } from "../bridge";
 import { Store } from "../store"
 
 /**
@@ -155,9 +149,15 @@ export async function login(this: any,
 				throw new Error(saveCredentialsResponse.data);
 		}
 
+		store.setUserMail(userMail);
+		store.setToken(loginReponseData.token);
+
+		axiosClient.defaults.headers.common["Authorization"] =
+			`Bearer ${loginReponseData.token}`;
+
 		const loginResult: WembatLoginResult = {
-			loginResponse: loginReponseData,
-			keyMaterial: inputKeyMaterial
+			verified: true,
+			publicKey: store.getPublicKey()
 		};
 		actionResponse.result = loginResult;
 		actionResponse.success = true;

@@ -1,5 +1,6 @@
-import { ab2str, deriveEncryptionKey, toBase64 } from "./helper";
+import { deriveEncryptionKey, toBase64 } from "./helper";
 import { WembatActionResponse, WembatError, WembatMessage } from "../types";
+import { Store } from "../store";
 
 /**
  * Encrypts a Wembat message using the provided public key.
@@ -10,7 +11,7 @@ import { WembatActionResponse, WembatError, WembatMessage } from "../types";
  * @returns A promise that resolves to a WembatActionResponse containing the encrypted message.
  */
 export async function encrypt(
-	privateKey: CryptoKey | undefined,
+	store: Store,
 	wembatMessage: WembatMessage,
 	publicKey: CryptoKey
 ): Promise<WembatActionResponse<WembatMessage>> {
@@ -21,6 +22,7 @@ export async function encrypt(
 	};
 
 	try {
+		const privateKey = store.getPrivateKey();
 		if (privateKey == undefined) throw new Error("Private Key undefined!");
 
 		const encryptionKey = await deriveEncryptionKey(privateKey, publicKey);

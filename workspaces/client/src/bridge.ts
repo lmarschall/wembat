@@ -1,4 +1,57 @@
-// Bridge.ts
+import { WembatClientToken, WembatMessage } from './types';
+
+export enum BridgeMessageType {
+	Init = 'init',
+	Register = 'register-message',
+	Login = 'login-message',
+	Encrypt = 'encrypt-message',
+	Decrypt = 'decrypt-message',
+	Link = 'link-message',
+    Onboard = 'onboard-message',
+	StartAuthentication = 'start-authentication-message',
+	StartRegistration = 'start-registration-message',
+}
+
+export type BridgeMessageContent = InitContent | EncryptContent | DecryptContent | RegisterContent | LoginContent | LinkContent | OnboardContent | StartAuthenticationContent;
+
+export interface InitContent {
+	token: string,
+	tokenPayload: WembatClientToken
+}
+
+export interface EncryptContent {
+	message: WembatMessage;
+	key: CryptoKey;
+}
+
+export interface DecryptContent {
+	message: WembatMessage;
+	key: CryptoKey;
+}
+
+export interface RegisterContent {
+	userMail: string;
+	autoRegister: boolean
+}
+
+export interface LoginContent {
+	userMail: string;
+	autoLogin: boolean
+}
+
+export interface LinkContent {
+}
+
+export interface OnboardContent {
+}
+
+export interface StartAuthenticationContent {
+	challengeOptions: any
+}
+
+export interface StartRegistrationContent {
+	challengeOptions: any
+}
 
 type MessageData = {
     id: string;

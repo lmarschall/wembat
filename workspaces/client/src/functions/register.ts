@@ -1,9 +1,4 @@
 import {
-	browserSupportsWebAuthn,
-	startRegistration,
-} from "@simplewebauthn/browser";
-import {
-	BridgeMessageType,
 	RegisterResponse,
 	RequestRegisterResponse,
 	StartRegistrationContent,
@@ -38,9 +33,6 @@ export async function register(
 	};
 
 	try {
-		// if (!browserSupportsWebAuthn())
-		// 	throw new Error("WebAuthn is not supported on this browser!");
-
 		const requestRegisterResponse = await axiosClient.post<string>(
 			`/request-register`,
 			{
@@ -48,10 +40,7 @@ export async function register(
 			}
 		);
 
-		if (requestRegisterResponse.status !== 200) {
-			// i guess we need to handle errors here
-			throw new Error(requestRegisterResponse.data);
-		}
+		if (requestRegisterResponse.status !== 200) throw new Error(requestRegisterResponse.data);
 
 		const requestRegisterResponseData: RequestRegisterResponse = JSON.parse(
 			requestRegisterResponse.data
@@ -59,8 +48,6 @@ export async function register(
 
 		const content: StartRegistrationContent = { challengeOptions: requestRegisterResponseData };
 		const credentials: RegistrationResponseJSON = await bridge.invoke(BridgeMessageType.StartRegistration, content);
-
-		console.log(credentials);
 
 		if (credentials.clientExtensionResults !== undefined) {
 			const credentialExtensions = credentials.clientExtensionResults as any;
