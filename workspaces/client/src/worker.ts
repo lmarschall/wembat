@@ -1,8 +1,7 @@
 // secure.worker.ts
 import axios, { AxiosInstance } from 'axios';
 import { encrypt } from './functions/encrypt';
-import { Bridge, BridgeMessageType, LinkContent, OnboardContent } from './bridge';
-import { DecryptContent, EncryptContent, InitContent, LoginContent, RegisterContent } from './types';
+import { Bridge, BridgeMessageType, LinkContent, OnboardContent, DecryptContent, EncryptContent, InitContent, LoginContent, RegisterContent  } from './bridge';
 import { decrypt } from './functions/decrypt';
 import { login } from './functions/login';
 import { register } from './functions/register';

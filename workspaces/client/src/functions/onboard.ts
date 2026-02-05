@@ -11,7 +11,7 @@ import {
 	WembatRegisterResult,
 } from "../types";
 import { AuthenticationResponseJSON } from "@simplewebauthn/types";
-import { bufferToArrayBuffer, saveCryptoKeyAsString } from "./helper";
+import { bufferToArrayBuffer, saveCryptoKeyAsString, toBase64 } from "./helper";
 import { AxiosInstance } from "axios";
 import { Store } from "../store";
 import { Bridge } from "../bridge";
@@ -117,9 +117,9 @@ export async function onboard(
 
 		const onboardResponse = await axiosClient.post<string>(`/onboard`, {
 			onboardRequest: {
-				privateKey: ab2str(encryptedPrivateKey),
+				privateKey: toBase64(new Uint8Array(encryptedPrivateKey)),
 				publicKey: publicKeyString,
-				nonce: ab2str(nonce.buffer),
+				nonce: toBase64(new Uint8Array(nonce.buffer)),
 				credentials: credentials,
 				challenge: challengeOptions.challenge,
 			},
@@ -138,7 +138,7 @@ export async function onboard(
 	} catch (error: Error | unknown) {
 		if (error instanceof Error) {
 			actionResponse.error = {
-				error: error.message,
+				message: error.message,
 			};
 			console.error(error);
 			return actionResponse;

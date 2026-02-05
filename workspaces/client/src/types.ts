@@ -127,7 +127,7 @@ export interface WembatLoginResult {
 	/**
 	 * The JSON Web Token (JWT) associated with the user's session.
 	 */
-	publicKey: string | undefined;
+	publicKey: CryptoKey | undefined;
 }
 
 /**

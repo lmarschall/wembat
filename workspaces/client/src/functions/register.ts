@@ -1,7 +1,6 @@
 import {
 	RegisterResponse,
 	RequestRegisterResponse,
-	StartRegistrationContent,
 	WembatActionResponse,
 	WembatError,
 	WembatRegisterResult,
@@ -11,7 +10,7 @@ import {
 	RegistrationResponseJSON,
 } from "@simplewebauthn/types";
 import { AxiosInstance } from "axios";
-import { Bridge } from "../bridge";
+import { Bridge, BridgeMessageType, StartRegistrationContent } from "../bridge";
 
 /**
  * Registers a user with the specified user ID.
