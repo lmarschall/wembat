@@ -90,16 +90,12 @@ export async function login(this: any,
 			throw new Error("Credentials not instance of PublicKeyCredential");
 		
 		const credentialExtensions = credentials.clientExtensionResults as any;
-	
 		const inputKeyMaterial = new Uint8Array(
 			credentialExtensions?.prf.results.first
 		);
 
 		const token = loginReponseData.token
-		store.setToken(token);
-
 		const [version, saltString, ivString] = parseSecretString(loginReponseData.cipherBlob);
-
   		const { encryptionKey, salt } = await deriveEncryptionKeyFromPRF(inputKeyMaterial, version, saltString);
 
 		if (
@@ -110,7 +106,6 @@ export async function login(this: any,
 			const publicKey = await loadCryptoPublicKeyFromString(loginReponseData.publicUserKey);
 			const privateKey = await loadCryptoPrivateKeyFromString(loginReponseData.privateUserKeyEncrypted, encryptionKey, ivString);
 			store.setKeys(privateKey, publicKey);
-
 		} else {
 			console.log("Generating new keys");
 
@@ -150,10 +145,10 @@ export async function login(this: any,
 		}
 
 		store.setUserMail(userMail);
-		store.setToken(loginReponseData.token);
+		store.setToken(token);
 
 		axiosClient.defaults.headers.common["Authorization"] =
-			`Bearer ${loginReponseData.token}`;
+			`Bearer ${token}`;
 
 		const loginResult: WembatLoginResult = {
 			verified: true,

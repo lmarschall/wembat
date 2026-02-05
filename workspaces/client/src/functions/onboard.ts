@@ -1,9 +1,4 @@
 import {
-	browserSupportsWebAuthn,
-	browserSupportsWebAuthnAutofill,
-	startAuthentication,
-} from "@simplewebauthn/browser";
-import {
 	RequestOnboardResponse,
 	WembatActionResponse,
 	WembatError,
@@ -11,10 +6,10 @@ import {
 	WembatRegisterResult,
 } from "../types";
 import { AuthenticationResponseJSON } from "@simplewebauthn/types";
-import { bufferToArrayBuffer, saveCryptoKeyAsString, toBase64 } from "./helper";
+import { bufferToArrayBuffer, deriveEncryptionKeyFromPRF, encryptPrivateKeyString, saveCryptoKeyAsString, toBase64 } from "./helper";
 import { AxiosInstance } from "axios";
 import { Store } from "../store";
-import { Bridge } from "../bridge";
+import { Bridge, BridgeMessageType, StartAuthenticationContent } from "../bridge";
 
 export async function onboard(
 	axiosClient: AxiosInstance,
@@ -28,43 +23,31 @@ export async function onboard(
 	};
 
 	try {
-		if (!browserSupportsWebAuthn())
-			throw Error("WebAuthn is not supported on this browser!");
-
 		const publicKey = store.getPublicKey();
 		const privateKey = store.getPrivateKey();
 
-		if (axiosClient == undefined) throw Error("Axiso Client undefined!");
-		if (publicKey == undefined) throw Error("Public Key undefined!");
-		if (privateKey == undefined) throw Error("Private Key undefined!");
+		if (publicKey == undefined) throw new Error("Public Key undefined!");
+		if (privateKey == undefined) throw new Error("Private Key undefined!");
 
 		const requestOnboardResponse = await axiosClient.post<string>(
 			`/request-onboard`,
 			{}
 		);
 
-		if (requestOnboardResponse.status !== 200) {
-			// i guess we need to handle errors here
-			throw Error(requestOnboardResponse.data);
-		}
+		if (requestOnboardResponse.status !== 200) throw new Error(requestOnboardResponse.data);
 
 		const onboardRequestResponseData: RequestOnboardResponse = JSON.parse(
 			requestOnboardResponse.data
 		);
 		const challengeOptions = onboardRequestResponseData.options as any;
-		const conditionalUISupported = await browserSupportsWebAuthnAutofill();
+		// const conditionalUISupported = await browserSupportsWebAuthnAutofill();
 
 		challengeOptions.extensions.prf.eval.first = bufferToArrayBuffer(
 			challengeOptions.extensions.prf.eval.first
 		);
 
-		const credentials: AuthenticationResponseJSON = await startAuthentication(
-			{
-				optionsJSON: challengeOptions,
-			}
-		).catch((err: string) => {
-			throw Error(err);
-		});
+		const content: StartAuthenticationContent = { challengeOptions: challengeOptions };
+		const credentials: AuthenticationResponseJSON = await bridge.invoke(BridgeMessageType.StartAuthentication, content);
 
 		const credentialExtensions = credentials.clientExtensionResults as any;
 
@@ -72,54 +55,20 @@ export async function onboard(
 			credentialExtensions?.prf.results.first
 		);
 
-		const keyDerivationKey = await crypto.subtle.importKey(
-			"raw",
-			inputKeyMaterial,
-			"HKDF",
-			false,
-			["deriveKey"]
-		);
+		const { encryptionKey, salt } = await deriveEncryptionKeyFromPRF(inputKeyMaterial, "");
 
-		// wild settings here
-		const label = "encryption key";
-		const info = new TextEncoder().encode(label);
-		const salt = new Uint8Array();
+		const publicKeyString = await saveCryptoKeyAsString(publicKey);
+		const privateKeyString = await saveCryptoKeyAsString(privateKey);
 
-		const encryptionKey = await crypto.subtle.deriveKey(
-			{ name: "HKDF", info, salt, hash: "SHA-256" },
-			keyDerivationKey,
-			{ name: "AES-GCM", length: 256 },
-			false,
-			["encrypt", "decrypt"]
-		);
+		const { encryptedBuffer, iv } = await encryptPrivateKeyString(privateKeyString, encryptionKey);
 
-		console.log("save public key to string");
-
-		const publicKeyString = await saveCryptoKeyAsString(
-			publicKey as CryptoKey
-		);
-
-		console.log("save private key to string");
-		const privateKeyString = await saveCryptoKeyAsString(
-			privateKey as CryptoKey
-		);
-
-		const nonce = crypto.getRandomValues(new Uint8Array(12));
-		const encoder = new TextEncoder();
-
-		console.log("encrypt private key");
-
-		const encryptedPrivateKey = await crypto.subtle.encrypt(
-			{ name: "AES-GCM", iv: nonce },
-			encryptionKey,
-			encoder.encode(privateKeyString)
-		);
+		const cipherBlob = `v1|${toBase64(salt)}|${toBase64(iv)}`;
 
 		const onboardResponse = await axiosClient.post<string>(`/onboard`, {
 			onboardRequest: {
-				privateKey: toBase64(new Uint8Array(encryptedPrivateKey)),
+				privateKey: toBase64(new Uint8Array(encryptedBuffer)),
 				publicKey: publicKeyString,
-				nonce: toBase64(new Uint8Array(nonce.buffer)),
+				cipherBlob: cipherBlob,
 				credentials: credentials,
 				challenge: challengeOptions.challenge,
 			},
