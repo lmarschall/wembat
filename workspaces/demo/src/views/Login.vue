@@ -55,7 +55,16 @@
               >
                 Register
               </button>
+              <button
+                class="btn btn-secondary mx-auto"
+                type="submit"
+                @click="loginWithSso()"
+                :disabled="loading"
+              >
+                SSO
+              </button>
             </div>
+            
             <div class="col-12 mt-5">
               <div id="liveAlertPlaceholder"></div>
             </div>
@@ -81,6 +90,8 @@ const loading = ref(false);
 const router = useRouter();
 const username = ref("" as string);
 const wembatClient: WembatClient = inject('wembatClient') as WembatClient
+const authEndpoint = 'http://localhost:8080/auth/github/login';
+const targetOrigin = 'http://localhost:8080';
 
 function appendAlert(message: string, type: string) {
   const alertPlaceholder = document.getElementById('liveAlertPlaceholder')
@@ -105,7 +116,7 @@ async function register() {
     appendAlert("Registration successful", "success");
   } else  {
     const errorResult = registerResponse.error;
-    appendAlert(errorResult.error, "danger");
+    appendAlert(errorResult.message, "danger");
   }
 
   loading.value = false;
@@ -128,9 +139,95 @@ async function login() {
     }
   } else {
     const errorResult = loginResponse.error;
-    appendAlert(errorResult.error, "danger");
+    appendAlert(errorResult.message, "danger");
   }
 
   loading.value = false;
+}
+
+async function handleSSOClick()
+{
+  try {
+    // Das Popup öffnet sich hier
+    const currentUser = await loginWithSso();
+
+    console.log(currentUser);
+    
+    // Wenn wir hier sind, war der Login erfolgreich!
+    // statusMsg.textContent = `Hallo ${currentUser.name}! Identität bestätigt.`;
+    // statusMsg.style.color = 'green';
+
+    // UI Wechseln: Login weg, Upgrade her
+    // btnLogin.style.display = 'none';
+    // btnUpgrade.style.display = 'block';
+    
+    // Optional: Kleiner visueller Hinweis
+    alert("Identität bestätigt! Bitte erstellen Sie jetzt Ihren Schlüssel.");
+
+  } catch (err) {
+      // statusMsg.textContent = 'Fehler: ' + err.message;
+      // statusMsg.style.color = 'red';
+  }
+}
+
+/**
+ * Startet den Login-Prozess in einem Popup.
+ * Gibt ein Promise zurück, das resolved, wenn der User erfolgreich eingeloggt ist.
+ */
+async function loginWithSso() {
+  return new Promise((resolve, reject) => {
+    // 1. Popup zentriert auf dem Bildschirm berechnen
+    const width = 500;
+    const height = 600;
+    const left = (window.screen.width - width) / 2;
+    const top = (window.screen.height - height) / 2;
+
+    // 2. Fenster öffnen (zeigt direkt den Google Login)
+    const popup = window.open(
+      authEndpoint,
+      'WembatSSO',
+      `width=${width},height=${height},top=${top},left=${left},scrollbars=yes`
+    );
+
+    if (!popup) {
+      return reject(new Error('Popup wurde blockiert. Bitte erlauben Sie Popups für diese Seite.'));
+    }
+
+    // 3. Event Listener für die Nachricht vom Popup
+    const handleMessage = (event) => {
+      // SICHERHEITS-CHECK: Kommt die Nachricht von unserem Backend?
+      if (event.origin !== targetOrigin) {
+        console.warn('Ignoriere Nachricht von fremder Quelle:', event.origin);
+        return;
+      }
+
+      // Prüfen, ob es unsere Nachricht ist
+      if (event.data?.type === 'WEMBAT_LOGIN_SUCCESS') {
+        // Aufräumen
+        cleanup();
+        
+        // Erfolg! User-Daten zurückgeben
+        resolve(event.data.user);
+      }
+    };
+
+    // 4. Timer, um zu prüfen, ob der User das Fenster manuell geschlossen hat
+    const timer = setInterval(() => {
+      if (popup.closed) {
+        cleanup();
+        reject(new Error('Login vom Nutzer abgebrochen (Fenster geschlossen).'));
+      }
+    }, 1000);
+
+    // Hilfsfunktion zum Aufräumen von Listenern und Timern
+    const cleanup = () => {
+      window.removeEventListener('message', handleMessage);
+      clearInterval(timer);
+      if (popup && !popup.closed) popup.close(); // Zur Sicherheit
+    };
+
+    // Listener registrieren
+    window.addEventListener('message', handleMessage);
+  });
 }
 </script>

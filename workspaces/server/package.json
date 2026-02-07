@@ -26,11 +26,12 @@
     "express-session": "^1.19.0",
     "helmet": "^5.0.2",
     "jose": "^4.15.5",
-    "openid-client": "^6.8.1",
+    "openid-client": "^5.7.1",
     "pg": "^8.18.0",
     "redis": "^4.0.6"
   },
   "devDependencies": {
+    "@types/express-session": "^1.18.2",
     "@types/node": "^25.2.0",
     "@types/pg": "^8.16.0",
     "prisma": "^7.3.0"
