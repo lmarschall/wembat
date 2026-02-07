@@ -21,6 +21,9 @@ import { deviceList } from "./device/deviceList";
 import { requestLink } from "./webauthn/requestLink";
 import { link } from "./webauthn/link";
 
+// backend/routes/auth.js
+import { Issuer } from 'openid-client';
+
 import "dotenv/config";
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from './generated/prisma/client'

@@ -21,10 +21,12 @@
     "connect-history-api-fallback": "^2.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
-    "express": "^4.19.2",
+    "express": "^4.22.1",
     "express-rate-limit": "^7.4.0",
+    "express-session": "^1.19.0",
     "helmet": "^5.0.2",
     "jose": "^4.15.5",
+    "openid-client": "^6.8.1",
     "pg": "^8.18.0",
     "redis": "^4.0.6"
   },
