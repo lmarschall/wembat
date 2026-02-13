@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { decodeProtectedHeader, importJWK, jwtVerify } from "jose";
 import { cryptoService } from "../../crypto";
 
-const serverUrl = process.env.SERVER_URL || "http://localhost:8080";
+const serverUrl = process.env.API_SERVER_URL || "http://localhost:8080";
 
 export async function validateApplicationToken(
 	req: Request,

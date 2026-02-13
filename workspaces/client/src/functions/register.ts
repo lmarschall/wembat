@@ -23,7 +23,7 @@ export async function register(
 	axiosClient: AxiosInstance,
 	bridge: Bridge,
 	userMail: string,
-	autoRegister = false
+	autoRegister: boolean
 ): Promise<WembatActionResponse<WembatRegisterResult>> {
 	const actionResponse: WembatActionResponse<WembatRegisterResult> = {
 		success: false,
@@ -32,6 +32,7 @@ export async function register(
 	};
 
 	try {
+		console.log("request register");
 		const requestRegisterResponse = await axiosClient.post<string>(
 			`/request-register`,
 			{
@@ -39,13 +40,15 @@ export async function register(
 			}
 		);
 
+		console.log(requestRegisterResponse);
+
 		if (requestRegisterResponse.status !== 200) throw new Error(requestRegisterResponse.data);
 
 		const requestRegisterResponseData: RequestRegisterResponse = JSON.parse(
 			requestRegisterResponse.data
 		);
 
-		const content: StartRegistrationContent = { challengeOptions: requestRegisterResponseData };
+		const content: StartRegistrationContent = { challengeOptions: requestRegisterResponseData, autoRegister };
 		const credentials: RegistrationResponseJSON = await bridge.invoke(BridgeMessageType.StartRegistration, content);
 
 		if (credentials.clientExtensionResults !== undefined) {

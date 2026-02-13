@@ -13,13 +13,23 @@ import session from 'express-session';
 import { BaseClient, Issuer, generators } from 'openid-client';
 import dotenv from 'dotenv';
 
+import fs from 'fs';
+import path from 'path';
+import https from 'https';
+
 dotenv.config();
 
 const port = 8080;
-const dashboardUrl = process.env.DASHBOARD_URL || "http://localhost:9090";
+const dashboardUrl = process.env.DASHBOARD_SERVER_URL || "http://localhost:9090";
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || "";
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || "";
-const REDIRECT_URI = 'http://localhost:8080/auth/github/callback';
+const REDIRECT_URI = 'https://localhost:8080/auth/github/callback';
+
+const sslOptions = {
+  // Pfad anpassen, falls die Keys woanders liegen
+  key: fs.readFileSync(path.join(__dirname, '../../../certs/localhost+2-key.pem')), 
+  cert: fs.readFileSync(path.join(__dirname, '../../../certs/localhost+2.pem'))
+};
 
 declare module 'express-session' {
   interface SessionData {
@@ -78,11 +88,13 @@ async function init() {
   const corsOptionsDelegate = async (req: any, callback: any) => {
     let corsOptions;
   
-    const origin = req.header("Origin");
-    const method = req.method;
-    const isDomainAllowed = await redisService.checkForDomainInWhiteList(origin);
+    // const origin = req.header("Origin");
+    // const method = req.method;
+    // let isDomainAllowed = await redisService.checkForDomainInWhiteList(origin);
     
-    console.log(`Request from ${origin} with method ${method} is allowed: ${isDomainAllowed}`);
+    // console.log(`Request from ${origin} with method ${method} is allowed: ${isDomainAllowed}`);
+
+    const isDomainAllowed = true;
   
     if (isDomainAllowed) {
       // Enable CORS for this request
@@ -107,7 +119,7 @@ async function init() {
   }
   
   app.use(limiter);
-  // app.use(cors(corsOptionsDelegate));
+  app.use(cors(corsOptionsDelegate));
   // app.set("trust proxy", true);
   app.use((req: any, res: any, next: NextFunction) => cookieParser(req, res, next));
   app.use(helmet());
@@ -134,9 +146,12 @@ async function init() {
       state: state,
     });
 
+    // CRITICAL: Allow the popup to keep the opener reference during the redirect
+    res.setHeader("Cross-Origin-Opener-Policy", "unsafe-none");
+
     // Für Popup Bridge: JSON zurückgeben
     // Für Direkt-Test im Browser: res.redirect(authorizationUrl) nutzen
-    res.json({ url: authorizationUrl });
+    res.redirect(authorizationUrl);
   });
 
   app.get('/auth/github/callback', async (req: Request, res: Response) => {
@@ -146,55 +161,84 @@ async function init() {
       const state = req.session.state;
 
       // Token Exchange
-      const tokenSet = await githubClient.callback(REDIRECT_URI, params, { state });
+      const tokenSet = await githubClient.oauthCallback(REDIRECT_URI, params, { state });
       
-      // WICHTIG BEI GITHUB:
-      // GitHub sendet kein ID-Token (JWT) zurück, sondern nur ein Access Token.
-      // Wir müssen die User-Infos manuell abrufen.
+      // Get User Info
       const userProfile = await githubClient.userinfo(tokenSet.access_token!);
 
-      // Aufräumen
+      // Cleanup session
       req.session.state = undefined;
 
-      // Popup Response
+      // Prepare raw data object (Do NOT stringify it yet)
+      const userData = {
+        id: userProfile.id,
+        name: userProfile.name,
+        email: userProfile.email,
+        avatar: userProfile.avatar_url // Optional, usually helpful
+      };
+
+      // Configuration for the Frontend
+      // In production, use process.env.FRONTEND_URL
+      const allowedOrigin = 'https://localhost:5173'; 
+
+      // GENERATE HTML SCRIPT
+      // This script runs inside the popup, talks to opener, and dies.
       const htmlResponse = `
         <!DOCTYPE html>
         <html>
-        <body>
-          <script>
-            const message = {
-              type: 'WEMBAT_LOGIN_SUCCESS', // Das hört dein Frontend
-              provider: 'github',
-              user: {
-                id: '${userProfile.id}',
-                username: '${userProfile.login}', // GitHub Username
-                name: '${userProfile.name || userProfile.login}',
-                email: '${userProfile.email}' // Kann null sein, wenn private!
+          <head><title>Authenticating...</title></head>
+          <body>
+            <p>Authentication successful. Closing...</p>
+            <script>
+              // 1. Get the data
+              const user = ${JSON.stringify(userData)};
+              console.log("User");
+              console.log(user);
+              console.log("Opener");
+              console.log(window.opener);
+              
+              // 2. Send data to the window that opened this popup
+              // 'targetOrigin' is crucial for security (don't use '*')
+              if (window.opener) {
+                console.log("post message");
+                window.opener.postMessage({
+                  type: 'WEMBAT_LOGIN_SUCCESS',
+                  user: user
+                }, '${allowedOrigin}');
               }
-            };
-            
-            if (window.opener) {
-              window.opener.postMessage(message, '*');
-              window.close();
-            } else {
-              document.write('Login erfolgreich: ' + JSON.stringify(message.user));
-            }
-          </script>
-          <h1>GitHub Login erfolgreich.</h1>
-        </body>
+
+              // 3. Close the popup
+              //window.close();
+            </script>
+          </body>
         </html>
       `;
 
+      // 1. Allow Inline Scripts (Fixes your previous error)
+      res.setHeader("Content-Security-Policy", "script-src 'self' 'unsafe-inline'");
+
+      // 2. Allow window.opener to exist across different ports (Fixes the null opener)
+      res.setHeader("Cross-Origin-Opener-Policy", "unsafe-none");
+
+      // Send the HTML directly
       res.send(htmlResponse);
 
     } catch (err) {
       const msg = (err instanceof Error) ? err.message : 'Unknown Error';
       console.error('GitHub Login Fehler:', msg);
-      res.status(500).send('Login Error: ' + msg);
+      
+      // Optional: Send an error message back to the frontend via postMessage too
+      // so your app stops loading
+      res.status(500).send(`
+        <script>
+          window.opener.postMessage({ type: 'WEMBAT_LOGIN_ERROR', error: '${msg}' }, '*');
+          window.close();
+        </script>
+      `);
     }
   });
   
-  app.listen(port, () => {
+  https.createServer(sslOptions, app).listen(port, () => {
     return console.log(`server is listening on ${port}`);
   });
 }

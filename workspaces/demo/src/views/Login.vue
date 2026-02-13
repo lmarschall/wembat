@@ -58,7 +58,7 @@
               <button
                 class="btn btn-secondary mx-auto"
                 type="submit"
-                @click="loginWithSso()"
+                @click="handleSSOClick()"
                 :disabled="loading"
               >
                 SSO
@@ -90,8 +90,8 @@ const loading = ref(false);
 const router = useRouter();
 const username = ref("" as string);
 const wembatClient: WembatClient = inject('wembatClient') as WembatClient
-const authEndpoint = 'http://localhost:8080/auth/github/login';
-const targetOrigin = 'http://localhost:8080';
+const authEndpoint = 'https://localhost:8080/auth/github/login';
+const targetOrigin = 'https://localhost:8080';
 
 function appendAlert(message: string, type: string) {
   const alertPlaceholder = document.getElementById('liveAlertPlaceholder')
@@ -109,7 +109,7 @@ function appendAlert(message: string, type: string) {
 async function register() {
   loading.value = true;
 
-  const registerResponse = await wembatClient.register(username.value);
+  const registerResponse = await wembatClient.register(username.value, true);
 
   if(registerResponse.success) {
     const verified = registerResponse.result;
@@ -149,9 +149,15 @@ async function handleSSOClick()
 {
   try {
     // Das Popup öffnet sich hier
-    const currentUser = await loginWithSso();
+    const currentUser: any = await loginWithSso();
 
     console.log(currentUser);
+
+    username.value = currentUser.email;
+
+    const registerResponse = await wembatClient.register(currentUser.email, false);
+
+    console.log(registerResponse);
     
     // Wenn wir hier sind, war der Login erfolgreich!
     // statusMsg.textContent = `Hallo ${currentUser.name}! Identität bestätigt.`;
@@ -162,7 +168,7 @@ async function handleSSOClick()
     // btnUpgrade.style.display = 'block';
     
     // Optional: Kleiner visueller Hinweis
-    alert("Identität bestätigt! Bitte erstellen Sie jetzt Ihren Schlüssel.");
+    // alert("Identität bestätigt! Bitte erstellen Sie jetzt Ihren Schlüssel.");
 
   } catch (err) {
       // statusMsg.textContent = 'Fehler: ' + err.message;
@@ -195,11 +201,14 @@ async function loginWithSso() {
 
     // 3. Event Listener für die Nachricht vom Popup
     const handleMessage = (event) => {
+      console.log(event);
       // SICHERHEITS-CHECK: Kommt die Nachricht von unserem Backend?
       if (event.origin !== targetOrigin) {
         console.warn('Ignoriere Nachricht von fremder Quelle:', event.origin);
         return;
       }
+
+      console.log(event);
 
       // Prüfen, ob es unsere Nachricht ist
       if (event.data?.type === 'WEMBAT_LOGIN_SUCCESS') {
@@ -217,7 +226,7 @@ async function loginWithSso() {
         cleanup();
         reject(new Error('Login vom Nutzer abgebrochen (Fenster geschlossen).'));
       }
-    }, 1000);
+    }, 5000);
 
     // Hilfsfunktion zum Aufräumen von Listenern und Timern
     const cleanup = () => {
@@ -228,6 +237,7 @@ async function loginWithSso() {
 
     // Listener registrieren
     window.addEventListener('message', handleMessage);
+    popup.addEventListener('message', handleMessage);
   });
 }
 </script>

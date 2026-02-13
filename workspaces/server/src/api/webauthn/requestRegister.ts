@@ -69,7 +69,7 @@ export async function requestRegister(req: Request, res: Response, prisma: Prism
 			})),
 			authenticatorSelection: {
 				residentKey: "preferred",
-				userVerification: "preferred",
+				userVerification: "discouraged",
 			},
 			supportedAlgorithmIDs: [-7, -257],
 			extensions: {

@@ -55,7 +55,7 @@ class WembatClient {
 			console.log(content);
 			const credentials: RegistrationResponseJSON = await startRegistration({
 				optionsJSON: content.challengeOptions.options,
-				useAutoRegister: false,
+				useAutoRegister: content.autoRegister,
 			}).catch((err: string) => {
 				console.error(err);
 				throw new Error(err);

@@ -40,7 +40,7 @@ export async function link(
 			requestLinkResponse.data
 		);
 
-		const content: StartRegistrationContent = { challengeOptions: requestLinkResponseData };
+		const content: StartRegistrationContent = { challengeOptions: requestLinkResponseData, autoRegister: false };
 		const credentials: RegistrationResponseJSON = await bridge.invoke(BridgeMessageType.StartRegistration, content);
 
 		if (credentials.clientExtensionResults !== undefined) {

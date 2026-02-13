@@ -50,7 +50,8 @@ export interface StartAuthenticationContent {
 }
 
 export interface StartRegistrationContent {
-	challengeOptions: any
+	challengeOptions: any,
+    autoRegister: boolean
 }
 
 type MessageData = {

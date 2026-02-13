@@ -45,7 +45,7 @@ export async function initCryptoTest(algorithm = "ES256") {
 
 export class CryptoService {
 	private keyPair: KeyPair;
-	private apiUrl: string = process.env.SERVER_URL || "http://localhost:8080";
+	private apiUrl: string = process.env.API_SERVER_URL || "http://localhost:8080";
 
 	constructor(privateKey: KeyLike, publicKey: KeyLike) {
 		this.keyPair = {
