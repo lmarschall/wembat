@@ -8,6 +8,7 @@ import { rateLimit} from "express-rate-limit";
 import { apiRouter } from "./api";
 import { initRedis, redisService } from "./redis";
 import { initCrypto, cryptoService } from "./crypto";
+import { authStore } from './auth-store';
 
 import session from 'express-session';
 import { BaseClient, Issuer, generators } from 'openid-client';
@@ -16,6 +17,12 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import https from 'https';
+
+declare module 'express-session' {
+  interface SessionData {
+    githubState: string; // Add your custom properties here
+  }
+}
 
 dotenv.config();
 
@@ -137,104 +144,128 @@ async function init() {
   app.get('/auth/github/login', (req: Request, res: Response) => {
     if (!githubClient) return res.status(500).send('GitHub Client nicht bereit');
 
-    // State generieren (wichtig für Sicherheit bei OAuth)
-    const state = generators.state();
-    req.session.state = state;
+    // 1. Get the Request ID from the frontend (polling ID)
+    const requestId = req.query.requestId as string;
+    
+    if (!requestId) {
+        return res.status(400).send("Missing requestId parameter");
+    }
+
+    // 2. Generate a random nonce for security
+    const nonce = generators.state();
+
+    // 3. Pack the requestId and nonce into a JSON object for the state
+    // We encode it to Base64 to ensure it travels safely in the URL
+    const stateObj = { requestId, nonce };
+    const stateString = Buffer.from(JSON.stringify(stateObj)).toString('base64');
+
+    // 4. Store nonce in session to verify later (Anti-CSRF)
+    req.session.githubState = nonce;
 
     const authorizationUrl = githubClient.authorizationUrl({
-      scope: 'user:email read:user', // GitHub spezifische Scopes
-      state: state,
+      scope: 'user:email read:user', 
+      state: stateString, // Send the packed string to GitHub
     });
 
-    // CRITICAL: Allow the popup to keep the opener reference during the redirect
-    res.setHeader("Cross-Origin-Opener-Policy", "unsafe-none");
-
-    // Für Popup Bridge: JSON zurückgeben
-    // Für Direkt-Test im Browser: res.redirect(authorizationUrl) nutzen
     res.redirect(authorizationUrl);
   });
 
   app.get('/auth/github/callback', async (req: Request, res: Response) => {
+    // 1. Retrieve the raw state string from GitHub
+    // Fix for S4325: If req.query.state is already typed as string, 'as string' is removed.
+    // If not, we force it to string safely.
+    const rawState = String(req.query.state || '');
+
+    if (!githubClient) return res.status(500).send('GitHub Client nicht bereit');
+
+    let requestId = "";
+
     try {
-      if (!githubClient) return res.status(500).send('GitHub Client nicht bereit');
+      // 2. Decode the State to recover requestId
+      const decodedJSON = Buffer.from(rawState, 'base64').toString('ascii');
+      const stateObj = JSON.parse(decodedJSON);
+      
+      requestId = stateObj.requestId;
+      const nonce = stateObj.nonce;
+
+      // 3. Security Check: Compare nonce with session
+      if (nonce !== req.session.githubState) {
+          authStore.fail(requestId, "Security Error: State mismatch");
+          return res.status(403).send("Security Check Failed");
+      }
+
+      // 4. Prepare parameters for OpenID Client
       const params = githubClient.callbackParams(req);
-      const state = req.session.state;
 
-      // Token Exchange
-      const tokenSet = await githubClient.oauthCallback(REDIRECT_URI, params, { state });
+      // 5. Exchange Code for Token (Pass rawState for validation)
+      const tokenSet = await githubClient.oauthCallback(REDIRECT_URI, params, { state: rawState });
       
-      // Get User Info
-      const userProfile = await githubClient.userinfo(tokenSet.access_token!);
+      // 6. Fix for 'tokenSet not found': Ensure tokenSet is valid before using it
+      if (!tokenSet || !tokenSet.access_token) {
+          throw new Error("No access token received");
+      }
 
-      // Cleanup session
-      req.session.state = undefined;
+      // 7. Get User Info
+      const userProfile = await githubClient.userinfo(tokenSet.access_token);
 
-      // Prepare raw data object (Do NOT stringify it yet)
-      const userData = {
-        id: userProfile.id,
-        name: userProfile.name,
-        email: userProfile.email,
-        avatar: userProfile.avatar_url // Optional, usually helpful
-      };
-
-      // Configuration for the Frontend
-      // In production, use process.env.FRONTEND_URL
-      const allowedOrigin = 'https://localhost:5173'; 
-
-      // GENERATE HTML SCRIPT
-      // This script runs inside the popup, talks to opener, and dies.
-      const htmlResponse = `
-        <!DOCTYPE html>
-        <html>
-          <head><title>Authenticating...</title></head>
-          <body>
-            <p>Authentication successful. Closing...</p>
-            <script>
-              // 1. Get the data
-              const user = ${JSON.stringify(userData)};
-              console.log("User");
-              console.log(user);
-              console.log("Opener");
-              console.log(window.opener);
-              
-              // 2. Send data to the window that opened this popup
-              // 'targetOrigin' is crucial for security (don't use '*')
-              if (window.opener) {
-                console.log("post message");
-                window.opener.postMessage({
-                  type: 'WEMBAT_LOGIN_SUCCESS',
-                  user: user
-                }, '${allowedOrigin}');
-              }
-
-              // 3. Close the popup
-              //window.close();
-            </script>
-          </body>
-        </html>
-      `;
-
-      // 1. Allow Inline Scripts (Fixes your previous error)
-      res.setHeader("Content-Security-Policy", "script-src 'self' 'unsafe-inline'");
-
-      // 2. Allow window.opener to exist across different ports (Fixes the null opener)
-      res.setHeader("Cross-Origin-Opener-Policy", "unsafe-none");
-
-      // Send the HTML directly
-      res.send(htmlResponse);
-
-    } catch (err) {
-      const msg = (err instanceof Error) ? err.message : 'Unknown Error';
-      console.error('GitHub Login Fehler:', msg);
+      // console.log(userProfile);
       
-      // Optional: Send an error message back to the frontend via postMessage too
-      // so your app stops loading
-      res.status(500).send(`
-        <script>
-          window.opener.postMessage({ type: 'WEMBAT_LOGIN_ERROR', error: '${msg}' }, '*');
-          window.close();
-        </script>
-      `);
+      // ... (Create your App JWT) ...
+      const appToken = "YOUR_GENERATED_JWT";
+
+      // 8. Save success to store
+      authStore.success(requestId, userProfile, appToken);
+
+      // 9. Close Popup
+      res.send(`<script>window.close();</script>`);
+
+    } catch (err: any) {
+      console.error("Login Error:", err);
+      // Only try to update store if we successfully recovered the requestId
+      if (requestId) {
+          authStore.fail(requestId, "Login Failed");
+      }
+      res.status(500).send(`<script>alert('Login failed'); window.close();</script>`);
+    }
+  });
+
+  app.get('/auth/poll', (req: Request, res: Response) => {
+    const requestId = req.query.requestId as string;
+
+    if (!requestId) {
+      return res.status(400).json({ error: 'Missing requestId' });
+    }
+
+    const state = authStore.get(requestId);
+
+    // console.log(state);
+
+    // Case 1: ID not found (Expired or never started)
+    if (!state) {
+      return res.status(404).json({ status: 'unknown', message: 'Session not found or expired' });
+    }
+
+    // Case 2: Still waiting for user to login
+    if (state.status === 'pending') {
+      return res.json({ status: 'pending' });
+    }
+
+    // Case 3: Success!
+    if (state.status === 'success') {
+      // CRITICAL: Delete the data immediately so it can't be fetched again (Replay Protection)
+      authStore.delete(requestId);
+      
+      return res.json({
+        status: 'success',
+        user: state.user,
+        token: state.token // Your JWT or Session ID
+      });
+    }
+
+    // Case 4: Error during login
+    if (state.status === 'error') {
+      authStore.delete(requestId);
+      return res.json({ status: 'error', message: state.error });
     }
   });
   

@@ -155,9 +155,27 @@ async function handleSSOClick()
 
     username.value = currentUser.email;
 
-    const registerResponse = await wembatClient.register(currentUser.email, false);
+    // const registerResponse = await wembatClient.register(currentUser.email, false);
 
-    console.log(registerResponse);
+    // console.log(registerResponse);
+    const loginResponse = await wembatClient.login(username.value);
+    console.log(loginResponse);
+
+    if(loginResponse.success) {
+      const loginResult = loginResponse.result;
+
+      console.log(loginResult);
+
+      if (loginResult.verified) {
+        appendAlert("Login successful", "success");
+        KeyService.setKey(loginResult.publicKey);
+        router.push("/");
+      }
+    } else {
+      const errorResult = loginResponse.error;
+      appendAlert(errorResult.message, "danger");
+    }
+
     
     // Wenn wir hier sind, war der Login erfolgreich!
     // statusMsg.textContent = `Hallo ${currentUser.name}! Identität bestätigt.`;
@@ -180,64 +198,98 @@ async function handleSSOClick()
  * Startet den Login-Prozess in einem Popup.
  * Gibt ein Promise zurück, das resolved, wenn der User erfolgreich eingeloggt ist.
  */
+// Helper to generate a random ID for the session
+function generateRequestId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
 async function loginWithSso() {
+  // 1. Generate a unique ID for this login attempt
+  const requestId = generateRequestId();
+
+  // 2. Prepare the URL (Append the requestId)
+  // Assuming authEndpoint is something like "http://localhost:3000/auth/github"
+  const urlWithId = new URL(authEndpoint);
+  urlWithId.searchParams.set('requestId', requestId);
+
   return new Promise((resolve, reject) => {
-    // 1. Popup zentriert auf dem Bildschirm berechnen
+    // 3. Calculate centered popup
     const width = 500;
     const height = 600;
     const left = (window.screen.width - width) / 2;
     const top = (window.screen.height - height) / 2;
 
-    // 2. Fenster öffnen (zeigt direkt den Google Login)
+    // 4. Open the window
     const popup = window.open(
-      authEndpoint,
+      urlWithId.toString(),
       'WembatSSO',
       `width=${width},height=${height},top=${top},left=${left},scrollbars=yes`
     );
 
     if (!popup) {
-      return reject(new Error('Popup wurde blockiert. Bitte erlauben Sie Popups für diese Seite.'));
+      return reject(new Error('Popup was blocked. Please allow popups for this site.'));
     }
 
-    // 3. Event Listener für die Nachricht vom Popup
-    const handleMessage = (event) => {
-      console.log(event);
-      // SICHERHEITS-CHECK: Kommt die Nachricht von unserem Backend?
-      if (event.origin !== targetOrigin) {
-        console.warn('Ignoriere Nachricht von fremder Quelle:', event.origin);
-        return;
-      }
-
-      console.log(event);
-
-      // Prüfen, ob es unsere Nachricht ist
-      if (event.data?.type === 'WEMBAT_LOGIN_SUCCESS') {
-        // Aufräumen
-        cleanup();
-        
-        // Erfolg! User-Daten zurückgeben
-        resolve(event.data.user);
-      }
-    };
-
-    // 4. Timer, um zu prüfen, ob der User das Fenster manuell geschlossen hat
-    const timer = setInterval(() => {
-      if (popup.closed) {
-        cleanup();
-        reject(new Error('Login vom Nutzer abgebrochen (Fenster geschlossen).'));
-      }
-    }, 5000);
-
-    // Hilfsfunktion zum Aufräumen von Listenern und Timern
+    // 5. Cleanup Helper
     const cleanup = () => {
-      window.removeEventListener('message', handleMessage);
-      clearInterval(timer);
-      if (popup && !popup.closed) popup.close(); // Zur Sicherheit
+      clearInterval(pollTimer);
+      clearTimeout(timeoutTimer);
+      if (popup && !popup.closed) popup.close();
     };
 
-    // Listener registrieren
-    window.addEventListener('message', handleMessage);
-    popup.addEventListener('message', handleMessage);
+    // 6. Polling Timer (Checks status every 1 second)
+    const pollTimer = setInterval(async () => {
+      try {
+        console.log(popup);
+        // A. Check if user closed the window manually
+        // if (popup.closed) {
+        //   console.log("Popup closed");
+        //   cleanup();
+        //   reject(new Error('Login cancelled by user (Window closed).'));
+        //   return;
+        // }
+
+        // B. Poll the backend
+        // We assume your backend has a route: GET /auth/poll?requestId=...
+        // Note: You might need to adjust the base URL depending on where your API lives
+        const pollUrl = `${new URL(authEndpoint).origin}/auth/poll?requestId=${requestId}`;
+
+        console.log(pollUrl);
+        
+        const response = await fetch(pollUrl);
+
+        console.log(response);
+        
+        // If 404, it means the ID isn't registered yet or expired
+        if (!response.ok) return; 
+
+        const data = await response.json();
+
+        console.log(data);
+
+        // C. Check Status
+        if (data.status === 'success') {
+          cleanup();
+          resolve(data.user); // SUCCESS! We have the user data (and token)
+        } 
+        else if (data.status === 'error') {
+          cleanup();
+          reject(new Error(data.message || 'Login failed'));
+        }
+        // If status is 'pending', we do nothing and wait for the next loop
+
+      } catch (err) {
+        // Network errors are ignored (we just try again next second)
+        // unless you want to fail fast.
+        console.warn("Polling error:", err);
+      }
+    }, 1000);
+
+    // 7. Safety Timeout (Stop after 2 minutes)
+    const timeoutTimer = setTimeout(() => {
+      cleanup();
+      reject(new Error('Login timed out.'));
+    }, 120000);
   });
 }
 </script>
