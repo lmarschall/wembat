@@ -1,5 +1,7 @@
-import { Router } from "express";
-import { Request, Response } from "express";
+import { Router, Request, Response } from "express";
+import { BaseClient, Issuer } from 'openid-client';
+import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from './generated/prisma/client'
 import { applicationList } from "./application/applicationList";
 import { applicationCreate } from "./application/applicationCreate";
 import { applicationToken } from "./application/applicationToken";
@@ -20,19 +22,41 @@ import { serverExportPublicKey } from "./server/serverExportPublicKey";
 import { deviceList } from "./device/deviceList";
 import { requestLink } from "./webauthn/requestLink";
 import { link } from "./webauthn/link";
-
-// backend/routes/auth.js
-import { Issuer } from 'openid-client';
+import { openidCallback } from "./openid/openidCallback";
+import { openidLogin } from "./openid/openidLogin";
+import { openidPoll } from "./openid/openidPoll";
 
 import "dotenv/config";
-import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient } from './generated/prisma/client'
 
 const connectionString = `${process.env.DATABASE_URL}`
+const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || "";
+const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || "";
+const REDIRECT_URI = 'https://localhost:8080/auth/github/callback';
 const adapter = new PrismaPg({ connectionString })
 
 export const apiRouter = Router();
 export const prisma = new PrismaClient({ adapter });
+
+let openidClient: BaseClient | undefined;
+
+export async function initOpenIdClient() {
+  console.log("init openid");
+  const githubIssuer = new Issuer({
+	issuer: 'https://github.com',
+	authorization_endpoint: 'https://github.com/login/oauth/authorize',
+	token_endpoint: 'https://github.com/login/oauth/access_token',
+	userinfo_endpoint: 'https://api.github.com/user',
+  });
+
+  openidClient = new githubIssuer.Client({
+	client_id: GITHUB_CLIENT_ID,
+	client_secret: GITHUB_CLIENT_SECRET,
+	redirect_uris: [REDIRECT_URI],
+	response_types: ['code'],
+  });
+  
+  console.log('GitHub OAuth Config geladen');
+}
 
 apiRouter.get(
 	"/application/list",
@@ -135,3 +159,19 @@ apiRouter.get(
 	[validateApplicationToken],
 	async (req: Request, res: Response) => serverExportPublicKey(req, res)
 );
+
+apiRouter.get(
+	"/openid/login", 
+	(req: Request, res: Response) => openidLogin(req, res, openidClient)
+);
+
+apiRouter.get(
+	'/openid/callback', 
+	async (req: Request, res: Response) => openidCallback(req, res, openidClient)
+);
+
+apiRouter.get(
+	'/auth/poll',
+	(req: Request, res: Response) => openidPoll(req, res)
+);
+    
