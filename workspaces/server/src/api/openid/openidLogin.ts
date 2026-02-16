@@ -1,5 +1,12 @@
 import { Request, Response } from "express";
 import { BaseClient, generators } from "openid-client";
+import session from 'express-session';
+
+declare module 'express-session' {
+  interface SessionData {
+    githubState: string; // Add your custom properties here
+  }
+}
 
 export async function openidLogin(req: Request, res: Response, openidClient: BaseClient | undefined): Promise<void> {
   try {

@@ -31,7 +31,7 @@ import "dotenv/config";
 const connectionString = `${process.env.DATABASE_URL}`
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || "";
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || "";
-const REDIRECT_URI = 'https://localhost:8080/auth/github/callback';
+const REDIRECT_URI = 'https://localhost:8080/api/openid/callback';
 const adapter = new PrismaPg({ connectionString })
 
 export const apiRouter = Router();
@@ -171,7 +171,7 @@ apiRouter.get(
 );
 
 apiRouter.get(
-	'/auth/poll',
+	'/openid/poll',
 	(req: Request, res: Response) => openidPoll(req, res)
 );
     

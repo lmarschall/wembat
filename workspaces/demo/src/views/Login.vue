@@ -90,7 +90,7 @@ const loading = ref(false);
 const router = useRouter();
 const username = ref("" as string);
 const wembatClient: WembatClient = inject('wembatClient') as WembatClient
-const authEndpoint = 'https://localhost:8080/auth/github/login';
+const authEndpoint = 'https://localhost:8080/api/openid/login';
 const targetOrigin = 'https://localhost:8080';
 
 function appendAlert(message: string, type: string) {
@@ -252,7 +252,7 @@ async function loginWithSso() {
         // B. Poll the backend
         // We assume your backend has a route: GET /auth/poll?requestId=...
         // Note: You might need to adjust the base URL depending on where your API lives
-        const pollUrl = `${new URL(authEndpoint).origin}/auth/poll?requestId=${requestId}`;
+        const pollUrl = `${new URL(authEndpoint).origin}/api/openid/poll?requestId=${requestId}`;
 
         console.log(pollUrl);
         

@@ -8,19 +8,13 @@ import { rateLimit} from "express-rate-limit";
 import { apiRouter, initOpenIdClient } from "./api";
 import { initRedis, redisService } from "./redis";
 import { initCrypto, cryptoService } from "./crypto";
-
 import session from 'express-session';
+
 import dotenv from 'dotenv';
 
 import fs from 'fs';
 import path from 'path';
 import https from 'https';
-
-declare module 'express-session' {
-  interface SessionData {
-    githubState: string; // Add your custom properties here
-  }
-}
 
 dotenv.config();
 
@@ -33,12 +27,12 @@ const sslOptions = {
   cert: fs.readFileSync(path.join(__dirname, '../../../certs/localhost+2.pem'))
 };
 
-declare module 'express-session' {
-  interface SessionData {
-    code_verifier?: string;
-    state?: string;
-  }
-}
+// declare module 'express-session' {
+//   interface SessionData {
+//     code_verifier?: string;
+//     state?: string;
+//   }
+// }
 
 
 
@@ -108,7 +102,7 @@ async function init() {
   app.use(helmet());
   app.use(compression());
   app.use(bodyParser.json({ limit: "1mb" }));
-  app.use("/api", apiRouter);
+
 
   app.use(session({
     secret: 'super-secret-session-key',
@@ -116,6 +110,8 @@ async function init() {
     saveUninitialized: false,
     cookie: { secure: false, httpOnly: true }
   }));
+
+  app.use("/api", apiRouter);
   
   https.createServer(sslOptions, app).listen(port, () => {
     return console.log(`server is listening on ${port}`);
