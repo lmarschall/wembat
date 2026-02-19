@@ -1,230 +1,201 @@
-// //// typescript
-// // filepath: /home/lukas/Source/wembat/backend/src/api/webauthn/login.test.ts
+import { Request, Response } from "express";
+import { PrismaClient } from "./../generated/prisma/client";
 
-// import { Request, Response } from "express";
-// import { PrismaClient } from "@prisma/client";
-// import { login } from "./login";
-// import { cryptoService, initCryptoTest } from "../../crypto";
-// import { redisService } from "../../redis";
-// import { verifyAuthenticationResponse } from "@simplewebauthn/server";
+// 1. Define all Mocks FIRST
+const mockVerifyAuth = jest.fn();
+jest.mock("@simplewebauthn/server", () => ({
+  __esModule: true,
+  verifyAuthenticationResponse: mockVerifyAuth,
+}));
 
-// // Alle Abhängigkeiten mocken: Prisma, cryptoService, addToWebAuthnTokens, verifyAuthenticationResponse
-// jest.mock("@prisma/client", () => {
-//   return {
-//     PrismaClient: jest.fn().mockImplementation(() => ({
-//       user: {
-//         findUnique: jest.fn(),
-//       },
-//       session: {
-//         create: jest.fn(),
-//       },
-//     })),
-//   };
-// });
+const mockCreateToken = jest.fn();
+const mockCreateRefreshToken = jest.fn();
+jest.mock("../../crypto", () => ({
+  cryptoService: {
+    createSessionToken: mockCreateToken,
+    createSessionRefreshToken: mockCreateRefreshToken,
+  },
+}));
 
-// jest.mock("../../crypto", () => ({
-//   cryptoService: {
-//     createSessionToken: jest.fn(),
-//     createSessionRefreshToken: jest.fn(),
-//   },
-// }));
+const mockAddToWebAuthnTokens = jest.fn();
+jest.mock("../../redis", () => ({
+  redisService: {
+    addToWebAuthnTokens: mockAddToWebAuthnTokens,
+  },
+}));
 
-// jest.mock("../../redis", () => ({
-//   redisService: {
-//     addToWebAuthnTokens: jest.fn(),
-//   }
-// }));
+const mockPrisma = {
+  user: { findUnique: jest.fn() },
+  session: { create: jest.fn() },
+};
+const prisma = (mockPrisma as unknown) as PrismaClient;
 
-// jest.mock("@simplewebauthn/server", () => ({
-//   verifyAuthenticationResponse: jest.fn(),
-// }));
+// 2. THE CRITICAL FIX: Load the function AFTER mocks are registered 
+// This prevents TypeScript from moving the import above our jest.mock calls.
+const { login } = require("./login");
 
-// const prisma = new PrismaClient();
+describe("testLogin", () => {
+  let req: Partial<Request>;
+  let res: Partial<Response>;
 
-// describe("testLogin", () => {
-//   let req: Partial<Request>;
-//   let res: Partial<Response>;
+  beforeEach(async () => {
+    req = { body: {} };
+    res = {
+      locals: {},
+      status: jest.fn().mockReturnThis(),
+      cookie: jest.fn().mockReturnThis(),
+      send: jest.fn(),
+      json: jest.fn(),
+    };
+    jest.clearAllMocks();
+  });
 
-//   beforeEach(async () => {
-//     req = {
-//       body: {},
-//     };
-//     res = {
-//       locals: {},
-//       status: jest.fn().mockReturnThis(),
-//       cookie: jest.fn().mockReturnThis(),
-//       send: jest.fn(),
-//       json: jest.fn(),
-//     };
-//     jest.clearAllMocks();
-//   });
+  it("should return error if loginChallengeResponse is missing", async () => {
+    await login(req as Request, res as Response, prisma);
 
-//   it("should return error if loginChallengeResponse is missing", async () => {
-//     await login(req as Request, res as Response, prisma);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("Login Challenge Response not present");
+  });
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("Login Challenge Response not present");
-//   });
+  it("should return error if res.locals.payload is missing", async () => {
+    req.body = {
+      loginChallengeResponse: {
+        challenge: "some-challenge",
+        credentials: {},
+      },
+    };
 
-//   it("should return error if res.locals.payload is missing", async () => {
-//     req.body = {
-//       loginChallengeResponse: {
-//         challenge: "some-challenge",
-//         credentials: {},
-//       },
-//     };
+    await login(req as Request, res as Response, prisma);
 
-//     // res.locals.payload nicht setzen
-//     await login(req as Request, res as Response, prisma);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("Payload not present");
+  });
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("Payload not present");
-//   });
+  it("should return error if user not found", async () => {
+    req.headers = req.headers || {};
+    res.locals = res.locals || {};
+    req.body = {
+      loginChallengeResponse: {
+        challenge: "some-challenge",
+        credentials: {},
+      },
+    };
+    res.locals.payload = { aud: "https://test.com", appUId: "testAppId" };
 
-//   it("should return error if user not found", async () => {
-//     req.headers = req.headers || {};
-//     res.locals = res.locals || {};
-//     req.body = {
-//       loginChallengeResponse: {
-//         challenge: "some-challenge",
-//         credentials: {},
-//       },
-//     };
-//     res.locals.payload = {
-//       aud: "https://test.com",
-//       appUId: "testAppId",
-//     };
+    mockPrisma.user.findUnique.mockRejectedValue(new Error("User with given challenge not found"));
 
-//     (prisma.user.findUnique as jest.Mock).mockRejectedValue(new Error("User with given challenge not found"));
+    await login(req as Request, res as Response, prisma);
 
-//     await login(req as Request, res as Response, prisma);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("User with given challenge not found");
+  });
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("User with given challenge not found");
-//   });
+  it("should return error if verifyAuthenticationResponse fails", async () => {
+    req.headers = req.headers || {};
+    res.locals = res.locals || {};
+    req.body = {
+      loginChallengeResponse: {
+        challenge: "some-challenge",
+        credentials: { rawId: "device-uid" },
+      },
+    };
+    res.locals.payload = { aud: "https://test.com", appUId: "testAppId" };
 
-//   it("should return error if verifyAuthenticationResponse fails", async () => {
-//     req.headers = req.headers || {};
-//     res.locals = res.locals || {};
-//     req.body = {
-//       loginChallengeResponse: {
-//         challenge: "some-challenge",
-//         credentials: { rawId: "device-uid" },
-//       },
-//     };
-//     res.locals.payload = {
-//       aud: "https://test.com",
-//       appUId: "testAppId",
-//     };
+    mockPrisma.user.findUnique.mockResolvedValue({
+      uid: "testUserId",
+      challenge: "some-challenge",
+      devices: [{ uid: "device1", credentialId: "device-uid", counter: 0 }],
+      sessions: [],
+    });
 
-//     (prisma.user.findUnique as jest.Mock).mockResolvedValue({
-//       uid: "testUserId",
-//       challenge: "some-challenge",
-//       devices: [{ uid: "device1", credentialId: "device-uid", counter: 0 }],
-//       sessions: [],
-//     });
+    mockVerifyAuth.mockRejectedValue(new Error("Authentication Response could not be verified"));
 
-//     (verifyAuthenticationResponse as jest.Mock).mockRejectedValue(new Error("Authentication Response could not be verified"));
+    await login(req as Request, res as Response, prisma);
 
-//     await login(req as Request, res as Response, prisma);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("Authentication Response could not be verified");
+  });
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("Authentication Response could not be verified");
-//   });
+  it("should return error if user device is not onboarded to session", async () => {
+    req.headers = req.headers || {};
+    res.locals = res.locals || {};
+    req.body = {
+      loginChallengeResponse: {
+        challenge: "some-challenge",
+        credentials: { rawId: "device-uid" },
+      },
+    };
+    res.locals.payload = { aud: "https://test.com", appUId: "testAppId" };
 
-//   it("should return error if user device is not onboarded to session", async () => {
-//     req.headers = req.headers || {};
-//     res.locals = res.locals || {};
-//     req.body = {
-//       loginChallengeResponse: {
-//         challenge: "some-challenge",
-//         credentials: { rawId: "device-uid" },
-//       },
-//     };
-//     res.locals.payload = {
-//       aud: "https://test.com",
-//       appUId: "testAppId",
-//     };
+    mockPrisma.user.findUnique.mockResolvedValue({
+      uid: "testUserId",
+      challenge: "some-challenge",
+      devices: [{ uid: "device1", credentialId: "device-uid", counter: 0 }],
+      sessions: [{ appUId: "testAppId", deviceUId: "otherDeviceUid" }],
+    });
 
-//     (prisma.user.findUnique as jest.Mock).mockResolvedValue({
-//       uid: "testUserId",
-//       challenge: "some-challenge",
-//       devices: [{ uid: "device1", credentialId: "device-uid", counter: 0 }],
-//       sessions: [{ appUId: "testAppId", deviceUId: "otherDeviceUid" }],
-//     });
+    mockVerifyAuth.mockResolvedValue({
+      verified: true,
+      authenticationInfo: { newCounter: 1 },
+    });
 
-//     (verifyAuthenticationResponse as jest.Mock).mockResolvedValue({
-//       verified: true,
-//       authenticationInfo: {
-//         newCounter: 1,
-//       },
-//     });
+    await login(req as Request, res as Response, prisma);
 
-//     await login(req as Request, res as Response, prisma);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("User device is not onboarded to session");
+  });
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("User device is not onboarded to session");
-//   });
+  it("should return 200 and tokens if valid data is provided", async () => {
+    req.headers = req.headers || {};
+    res.locals = res.locals || {};
+    req.body = {
+      loginChallengeResponse: {
+        challenge: "some-challenge",
+        credentials: { rawId: "device-uid" },
+      },
+    };
+    res.locals.payload = { aud: "https://test.com", appUId: "testAppId" };
 
-//   it("should return 200 and tokens if valid data is provided", async () => {
-//     req.headers = req.headers || {};
-//     res.locals = res.locals || {};
-//     req.body = {
-//       loginChallengeResponse: {
-//         challenge: "some-challenge",
-//         credentials: { rawId: "device-uid" },
-//       },
-//     };
+    mockPrisma.user.findUnique.mockResolvedValue({
+      uid: "testUserId",
+      challenge: "some-challenge",
+      devices: [{ uid: "device1", credentialId: "device-uid", counter: 0 }],
+      sessions: [],
+    });
 
-//     res.locals.payload = {
-//       aud: "https://test.com",
-//       appUId: "testAppId",
-//     };
+    mockVerifyAuth.mockResolvedValue({
+      verified: true,
+      authenticationInfo: { newCounter: 1 },
+    });
 
-//     (prisma.user.findUnique as jest.Mock).mockResolvedValue({
-//       uid: "testUserId",
-//       challenge: "some-challenge",
-//       devices: [{ uid: "device1", credentialId: "device-uid", counter: 0 }],
-//       sessions: [],
-//     });
+    mockPrisma.session.create.mockResolvedValue({
+      uid: "sessionId",
+      userUId: "testUserId",
+      appUId: "testAppId",
+      deviceUId: "device1",
+      publicKey: "publicKey",
+      privateKey: "privateKey",
+      cipherBlob: "cipherBlob",
+      nonce: 1234,
+    });
 
-//     // WebAuthn-Verification simulieren
-//     (verifyAuthenticationResponse as jest.Mock).mockResolvedValue({
-//       verified: true,
-//       authenticationInfo: {
-//         newCounter: 1,
-//       },
-//     });
+    mockCreateToken.mockResolvedValue("test-session-token");
+    mockCreateRefreshToken.mockResolvedValue("test-refresh-token");
+    mockAddToWebAuthnTokens.mockResolvedValue({});
 
-//     // Session in DB erstellen
-//     (prisma.session.create as jest.Mock).mockResolvedValue({
-//       uid: "sessionId",
-//       userUId: "testUserId",
-//       appUId: "testAppId",
-//       deviceUId: "device1",
-//       publicKey: "publicKey",
-//       privateKey: "privateKey",
-//       nonce: 1234,
-//     });
+    await login(req as Request, res as Response, prisma);
 
-//     // createSessionToken und createSessionRefreshToken mocken
-//     (cryptoService.createSessionToken as jest.Mock).mockResolvedValue("test-session-token");
-//     (cryptoService.createSessionRefreshToken as jest.Mock).mockResolvedValue("test-refresh-token");
-//     (redisService.addToWebAuthnTokens as jest.Mock).mockResolvedValue({});
-
-//     await login(req as Request, res as Response, prisma);
-
-//     expect(res.status).toHaveBeenCalledWith(200);
-//     expect(res.cookie).toHaveBeenCalledWith("refreshToken", "test-refresh-token", expect.any(Object));
-//     expect(res.send).toHaveBeenCalledWith(
-//       JSON.stringify({
-//         verified: true,
-//         token: "test-session-token",
-//         sessionId: "sessionId",
-//         publicUserKey: "publicKey",
-//         privateUserKeyEncrypted: "privateKey",
-//         nonce: 1234,
-//       })
-//     );
-//   });
-// });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.cookie).toHaveBeenCalledWith("refreshToken", "test-refresh-token", expect.any(Object));
+    expect(res.send).toHaveBeenCalledWith(
+      JSON.stringify({
+        verified: true,
+        token: "test-session-token",
+        sessionId: "sessionId",
+        publicUserKey: "publicKey",
+        privateUserKeyEncrypted: "privateKey",
+        cipherBlob: "cipherBlob",
+      })
+    );
+  });
+});

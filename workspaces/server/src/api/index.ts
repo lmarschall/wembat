@@ -28,11 +28,12 @@ import { openidPoll } from "./openid/openidPoll";
 
 import "dotenv/config";
 
-const connectionString = `${process.env.DATABASE_URL}`
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || "";
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || "";
-const REDIRECT_URI = 'https://localhost:8080/api/openid/callback';
-const adapter = new PrismaPg({ connectionString })
+const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI || "";
+
+const connectionString = `${process.env.DATABASE_URL}`;
+const adapter = new PrismaPg({ connectionString });
 
 export const apiRouter = Router();
 export const prisma = new PrismaClient({ adapter });
@@ -51,7 +52,7 @@ export async function initOpenIdClient() {
   openidClient = new githubIssuer.Client({
 	client_id: GITHUB_CLIENT_ID,
 	client_secret: GITHUB_CLIENT_SECRET,
-	redirect_uris: [REDIRECT_URI],
+	redirect_uris: [GITHUB_REDIRECT_URI],
 	response_types: ['code'],
   });
   
@@ -167,7 +168,7 @@ apiRouter.get(
 
 apiRouter.get(
 	'/openid/callback', 
-	async (req: Request, res: Response) => openidCallback(req, res, openidClient)
+	async (req: Request, res: Response) => openidCallback(req, res, openidClient, GITHUB_REDIRECT_URI)
 );
 
 apiRouter.get(

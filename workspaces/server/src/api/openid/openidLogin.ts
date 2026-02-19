@@ -10,12 +10,12 @@ declare module 'express-session' {
 
 export async function openidLogin(req: Request, res: Response, openidClient: BaseClient | undefined): Promise<void> {
   try {
-    if (!openidClient) throw new Error('GitHub Client nicht bereit');
+    if (!openidClient) throw new Error('openid client undefined');
 
     // 1. Get the Request ID from the frontend (polling ID)
     const requestId = req.query.requestId as string;
     
-    if (!requestId) throw new Error("Missing requestId parameter");
+    if (!requestId) throw new Error("missing requestId parameter");
 
     // 2. Generate a random nonce for security
     const nonce = generators.state();

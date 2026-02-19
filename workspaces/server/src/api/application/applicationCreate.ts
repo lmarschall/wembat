@@ -19,7 +19,7 @@ export async function applicationCreate(req: Request, res: Response, prisma: Pri
 			.catch((err: any) => {
 				console.log(err);
 				throw Error("Error while creating application");
-			}) as Application;
+			});
 
 		const appUrl = `https://${app.domain}`;
 		await redisService.addToDomainWhitelist(appUrl);

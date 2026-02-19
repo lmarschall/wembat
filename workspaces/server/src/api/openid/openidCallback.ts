@@ -2,16 +2,14 @@ import { Request, Response } from "express";
 import { BaseClient } from "openid-client";
 import { authStore } from "../auth-store";
 
-const REDIRECT_URI = 'https://localhost:8080/api/openid/callback';
-
-export async function openidCallback(req: Request, res: Response, openidClient: BaseClient | undefined): Promise<void> {
+export async function openidCallback(req: Request, res: Response, openidClient: BaseClient | undefined, redirectUri: string): Promise<void> {
     try {
         // 1. Retrieve the raw state string from GitHub
         // Fix for S4325: If req.query.state is already typed as string, 'as string' is removed.
         // If not, we force it to string safely.
         const rawState = String(req.query.state || '');
 
-        if (!openidClient) throw new Error('GitHub Client nicht bereit');
+        if (!openidClient) throw new Error('openid client undefined');
 
         let requestId = "";
 
@@ -32,7 +30,7 @@ export async function openidCallback(req: Request, res: Response, openidClient: 
         const params = openidClient.callbackParams(req);
 
         // 5. Exchange Code for Token (Pass rawState for validation)
-        const tokenSet = await openidClient.oauthCallback(REDIRECT_URI, params, { state: rawState });
+        const tokenSet = await openidClient.oauthCallback(redirectUri, params, { state: rawState });
         
         // 6. Fix for 'tokenSet not found': Ensure tokenSet is valid before using it
         if (!tokenSet || !tokenSet.access_token) {
@@ -48,13 +46,13 @@ export async function openidCallback(req: Request, res: Response, openidClient: 
         // 8. Save success to store
         authStore.success(requestId, userProfile, appToken);
 
+        // 1. Allow this page to be loaded in the existing popup
+        res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
+
         // 9. Close Popup
         res.send(authSuccessHtml);
     } catch (error: any) {
         console.log(error);
-        // if (requestId) {
-        //     authStore.fail(requestId, "Login Failed");
-        // }
 		res.status(400).send(error.message);
     }
 }

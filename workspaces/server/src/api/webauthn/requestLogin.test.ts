@@ -1,158 +1,163 @@
-// //// typescript
-// // filepath: /home/lukas/Source/wembat/backend/src/api/webauthn/requestLogin.test.ts
+import { Request, Response } from "express";
+import { PrismaClient } from "./../generated/prisma/client";
 
-// import { Request, Response } from "express";
-// import { PrismaClient } from "@prisma/client";
-// import { requestLogin } from "./requestLogin";
-// import { generateAuthenticationOptions } from "@simplewebauthn/server";
+// --- 1. PRISMA MOCK ---
+const mockPrisma = {
+  user: {
+    findUnique: jest.fn(),
+    update: jest.fn(),
+  },
+};
 
-// jest.mock("@prisma/client", () => {
-//   return {
-//     PrismaClient: jest.fn().mockImplementation(() => ({
-//       user: {
-//         findUnique: jest.fn(),
-//         update: jest.fn(),
-//       },
-//     })),
-//   };
-// });
+// Ensure this matches the exact import path in your requestLogin.ts file
+jest.mock("./../generated/prisma/client", () => ({
+  PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
+}));
 
-// jest.mock("@simplewebauthn/server", () => ({
-//   generateAuthenticationOptions: jest.fn(),
-// }));
+const prisma = (mockPrisma as unknown) as PrismaClient;
 
-// const prisma = new PrismaClient();
+// --- 2. WEBAUTHN MOCK ---
+const mockGenerateAuthOptions = jest.fn();
 
-// describe("testRequestLogin", () => {
-//   let req: Partial<Request>;
-//   let res: Partial<Response>;
+jest.mock("@simplewebauthn/server", () => ({
+  __esModule: true,
+  generateAuthenticationOptions: mockGenerateAuthOptions,
+}));
 
-//   beforeEach(() => {
-//     req = { body: {} };
-//     res = {
-//       locals: {},
-//       status: jest.fn().mockReturnThis(),
-//       send: jest.fn(),
-//     };
-//     jest.clearAllMocks();
-//   });
+// --- 3. DYNAMIC IMPORT OF CONTROLLER ---
+// Load requestLogin AFTER the mocks are registered to prevent import hoisting bugs
+const { requestLogin } = require("./requestLogin");
 
-//   it("should return 400 if userInfo is missing", async () => {
-//     await requestLogin(req as Request, res as Response, prisma);
+describe("testRequestLogin", () => {
+  let req: Partial<Request>;
+  let res: Partial<Response>;
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("User info not present");
-//   });
+  beforeEach(() => {
+    req = { body: {} };
+    res = {
+      locals: {},
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn(),
+    };
+    jest.clearAllMocks();
+  });
 
-//   it("should return 400 if payload is missing", async () => {
-//     req.body = { userInfo: { userMail: "test@user.com" } };
+  it("should return 400 if userInfo is missing", async () => {
+    await requestLogin(req as Request, res as Response, prisma);
 
-//     await requestLogin(req as Request, res as Response, prisma);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("User info not present");
+  });
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("Payload not present");
-//   });
+  it("should return 400 if payload is missing", async () => {
+    req.body = { userInfo: { userMail: "test@user.com" } };
 
-//   it("should return 400 if user is not found in database", async () => {
-//     req.headers = req.headers || {};
-//     res.locals = res.locals || {};
-//     req.body = { userInfo: { userMail: "test@user.com" } };
-//     res.locals.payload = { aud: "https://test.de" };
+    await requestLogin(req as Request, res as Response, prisma);
 
-//     (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("Payload not present");
+  });
 
-//     await requestLogin(req as Request, res as Response, prisma);
+  it("should return 400 if user is not found in database", async () => {
+    req.headers = req.headers || {};
+    res.locals = res.locals || {};
+    req.body = { userInfo: { userMail: "test@user.com" } };
+    res.locals.payload = { aud: "https://test.de" };
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("User could not be found in database");
-//   });
+    mockPrisma.user.findUnique.mockResolvedValue(null);
 
-//   it("should return 400 if generateAuthenticationOptions fails", async () => {
-//     req.headers = req.headers || {};
-//     res.locals = res.locals || {};
-//     req.body = { userInfo: { userMail: "test@user.com" } };
-//     res.locals.payload = { aud: "https://test.de" };
+    await requestLogin(req as Request, res as Response, prisma);
 
-//     (prisma.user.findUnique as jest.Mock).mockResolvedValue({
-//       uid: "userId",
-//       mail: "test@user.com",
-//       devices: [],
-//       sessions: [],
-//     });
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("User could not be found in database");
+  });
 
-//     (generateAuthenticationOptions as jest.Mock).mockRejectedValue(
-//       new Error("Authentication Options could not be generated")
-//     );
+  it("should return 400 if generateAuthenticationOptions fails", async () => {
+    req.headers = req.headers || {};
+    res.locals = res.locals || {};
+    req.body = { userInfo: { userMail: "test@user.com" } };
+    res.locals.payload = { aud: "https://test.de" };
 
-//     await requestLogin(req as Request, res as Response, prisma);
+    mockPrisma.user.findUnique.mockResolvedValue({
+      uid: "userId",
+      mail: "test@user.com",
+      devices: [],
+      sessions: [],
+    });
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("Authentication Options could not be generated");
-//   });
+    mockGenerateAuthOptions.mockRejectedValue(
+      new Error("Authentication Options could not be generated")
+    );
 
-//   it("should return 400 if user update fails", async () => {
-//     req.headers = req.headers || {};
-//     res.locals = res.locals || {};
-//     req.body = { userInfo: { userMail: "test@user.com" } };
-//     res.locals.payload = { aud: "https://test.de" };
+    await requestLogin(req as Request, res as Response, prisma);
 
-//     (prisma.user.findUnique as jest.Mock).mockResolvedValue({
-//       uid: "userId",
-//       mail: "test@user.com",
-//       devices: [],
-//       sessions: [],
-//     });
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("Authentication Options could not be generated");
+  });
 
-//     (generateAuthenticationOptions as jest.Mock).mockResolvedValue({
-//       challenge: "test-challenge",
-//       allowCredentials: [],
-//     });
+  it("should return 400 if user update fails", async () => {
+    req.headers = req.headers || {};
+    res.locals = res.locals || {};
+    req.body = { userInfo: { userMail: "test@user.com" } };
+    res.locals.payload = { aud: "https://test.de" };
 
-//     (prisma.user.update as jest.Mock).mockRejectedValue(
-//       new Error("Updating user challenge failed")
-//     );
+    mockPrisma.user.findUnique.mockResolvedValue({
+      uid: "userId",
+      mail: "test@user.com",
+      devices: [],
+      sessions: [],
+    });
 
-//     await requestLogin(req as Request, res as Response, prisma);
+    mockGenerateAuthOptions.mockResolvedValue({
+      challenge: "test-challenge",
+      allowCredentials: [],
+    });
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("Updating user challenge failed");
-//   });
+    mockPrisma.user.update.mockRejectedValue(
+      new Error("Updating user challenge failed")
+    );
 
-//   it("should return 200 and options if successful", async () => {
-//     req.headers = req.headers || {};
-//     res.locals = res.locals || {};
-//     req.body = { userInfo: { userMail: "test@user.com" } };
-//     res.locals.payload = { aud: "https://test.de" };
+    await requestLogin(req as Request, res as Response, prisma);
 
-//     (prisma.user.findUnique as jest.Mock).mockResolvedValue({
-//       uid: "userId",
-//       mail: "test@user.com",
-//       devices: [
-//         { uid: "dev1", credentialId: "abcd", transports: ["usb"] },
-//       ],
-//       sessions: [],
-//     });
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("Updating user challenge failed");
+  });
 
-//     (generateAuthenticationOptions as jest.Mock).mockResolvedValue({
-//       challenge: "test-challenge",
-//       allowCredentials: [{ id: "abcd", transports: ["usb"] }],
-//     });
+  it("should return 200 and options if successful", async () => {
+    req.headers = req.headers || {};
+    res.locals = res.locals || {};
+    req.body = { userInfo: { userMail: "test@user.com" } };
+    res.locals.payload = { aud: "https://test.de" };
 
-//     (prisma.user.update as jest.Mock).mockResolvedValue({
-//       uid: "userId",
-//       challenge: "test-challenge",
-//     });
+    mockPrisma.user.findUnique.mockResolvedValue({
+      uid: "userId",
+      mail: "test@user.com",
+      devices: [
+        { uid: "dev1", credentialId: "abcd", transports: ["usb"] },
+      ],
+      sessions: [],
+    });
 
-//     await requestLogin(req as Request, res as Response, prisma);
+    mockGenerateAuthOptions.mockResolvedValue({
+      challenge: "test-challenge",
+      allowCredentials: [{ id: "abcd", transports: ["usb"] }],
+    });
 
-//     expect(res.status).toHaveBeenCalledWith(200);
-//     expect(res.send).toHaveBeenCalledWith(
-//       JSON.stringify({
-//         options: {
-//           challenge: "test-challenge",
-//           allowCredentials: [{ id: "abcd", transports: ["usb"] }],
-//         },
-//       })
-//     );
-//   });
-// });
+    mockPrisma.user.update.mockResolvedValue({
+      uid: "userId",
+      challenge: "test-challenge",
+    });
+
+    await requestLogin(req as Request, res as Response, prisma);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.send).toHaveBeenCalledWith(
+      JSON.stringify({
+        options: {
+          challenge: "test-challenge",
+          allowCredentials: [{ id: "abcd", transports: ["usb"] }],
+        },
+      })
+    );
+  });
+});

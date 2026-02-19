@@ -17,11 +17,11 @@ export async function login(req: Request, res: Response, prisma: PrismaClient): 
 		// 7 ?????
 
 		if (!req.body.loginChallengeResponse)
-			throw Error("Login Challenge Response not present");
+			throw new Error("Login Challenge Response not present");
 		const { challenge, credentials } =
 			req.body.loginChallengeResponse as LoginChallengeResponse;
 
-		if(!res.locals.payload) throw Error("Payload not present");
+		if(!res.locals.payload) throw new Error("Payload not present");
 		const audience = res.locals.payload.aud;
 		const domain = audience.split("://")[1];
 		const rpId = domain.split(":")[0];
@@ -40,10 +40,10 @@ export async function login(req: Request, res: Response, prisma: PrismaClient): 
 			})
 			.catch((err: any) => {
 				console.log(err);
-				throw Error("User with given challenge not found");
+				throw new Error("User with given challenge not found");
 			})) as UserWithDevicesAndSessions;
 
-		if (!user) throw Error("User with given challenge not found");
+		if (!user) throw new Error("User with given challenge not found");
 
 		let userDevice: Device | null = null;
 		// "Query the DB" here for an authenticator matching `credentialID`
@@ -75,11 +75,11 @@ export async function login(req: Request, res: Response, prisma: PrismaClient): 
 		const { verified, authenticationInfo } = await verifyAuthenticationResponse(opts).catch(
 			(err) => {
 				console.log(err);
-				throw Error("Authentication Response could not be verified");
+				throw new Error("Authentication Response could not be verified");
 			}
 		);
 
-		if (verified == false) throw Error("Could not verifiy reponse");
+		if (!verified) throw new Error("Could not verifiy reponse");
 
 		// Update the authenticator's counter in the DB to the newest count in the authentication
 		// TODO make this db call not only local parameter
@@ -94,8 +94,7 @@ export async function login(req: Request, res: Response, prisma: PrismaClient): 
 		let userSession: Session;
 		
 		if (userSessionsForApp.length == 0 && userSessionsForAppAndDevice.length == 0) {
-			// create new user session for this app
-			// keys will be generated locally
+			// create new user session for this app, keys will be generated locally
 			userSession = await prisma.session
 			.create({
 				data: {
@@ -106,18 +105,17 @@ export async function login(req: Request, res: Response, prisma: PrismaClient): 
 			})
 			.catch((err: any) => {
 				console.log(err);
-				throw Error("Error while creating new session for user");
-			}) as Session;
+				throw new Error("Error while creating new session for user");
+			});
 		} else if (userSessionsForApp.length > 0 && userSessionsForAppAndDevice.length == 0) {
 			// user has sessions but device is not onboarded to session
 			// keys need to be shared from other session
-			throw Error("User device is not onboarded to session");
-		} 
-		else if (userSessionsForApp.length > 0 && userSessionsForAppAndDevice.length > 0) {
+			throw new Error("User device is not onboarded to session");
+		} else if (userSessionsForApp.length > 0 && userSessionsForAppAndDevice.length > 0) {
 			// user has session for app and device
 			userSession = userSessionsForAppAndDevice[0];
 		} else {
-			throw Error("Unknown error while creating session");
+			throw new Error("Unknown error while creating session");
 		}
 
 		// create new json web token for api calls

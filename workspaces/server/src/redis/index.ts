@@ -26,13 +26,13 @@ export async function initRedis(): Promise<boolean> {
 }
 
 export class RedisService {
-	private port = process.env.REDIS_PORT || 6379;
-	private host = process.env.REDIS_HOST || "127.0.0.1";
-	private dashboardUrl = process.env.DASHBOARD_URL || "http://localhost:9090";
+	private readonly port = process.env.REDIS_PORT || 6379;
+	private readonly host = process.env.REDIS_HOST || "127.0.0.1";
+	private readonly dashboardUrl = process.env.DASHBOARD_URL || "http://localhost:9090";
 
-	private redisurl = `redis://${this.host}:${this.port}`;
-	private client = createClient({ url: this.redisurl });
-	private prisma = new PrismaClient({adapter});
+	private readonly redisurl = `redis://${this.host}:${this.port}`;
+	private readonly client = createClient({ url: this.redisurl });
+	private readonly prisma = new PrismaClient({adapter});
 
 	constructor() {
 		this.client.on("connect", () => {
