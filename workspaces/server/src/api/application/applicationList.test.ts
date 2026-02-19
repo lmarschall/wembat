@@ -1,62 +1,63 @@
-// //// typescript
-// // filepath: /home/lukas/Source/wembat/backend/src/api/application/applicationList.test.ts
+import { Request, Response } from "express";
+import { PrismaClient } from "./../generated/prisma/client";
 
-// import { Request, Response } from "express";
-// import { PrismaClient } from "@prisma/client";
-// import { applicationList } from "./applicationList";
+// --- 1. PRISMA MOCK ---
+const mockPrisma = {
+  application: {
+    findMany: jest.fn(),
+  },
+};
 
-// // Prisma-Client mocken
-// jest.mock("@prisma/client", () => {
-//   return {
-//     PrismaClient: jest.fn().mockImplementation(() => ({
-//       application: {
-//         findMany: jest.fn(),
-//       },
-//     })),
-//   };
-// });
+// Ensure this matches the exact import path in your applicationList.ts file
+jest.mock("./../generated/prisma/client", () => ({
+  PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
+}));
 
-// const prisma = new PrismaClient();
+const prisma = (mockPrisma as unknown) as PrismaClient;
 
-// describe("testApplicationList", () => {
-//   let req: Partial<Request>;
-//   let res: Partial<Response>;
+// --- 2. DYNAMIC IMPORT OF CONTROLLER ---
+// Load applicationList AFTER the mocks are registered to prevent import hoisting bugs
+const { applicationList } = require("./applicationList");
 
-//   beforeEach(() => {
-//     req = {
-//       body: {},
-//     };
-//     res = {
-//       status: jest.fn().mockReturnThis(),
-//       json: jest.fn(),
-//       send: jest.fn(),
-//     };
-//     jest.clearAllMocks();
-//   });
+describe("testApplicationList", () => {
+  let req: Partial<Request>;
+  let res: Partial<Response>;
 
-//   it("should return a list of applications", async () => {
-//     const mockApplications = [
-//       { uid: "app1", name: "Test App 1", domain: "test1.com" },
-//       { uid: "app2", name: "Test App 2", domain: "test2.com" },
-//     ];
+  beforeEach(() => {
+    req = {
+      body: {},
+    };
+    res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+      send: jest.fn(),
+    };
+    jest.clearAllMocks();
+  });
 
-//     (prisma.application.findMany as jest.Mock).mockResolvedValue(mockApplications);
+  it("should return a list of applications", async () => {
+    const mockApplications = [
+      { uid: "app1", name: "Test App 1", domain: "test1.com" },
+      { uid: "app2", name: "Test App 2", domain: "test2.com" },
+    ];
 
-//     await applicationList(req as Request, res as Response, prisma);
+    mockPrisma.application.findMany.mockResolvedValue(mockApplications);
 
-//     expect(prisma.application.findMany).toHaveBeenCalled();
-//     expect(res.status).toHaveBeenCalledWith(200);
-//     expect(res.json).toHaveBeenCalledWith(mockApplications);
-//   });
+    await applicationList(req as Request, res as Response, prisma);
 
-//   it("should return 500 if an error occurs while listing applications", async () => {
-//     (prisma.application.findMany as jest.Mock).mockRejectedValue(
-//       new Error("Database error")
-//     );
+    expect(mockPrisma.application.findMany).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(mockApplications);
+  });
 
-//     await applicationList(req as Request, res as Response, prisma);
+  it("should return 500 if an error occurs while listing applications", async () => {
+    mockPrisma.application.findMany.mockRejectedValue(
+      new Error("Database error")
+    );
 
-//     expect(res.status).toHaveBeenCalledWith(500);
-//     expect(res.send).toHaveBeenCalledWith("Database error");
-//   });
-// });
+    await applicationList(req as Request, res as Response, prisma);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith("Database error");
+  });
+});

@@ -1,196 +1,188 @@
-// //// typescript
-// // filepath: /home/lukas/Source/wembat/backend/src/api/webauthn/refresh.test.ts
+import { Request, Response } from "express";
+import { PrismaClient } from "./../generated/prisma/client";
 
-// import { Request, Response } from "express";
-// import { PrismaClient } from "@prisma/client";
-// import { refresh } from "./refresh";
-// import { cryptoService } from "../../crypto";
+// --- 1. PRISMA MOCK ---
+const mockPrisma = {
+  user: {
+    findUnique: jest.fn(),
+  },
+};
 
-// // Prisma und cryptoService mocken
-// jest.mock("@prisma/client", () => {
-//   return {
-//     PrismaClient: jest.fn().mockImplementation(() => ({
-//       user: {
-//         findUnique: jest.fn(),
-//       },
-//     })),
-//   };
-// });
+// Ensure this matches the exact import path in your refresh.ts file
+jest.mock("./../generated/prisma/client", () => ({
+  PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
+}));
 
-// jest.mock("../../crypto", () => ({
-//   cryptoService: {
-//     createSessionToken: jest.fn(),
-//   },
-// }));
+const prisma = (mockPrisma as unknown) as PrismaClient;
 
-// const prisma = new PrismaClient();
+// --- 2. CRYPTO MOCK ---
+const mockCreateSessionToken = jest.fn();
 
-// describe("testRefresh", () => {
-//   let req: Partial<Request>;
-//   let res: Partial<Response>;
+jest.mock("../../crypto", () => ({
+  cryptoService: {
+    createSessionToken: mockCreateSessionToken,
+  },
+}));
 
-//   beforeEach(() => {
-//     req = {
-//       cookies: {},
-//       body: {},
-//     };
-//     res = {
-//       locals: {},
-//       status: jest.fn().mockReturnThis(),
-//       send: jest.fn(),
-//     };
-//     jest.clearAllMocks();
-//   });
+// --- 3. DYNAMIC IMPORT OF CONTROLLER ---
+// Load refresh AFTER the mocks are registered to prevent import hoisting bugs
+const { refresh } = require("./refresh");
 
-//   it("should return error if refreshToken cookie is missing", async () => {
-//     // refreshToken nicht vorhanden
-//     await refresh(req as Request, res as Response, prisma);
+describe("testRefresh", () => {
+  let req: Partial<Request>;
+  let res: Partial<Response>;
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("Refresh Token not present");
-//   });
+  beforeEach(() => {
+    req = {
+      cookies: {},
+      body: {},
+    };
+    res = {
+      locals: {},
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn(),
+    };
+    jest.clearAllMocks();
+  });
 
-//   it("should return error if userInfo is missing", async () => {
-//     req.cookies = { refreshToken: "test-refresh-token" };
-//     // userInfo nicht definiert
-//     await refresh(req as Request, res as Response, prisma);
+  it("should return error if refreshToken cookie is missing", async () => {
+    // refreshToken is deliberately left undefined
+    await refresh(req as Request, res as Response, prisma);
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("User info not present");
-//   });
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("Refresh Token not present");
+  });
 
-//   it("should return error if payload is missing", async () => {
-//     req.cookies = { refreshToken: "test-refresh-token" };
-//     req.body = {
-//       userInfo: {
-//         userMail: "test@user.com",
-//         sessionId: "session123",
-//       },
-//     };
-//     // res.locals.payload nicht gesetzt
+  it("should return error if userInfo is missing", async () => {
+    req.cookies = { refreshToken: "test-refresh-token" };
+    // userInfo is deliberately left undefined
+    await refresh(req as Request, res as Response, prisma);
 
-//     await refresh(req as Request, res as Response, prisma);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("User info not present");
+  });
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("Payload not present");
-//   });
+  it("should return error if payload is missing", async () => {
+    req.cookies = { refreshToken: "test-refresh-token" };
+    req.body = {
+      userInfo: {
+        userMail: "test@user.com",
+        sessionId: "session123",
+      },
+    };
+    // res.locals.payload is deliberately left undefined
 
-//   it("should return error if user not found in database", async () => {
-//     req.headers = req.headers || {};
-//     res.locals = res.locals || {};
-//     req.cookies = { refreshToken: "test-refresh-token" };
-//     req.body = {
-//       userInfo: {
-//         userMail: "test@user.com",
-//         sessionId: "session123",
-//       },
-//     };
-//     res.locals.payload = {
-//       aud: "https://example.de",
-//     };
+    await refresh(req as Request, res as Response, prisma);
 
-//     // findUnique wirft einen Fehler
-//     (prisma.user.findUnique as jest.Mock).mockRejectedValue(
-//       new Error("User could not be found in database")
-//     );
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("Payload not present");
+  });
 
-//     await refresh(req as Request, res as Response, prisma);
+  it("should return error if user not found in database", async () => {
+    req.headers = req.headers || {};
+    res.locals = res.locals || {};
+    req.cookies = { refreshToken: "test-refresh-token" };
+    req.body = {
+      userInfo: {
+        userMail: "test@user.com",
+        sessionId: "session123",
+      },
+    };
+    res.locals.payload = { aud: "https://example.de" };
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("User could not be found in database");
-//   });
+    mockPrisma.user.findUnique.mockRejectedValue(
+      new Error("User could not be found in database")
+    );
 
-//   it("should return error if user is null", async () => {
-//     req.headers = req.headers || {};
-//     res.locals = res.locals || {};
-//     req.cookies = { refreshToken: "test-refresh-token" };
-//     req.body = {
-//       userInfo: {
-//         userMail: "test@user.com",
-//         sessionId: "session123",
-//       },
-//     };
-//     res.locals.payload = {
-//       aud: "https://example.de",
-//     };
+    await refresh(req as Request, res as Response, prisma);
 
-//     (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("User could not be found in database");
+  });
 
-//     await refresh(req as Request, res as Response, prisma);
+  it("should return error if user is null", async () => {
+    req.headers = req.headers || {};
+    res.locals = res.locals || {};
+    req.cookies = { refreshToken: "test-refresh-token" };
+    req.body = {
+      userInfo: {
+        userMail: "test@user.com",
+        sessionId: "session123",
+      },
+    };
+    res.locals.payload = { aud: "https://example.de" };
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("User could not be found in database");
-//   });
+    mockPrisma.user.findUnique.mockResolvedValue(null);
 
-//   it("should return error if user session not found", async () => {
-//     req.headers = req.headers || {};
-//     res.locals = res.locals || {};
-//     req.cookies = { refreshToken: "test-refresh-token" };
-//     req.body = {
-//       userInfo: {
-//         userMail: "test@user.com",
-//         sessionId: "session123",
-//       },
-//     };
-//     res.locals.payload = {
-//       aud: "https://example.de",
-//     };
+    await refresh(req as Request, res as Response, prisma);
 
-//     // findUnique gibt einen User ohne passende Session zurück
-//     (prisma.user.findUnique as jest.Mock).mockResolvedValue({
-//       uid: "testUserId",
-//       mail: "test@user.com",
-//       devices: [],
-//       sessions: [{ uid: "someOtherSessionId" }],
-//     });
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("User could not be found in database");
+  });
 
-//     await refresh(req as Request, res as Response, prisma);
+  it("should return error if user session not found", async () => {
+    req.headers = req.headers || {};
+    res.locals = res.locals || {};
+    req.cookies = { refreshToken: "test-refresh-token" };
+    req.body = {
+      userInfo: {
+        userMail: "test@user.com",
+        sessionId: "session123",
+      },
+    };
+    res.locals.payload = { aud: "https://example.de" };
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("User session not found");
-//   });
+    mockPrisma.user.findUnique.mockResolvedValue({
+      uid: "testUserId",
+      mail: "test@user.com",
+      devices: [],
+      sessions: [{ uid: "someOtherSessionId" }],
+    });
 
-//   it("should return 200 and token if refresh is valid", async () => {
-//     req.headers = req.headers || {};
-//     res.locals = res.locals || {};
-//     req.cookies = { refreshToken: "test-refresh-token" };
-//     req.body = {
-//       userInfo: {
-//         userMail: "test@user.com",
-//         sessionId: "session123",
-//       },
-//     };
-//     res.locals.payload = {
-//       aud: "https://example.de",
-//     };
+    await refresh(req as Request, res as Response, prisma);
 
-//     // findUnique gibt User + Session zurück
-//     (prisma.user.findUnique as jest.Mock).mockResolvedValue({
-//       uid: "testUserId",
-//       mail: "test@user.com",
-//       devices: [],
-//       sessions: [
-//         {
-//           uid: "session123",
-//           userUId: "testUserId",
-//           appUId: "appId",
-//           deviceUId: "deviceUid",
-//           publicKey: "publicKey",
-//           privateKey: "privateKey",
-//           nonce: 1234,
-//         },
-//       ],
-//     });
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("User session not found");
+  });
 
-//     (cryptoService.createSessionToken as jest.Mock).mockResolvedValue("test-session-token");
+  it("should return 200 and token if refresh is valid", async () => {
+    req.headers = req.headers || {};
+    res.locals = res.locals || {};
+    req.cookies = { refreshToken: "test-refresh-token" };
+    req.body = {
+      userInfo: {
+        userMail: "test@user.com",
+        sessionId: "session123",
+      },
+    };
+    res.locals.payload = { aud: "https://example.de" };
 
-//     await refresh(req as Request, res as Response, prisma);
+    mockPrisma.user.findUnique.mockResolvedValue({
+      uid: "testUserId",
+      mail: "test@user.com",
+      devices: [],
+      sessions: [
+        {
+          uid: "session123",
+          userUId: "testUserId",
+          appUId: "appId",
+          deviceUId: "deviceUid",
+          publicKey: "publicKey",
+          privateKey: "privateKey",
+          nonce: 1234,
+        },
+      ],
+    });
 
-//     expect(res.status).toHaveBeenCalledWith(200);
-//     expect(res.send).toHaveBeenCalledWith(
-//       JSON.stringify({
-//         token: "test-session-token",
-//       })
-//     );
-//   });
-// });
+    mockCreateSessionToken.mockResolvedValue("test-session-token");
+
+    await refresh(req as Request, res as Response, prisma);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.send).toHaveBeenCalledWith(
+      JSON.stringify({
+        token: "test-session-token",
+      })
+    );
+  });
+});

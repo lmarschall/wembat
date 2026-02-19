@@ -1,15 +1,23 @@
-//// typescript
-// filepath: /home/lukas/Source/wembat/backend/src/api/server/serverExportPublicKey.test.ts
-
 import { Request, Response } from "express";
-import { serverExportPublicKey } from "./serverExportPublicKey";
-import { cryptoService } from "../../crypto";
+
+// --- 1. CRYPTO SERVICE MOCK ---
+const mockExportPublicKey = jest.fn();
+
+// We use a variable here so we can simulate the service being undefined later
+let mockCryptoModuleState: any = {
+  exportPublicKey: mockExportPublicKey,
+};
 
 jest.mock("../../crypto", () => ({
-  cryptoService: {
-    exportPublicKey: jest.fn(),
+  // Using a getter ensures the controller always reads the *current* state of our variable
+  get cryptoService() {
+    return mockCryptoModuleState;
   },
 }));
+
+// --- 2. DYNAMIC IMPORT OF CONTROLLER ---
+// Load controller AFTER the mocks are registered to prevent import hoisting bugs
+const { serverExportPublicKey } = require("./serverExportPublicKey");
 
 describe("testServerExportPublicKey", () => {
   let req: Partial<Request>;
@@ -22,24 +30,26 @@ describe("testServerExportPublicKey", () => {
       send: jest.fn(),
       json: jest.fn(),
     };
+    
+    // Reset the mock module state and clear function histories before EVERY test
+    mockCryptoModuleState = {
+      exportPublicKey: mockExportPublicKey,
+    };
     jest.clearAllMocks();
   });
 
   it("should return 500 if cryptoService is not initialized", async () => {
-    // Mock cryptoService als undefined
-    (require("../../crypto").cryptoService as any) = undefined;
+    // Simulate cryptoService not being initialized
+    mockCryptoModuleState = undefined;
 
     await serverExportPublicKey(req as Request, res as Response);
 
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.send).toHaveBeenCalledWith("CryptoService not initialized");
-
-    // Wiederherstellen
-    (require("../../crypto").cryptoService as any) = { exportPublicKey: jest.fn() };
   });
 
   it("should return 500 when exportPublicKey fails", async () => {
-    (cryptoService.exportPublicKey as jest.Mock).mockRejectedValue(new Error("Export error"));
+    mockExportPublicKey.mockRejectedValue(new Error("Export error"));
 
     await serverExportPublicKey(req as Request, res as Response);
 
@@ -48,7 +58,7 @@ describe("testServerExportPublicKey", () => {
   });
 
   it("should return 200 and the public key if successful", async () => {
-    (cryptoService.exportPublicKey as jest.Mock).mockResolvedValue("mockedPublicKey");
+    mockExportPublicKey.mockResolvedValue("mockedPublicKey");
 
     await serverExportPublicKey(req as Request, res as Response);
 

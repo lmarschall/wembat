@@ -1,86 +1,80 @@
-// //// typescript
-// // filepath: /home/lukas/Source/wembat/backend/src/api/webauthn/updateCredentials.test.ts
+import { Request, Response } from "express";
+import { PrismaClient } from "./../generated/prisma/client";
 
-// import { Request, Response } from "express";
-// import { updateCredentials } from "./updateCredentials";
-// import { PrismaClient } from "@prisma/client";
+// --- 1. PRISMA MOCK ---
+const mockPrisma = {
+  session: {
+    update: jest.fn(),
+  },
+};
 
-// // Prisma mocken
-// jest.mock("@prisma/client", () => ({
-//   PrismaClient: jest.fn().mockImplementation(() => ({
-//     session: {
-//       update: jest.fn(),
-//     },
-//   })),
-// }));
+// Ensure this matches the exact import path in your updateCredentials.ts file
+jest.mock("./../generated/prisma/client", () => ({
+  PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
+}));
 
-// const prisma = new PrismaClient();
+const prisma = (mockPrisma as unknown) as PrismaClient;
 
-// describe("testUpdateCredentials", () => {
-//   let req: Partial<Request>;
-//   let res: Partial<Response>;
+// --- 2. DYNAMIC IMPORT OF CONTROLLER ---
+// Load updateCredentials AFTER the mocks are registered to prevent import hoisting bugs
+const { updateCredentials } = require("./updateCredentials");
 
-//   beforeEach(() => {
-//     req = { body: {} };
-//     res = {
-//       status: jest.fn().mockReturnThis(),
-//       send: jest.fn(),
-//     };
-//     jest.clearAllMocks();
-//   });
+describe("testUpdateCredentials", () => {
+  let req: Partial<Request>;
+  let res: Partial<Response>;
 
-//   it("should return 400 if updateCredentialsRequest is not present", async () => {
-//     await updateCredentials(req as Request, res as Response, prisma);
+  beforeEach(() => {
+    req = { body: {} };
+    res = {
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn(),
+    };
+    jest.clearAllMocks();
+  });
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("Challenge Response not present");
-//   });
+  it("should return 400 if updateCredentialsRequest is not present", async () => {
+    await updateCredentials(req as Request, res as Response, prisma);
 
-//   it("should return 400 if session update fails", async () => {
-//     req.body = {
-//       updateCredentialsRequest: {
-//         privKey: "testPrivKey",
-//         pubKey: "testPubKey",
-//         nonce: 1234,
-//         sessionId: "testSessionId",
-//       },
-//     };
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("Challenge Response not present");
+  });
 
-//     // const mockUpdate = jest
-//     //   .fn()
-//     //   .mockRejectedValue(new Error("Updating user challenge failed"));
-//     // (require("@prisma/client").PrismaClient as jest.Mock).mockImplementation(() => ({
-//     //   session: {
-//     //     update: mockUpdate,
-//     //   },
-//     // }));
+  it("should return 400 if session update fails", async () => {
+    req.body = {
+      updateCredentialsRequest: {
+        privKey: "testPrivKey",
+        pubKey: "testPubKey",
+        nonce: 1234,
+        sessionId: "testSessionId",
+      },
+    };
 
-//     (prisma.session.update as jest.Mock).mockRejectedValue(
-//       new Error("Updating user challenge failed")
-//     );
+    mockPrisma.session.update.mockRejectedValue(
+      new Error("Updating user challenge failed")
+    );
 
-//     await updateCredentials(req as Request, res as Response, prisma);
+    await updateCredentials(req as Request, res as Response, prisma);
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("Updating user challenge failed");
-//   });
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("Updating user challenge failed");
+  });
 
-//   it("should return 200 and success if update is successful", async () => {
-//     req.body = {
-//       updateCredentialsRequest: {
-//         privKey: "testPrivKey",
-//         pubKey: "testPubKey",
-//         nonce: 9999,
-//         sessionId: "testSessionId",
-//       },
-//     };
+  it("should return 200 and success if update is successful", async () => {
+    req.body = {
+      updateCredentialsRequest: {
+        privKey: "testPrivKey",
+        pubKey: "testPubKey",
+        nonce: 9999,
+        sessionId: "testSessionId",
+      },
+    };
 
-//     (prisma.session.update as jest.Mock).mockResolvedValue({});
+    mockPrisma.session.update.mockResolvedValue({});
 
-//     await updateCredentials(req as Request, res as Response, prisma);
+    await updateCredentials(req as Request, res as Response, prisma);
 
-//     expect(prisma.session.update).toHaveBeenCalled();
-//     expect(res.status).toHaveBeenCalledWith(200);
-//     expect(res.send).toHaveBeenCalledWith(JSON.stringify({ success: true }));
-//   });
-// });
+    expect(mockPrisma.session.update).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.send).toHaveBeenCalledWith(JSON.stringify({ success: true }));
+  });
+});

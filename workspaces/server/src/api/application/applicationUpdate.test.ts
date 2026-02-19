@@ -1,133 +1,140 @@
-// //// typescript
-// // filepath: /home/lukas/Source/wembat/backend/src/api/application/applicationUpdate.test.ts
+import { Request, Response } from "express";
+import { PrismaClient } from "./../generated/prisma/client";
 
-// import { Request, Response } from "express";
-// import { PrismaClient } from "@prisma/client";
-// import { applicationUpdate } from "./applicationUpdate";
-// import { redisService } from "../../redis";
+// --- 1. PRISMA MOCK ---
+const mockPrisma = {
+  application: {
+    findUnique: jest.fn(),
+    update: jest.fn(),
+  },
+};
 
-// // Prisma-Client mocken
-// jest.mock("@prisma/client", () => {
-//   return {
-//     PrismaClient: jest.fn().mockImplementation(() => ({
-//       application: {
-//         findUnique: jest.fn(),
-//         update: jest.fn(),
-//       },
-//     })),
-//   };
-// });
+// Ensure this matches the exact import path in your applicationUpdate.ts file
+jest.mock("./../generated/prisma/client", () => ({
+  PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
+}));
 
-// jest.mock("../../redis", () => ({
-//   redisService: {
-//     addToDomainWhitelist: jest.fn(),
-//     removeFromDomainWhitelist: jest.fn(),
-//   }
-// }));
+const prisma = (mockPrisma as unknown) as PrismaClient;
 
-// const prisma = new PrismaClient();
+// --- 2. REDIS MOCK ---
+const mockAddToDomainWhitelist = jest.fn();
+const mockRemoveFromDomainWhitelist = jest.fn();
 
-// describe("testApplicationUpdate", () => {
-//   let req: Partial<Request>;
-//   let res: Partial<Response>;
+jest.mock("../../redis", () => ({
+  redisService: {
+    addToDomainWhitelist: mockAddToDomainWhitelist,
+    removeFromDomainWhitelist: mockRemoveFromDomainWhitelist,
+  }
+}));
 
-//   beforeEach(() => {
-//     req = {
-//       body: {},
-//     };
-//     res = {
-//       status: jest.fn().mockReturnThis(),
-//       send: jest.fn(),
-//     };
-//     jest.clearAllMocks();
-//   });
+// --- 3. DYNAMIC IMPORT OF CONTROLLER ---
+// Load applicationUpdate AFTER the mocks are registered to prevent import hoisting bugs
+const { applicationUpdate } = require("./applicationUpdate");
 
-//   it("should return 500 if applicationInfo is not present", async () => {
-//     // Keine applicationInfo im Request-Body
-//     await applicationUpdate(req as Request, res as Response, prisma);
+describe("testApplicationUpdate", () => {
+  let req: Partial<Request>;
+  let res: Partial<Response>;
 
-//     expect(res.status).toHaveBeenCalledWith(500);
-//     expect(res.send).toHaveBeenCalledWith("Application Info not present");
-//   });
+  beforeEach(() => {
+    req = {
+      body: {},
+    };
+    res = {
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn(),
+    };
+    jest.clearAllMocks();
+  });
 
-//   it("should return 500 if findUnique fails", async () => {
-//     req.body = {
-//       applicationInfo: {
-//         appUId: "test-app-id",
-//         appName: "Test App",
-//         appDomain: "test.com",
-//       },
-//     };
+  it("should return 500 if applicationInfo is not present", async () => {
+    // No applicationInfo in the request body
+    await applicationUpdate(req as Request, res as Response, prisma);
 
-//     // Simuliere einen Datenbankfehler bei findUnique
-//     (prisma.application.findUnique as jest.Mock).mockRejectedValue(
-//       new Error("Database error")
-//     );
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith("Application Info not present");
+  });
 
-//     await applicationUpdate(req as Request, res as Response, prisma);
+  it("should return 500 if findUnique fails", async () => {
+    req.body = {
+      applicationInfo: {
+        appUId: "test-app-id",
+        appName: "Test App",
+        appDomain: "test.com",
+      },
+    };
 
-//     expect(res.status).toHaveBeenCalledWith(500);
-//     expect(res.send).toHaveBeenCalledWith("Error while updating application");
-//   });
+    // Simulate a database error on findUnique
+    mockPrisma.application.findUnique.mockRejectedValue(
+      new Error("Database error")
+    );
 
-//   it("should return 500 if update fails", async () => {
-//     req.body = {
-//       applicationInfo: {
-//         appUId: "test-app-id",
-//         appName: "Test App",
-//         appDomain: "test.com",
-//       },
-//     };
+    await applicationUpdate(req as Request, res as Response, prisma);
 
-//     // findUnique soll erfolgreich sein
-//     (prisma.application.findUnique as jest.Mock).mockResolvedValue({
-//       uid: "test-app-id",
-//       name: "Old Name",
-//       domain: "old-domain.com",
-//     });
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith("Error while updating application");
+  });
 
-//     // update soll fehlschlagen
-//     (prisma.application.update as jest.Mock).mockRejectedValue(
-//       new Error("Error while updating application")
-//     );
+  it("should return 500 if update fails", async () => {
+    req.body = {
+      applicationInfo: {
+        appUId: "test-app-id",
+        appName: "Test App",
+        appDomain: "test.com",
+      },
+    };
 
-//     await applicationUpdate(req as Request, res as Response, prisma);
+    mockPrisma.application.findUnique.mockResolvedValue({
+      uid: "test-app-id",
+      name: "Old Name",
+      domain: "old-domain.com",
+    });
 
-//     expect(res.status).toHaveBeenCalledWith(500);
-//     expect(res.send).toHaveBeenCalledWith("Error while updating application");
-//   });
+    // Simulate a database error on update
+    mockPrisma.application.update.mockRejectedValue(
+      new Error("Error while updating application")
+    );
 
-//   it("should update an application and return 200 if valid data is provided", async () => {
-//     req.body = {
-//       applicationInfo: {
-//         appUId: "test-app-id",
-//         appName: "Updated Name",
-//         appDomain: "updated-domain.com",
-//       },
-//     };
+    await applicationUpdate(req as Request, res as Response, prisma);
 
-//     // findUnique gibt ein bestehendes Objekt zurück
-//     (prisma.application.findUnique as jest.Mock).mockResolvedValue({
-//       uid: "test-app-id",
-//       name: "Old Name",
-//       domain: "old-domain.com",
-//     });
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith("Error while updating application");
+  });
 
-//     // update liefert das aktualisierte Objekt zurück
-//     (prisma.application.update as jest.Mock).mockResolvedValue({
-//       uid: "test-app-id",
-//       name: "Updated Name",
-//       domain: "updated-domain.com",
-//     });
+  it("should update an application and return 200 if valid data is provided", async () => {
+    req.body = {
+      applicationInfo: {
+        appUId: "test-app-id",
+        appName: "Updated Name",
+        appDomain: "updated-domain.com",
+      },
+    };
 
-//     (redisService.addToDomainWhitelist as jest.Mock).mockResolvedValue({});
-//     (redisService.removeFromDomainWhitelist as jest.Mock).mockResolvedValue({});
+    mockPrisma.application.findUnique.mockResolvedValue({
+      uid: "test-app-id",
+      name: "Old Name",
+      domain: "old-domain.com",
+    });
 
-//     await applicationUpdate(req as Request, res as Response, prisma);
+    mockPrisma.application.update.mockResolvedValue({
+      uid: "test-app-id",
+      name: "Updated Name",
+      domain: "updated-domain.com",
+    });
 
-//     expect(prisma.application.findUnique).toHaveBeenCalled();
-//     expect(prisma.application.update).toHaveBeenCalled();
-//     expect(res.status).toHaveBeenCalledWith(200);
-//     expect(res.send).toHaveBeenCalled();
-//   });
-// });
+    mockAddToDomainWhitelist.mockResolvedValue({});
+    mockRemoveFromDomainWhitelist.mockResolvedValue({});
+
+    await applicationUpdate(req as Request, res as Response, prisma);
+
+    // Verify explicitly mocked functions were called
+    expect(mockPrisma.application.findUnique).toHaveBeenCalled();
+    expect(mockPrisma.application.update).toHaveBeenCalled();
+    
+    // Depending on your controller logic, you can assert exact params passed to Redis here:
+    // expect(mockRemoveFromDomainWhitelist).toHaveBeenCalledWith("https://old-domain.com");
+    // expect(mockAddToDomainWhitelist).toHaveBeenCalledWith("https://updated-domain.com");
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.send).toHaveBeenCalled();
+  });
+});

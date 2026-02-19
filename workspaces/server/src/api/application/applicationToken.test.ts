@@ -1,121 +1,120 @@
-// //// typescript
-// // filepath: /home/lukas/Source/wembat/backend/src/api/application/applicationToken.test.ts
+import { Request, Response } from "express";
+import { PrismaClient } from "./../generated/prisma/client";
 
-// import { Request, Response } from "express";
-// import { PrismaClient } from "@prisma/client";
-// import { applicationToken } from "./applicationToken";
-// import { cryptoService } from "../../crypto";
+// --- 1. PRISMA MOCK ---
+const mockPrisma = {
+  application: {
+    findUnique: jest.fn(),
+  },
+};
 
-// // Prisma-Client und cryptoService mocken
-// jest.mock("@prisma/client", () => {
-//   return {
-//     PrismaClient: jest.fn().mockImplementation(() => ({
-//       application: {
-//         findUnique: jest.fn(),
-//       },
-//     })),
-//   };
-// });
+// Ensure this matches the exact import path in your applicationToken.ts file
+jest.mock("./../generated/prisma/client", () => ({
+  PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
+}));
 
-// jest.mock("../../crypto", () => ({
-//   cryptoService: {
-//     createApplicationJWT: jest.fn(),
-//   },
-// }));
+const prisma = (mockPrisma as unknown) as PrismaClient;
 
-// const prisma = new PrismaClient();
+// --- 2. CRYPTO SERVICE MOCK ---
+const mockCreateApplicationJWT = jest.fn();
 
-// describe("testApplicationToken", () => {
-//   let req: Partial<Request>;
-//   let res: Partial<Response>;
+jest.mock("../../crypto", () => ({
+  cryptoService: {
+    createApplicationJWT: mockCreateApplicationJWT,
+  },
+}));
 
-//   beforeEach(() => {
-//     req = {
-//       body: {},
-//     };
-//     res = {
-//       status: jest.fn().mockReturnThis(),
-//       send: jest.fn(),
-//       json: jest.fn(),
-//     };
-//     jest.clearAllMocks();
-//   });
+// --- 3. DYNAMIC IMPORT OF CONTROLLER ---
+// Load applicationToken AFTER the mocks are registered to prevent import hoisting bugs
+const { applicationToken } = require("./applicationToken");
 
-//   it("should return 500 if applicationInfo is not present", async () => {
-//     // Hier setzen wir req.body absichtlich nicht
-//     await applicationToken(req as Request, res as Response, prisma);
+describe("testApplicationToken", () => {
+  let req: Partial<Request>;
+  let res: Partial<Response>;
 
-//     expect(res.status).toHaveBeenCalledWith(500);
-//     expect(res.send).toHaveBeenCalledWith("Application Info not present");
-//   });
+  beforeEach(() => {
+    req = {
+      body: {},
+    };
+    res = {
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn(),
+      json: jest.fn(),
+    };
+    jest.clearAllMocks();
+  });
 
-//   it("should return 500 if application not found", async () => {
-//     req.body = { applicationInfo: { appUId: "test-app-id" } };
+  it("should return 500 if applicationInfo is not present", async () => {
+    // req.body is intentionally left empty
+    await applicationToken(req as Request, res as Response, prisma);
 
-//     // Mock findUnique, damit es keinen Eintrag zurückgibt
-//     (prisma.application.findUnique as jest.Mock).mockResolvedValue(undefined);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith("Application Info not present");
+  });
 
-//     await applicationToken(req as Request, res as Response, prisma);
+  it("should return 500 if application not found", async () => {
+    req.body = { applicationInfo: { appUId: "test-app-id" } };
 
-//     expect(res.status).toHaveBeenCalledWith(500);
-//     expect(res.send).toHaveBeenCalledWith("Application not found");
-//   });
+    // Mock findUnique to return no record
+    mockPrisma.application.findUnique.mockResolvedValue(null);
 
-//   it("should return 500 if database error occurs", async () => {
-//     req.body = { applicationInfo: { appUId: "test-app-id" } };
+    await applicationToken(req as Request, res as Response, prisma);
 
-//     // Mock findUnique, damit es einen DB-Fehler wirft
-//     (prisma.application.findUnique as jest.Mock).mockRejectedValue(
-//       new Error("Database error")
-//     );
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith("Application not found");
+  });
 
-//     await applicationToken(req as Request, res as Response, prisma);
+  it("should return 500 if database error occurs", async () => {
+    req.body = { applicationInfo: { appUId: "test-app-id" } };
 
-//     expect(res.status).toHaveBeenCalledWith(500);
-//     expect(res.send).toHaveBeenCalledWith("Database error");
-//   });
+    // Mock findUnique to throw a DB error
+    mockPrisma.application.findUnique.mockRejectedValue(
+      new Error("Database error")
+    );
 
-//   it("should return 500 if JWT creation fails", async () => {
-//     req.body = { applicationInfo: { appUId: "test-app-id" } };
+    await applicationToken(req as Request, res as Response, prisma);
 
-//     // Mock findUnique, damit es einen gültigen Anwendungsdatensatz zurückgibt
-//     (prisma.application.findUnique as jest.Mock).mockResolvedValue({
-//       uid: "test-app-id",
-//       name: "Test App",
-//       domain: "test.com",
-//     });
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith("Database error");
+  });
 
-//     // Mock createApplicationJWT mit einem Fehler
-//     (cryptoService.createApplicationJWT as jest.Mock).mockRejectedValue(
-//       new Error("JWT creation failed")
-//     );
+  it("should return 500 if JWT creation fails", async () => {
+    req.body = { applicationInfo: { appUId: "test-app-id" } };
 
-//     await applicationToken(req as Request, res as Response, prisma);
+    mockPrisma.application.findUnique.mockResolvedValue({
+      uid: "test-app-id",
+      name: "Test App",
+      domain: "test.com",
+    });
 
-//     expect(res.status).toHaveBeenCalledWith(500);
-//     expect(res.send).toHaveBeenCalledWith("JWT creation failed");
-//   });
+    // Mock createApplicationJWT to throw an error
+    mockCreateApplicationJWT.mockRejectedValue(
+      new Error("JWT creation failed")
+    );
 
-//   it("should return token if valid data is provided", async () => {
-//     req.body = { applicationInfo: { appUId: "test-app-id" } };
+    await applicationToken(req as Request, res as Response, prisma);
 
-//     const mockApp = {
-//       uid: "test-app-id",
-//       name: "Test App",
-//       domain: "test.com",
-//     };
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith("JWT creation failed");
+  });
 
-//     const mockToken = "mock-jwt-token";
+  it("should return token if valid data is provided", async () => {
+    req.body = { applicationInfo: { appUId: "test-app-id" } };
 
-//     // Mock findUnique, damit es einen gültigen Anwendungsdatensatz zurückgibt
-//     (prisma.application.findUnique as jest.Mock).mockResolvedValue(mockApp);
+    const mockApp = {
+      uid: "test-app-id",
+      name: "Test App",
+      domain: "test.com",
+    };
 
-//     // Mock createApplicationJWT, damit es einen gültigen Token zurückgibt
-//     (cryptoService.createApplicationJWT as jest.Mock).mockResolvedValue(mockToken);
+    const mockToken = "mock-jwt-token";
 
-//     await applicationToken(req as Request, res as Response, prisma);
+    mockPrisma.application.findUnique.mockResolvedValue(mockApp);
+    mockCreateApplicationJWT.mockResolvedValue(mockToken);
 
-//     expect(res.status).toHaveBeenCalledWith(200);
-//     expect(res.json).toHaveBeenCalledWith(mockToken);
-//   });
-// });
+    await applicationToken(req as Request, res as Response, prisma);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(mockToken);
+  });
+});

@@ -1,93 +1,99 @@
-// import { Request, Response } from "express";
-// import { applicationCreate } from "./applicationCreate";
-// import { redisService } from "../../redis";
+import { Request, Response } from "express";
+import { PrismaClient } from "./../generated/prisma/client";
 
-// jest.mock("@prisma/client", () => {
-//     return {
-//         ...jest.requireActual('@prisma/client'),  // Keep other implementations intact
-//         PrismaClient: jest.fn().mockImplementation(() => ({
-//             application: {
-//                 create: jest.fn(),
-//             },
-//         })),
-//     };
-// });
+// --- 1. PRISMA MOCK ---
+const mockPrisma = {
+    application: {
+        create: jest.fn(),
+    },
+};
 
-// jest.mock("../../redis", () => ({
-//     redisService: {
-//       addToDomainWhitelist: jest.fn(),
-//     }
-// }));
+// Ensure this matches the exact import path in your applicationCreate.ts file
+jest.mock("./../generated/prisma/client", () => ({
+    PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
+}));
 
-// import { PrismaClient } from "./../generated/prisma/client";
+const prisma = (mockPrisma as unknown) as PrismaClient;
 
-// const prisma = new PrismaClient();
+// --- 2. REDIS MOCK ---
+const mockAddToDomainWhitelist = jest.fn();
 
-// describe("testApplicationCreate", () => {
-//     let req: Partial<Request>;
-//     let res: Partial<Response>;
+jest.mock("../../redis", () => ({
+    redisService: {
+      addToDomainWhitelist: mockAddToDomainWhitelist,
+    }
+}));
 
-//     beforeEach(() => {
-//         req = {
-//             body: {},
-//         };
-//         res = {
-//             status: jest.fn().mockReturnThis(),
-//             send: jest.fn(),
-//         };
-//         jest.clearAllMocks();
-//     });
+// --- 3. DYNAMIC IMPORT OF CONTROLLER ---
+// Load applicationCreate AFTER the mocks are registered to prevent import hoisting bugs
+const { applicationCreate } = require("./applicationCreate");
 
-//     it("should return 500 if applicationInfo is not present", async () => {
-//         await applicationCreate(req as Request, res as Response, prisma);
+describe("testApplicationCreate", () => {
+    let req: Partial<Request>;
+    let res: Partial<Response>;
 
-//         expect(res.status).toHaveBeenCalledWith(500);
-//         expect(res.send).toHaveBeenCalledWith("Application Info not present");
-//     });
+    beforeEach(() => {
+        req = {
+            body: {},
+        };
+        res = {
+            status: jest.fn().mockReturnThis(),
+            send: jest.fn(),
+        };
+        jest.clearAllMocks();
+    });
 
-//     it("should return 500 if there is an error while creating the application", async () => {
-//         req.body = {
-//             applicationInfo: {
-//                 appUId: "test-app-id",
-//                 appName: "Test App",
-//                 appDomain: "test.com",
-//             },
-//         };
+    it("should return 500 if applicationInfo is not present", async () => {
+        await applicationCreate(req as Request, res as Response, prisma);
 
-//         (prisma.application.create as jest.Mock).mockRejectedValue(
-//             new Error("Database error")
-//         );
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.send).toHaveBeenCalledWith("Application Info not present");
+    });
 
-//         await applicationCreate(req as Request, res as Response, prisma);
+    it("should return 500 if there is an error while creating the application", async () => {
+        req.body = {
+            applicationInfo: {
+                appUId: "test-app-id",
+                appName: "Test App",
+                appDomain: "test.com",
+            },
+        };
 
-//         expect(res.status).toHaveBeenCalledWith(500);
-//         expect(res.send).toHaveBeenCalledWith("Error while creating application");
-//     });
+        mockPrisma.application.create.mockRejectedValue(
+            new Error("Database error")
+        );
 
-//     it("should create an application and return 200 if valid data is provided", async () => {
-//         req.body = {
-//             applicationInfo: {
-//                 appUId: "test-app-id",
-//                 appName: "Test App",
-//                 appDomain: "test.com",
-//             },
-//         };
+        await applicationCreate(req as Request, res as Response, prisma);
 
-//         const mockApplication = {
-//             id: 1,
-//             name: "Test App",
-//             domain: "test.com",
-//         };
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.send).toHaveBeenCalledWith("Error while creating application");
+    });
 
-//         (prisma.application.create as jest.Mock).mockResolvedValue(
-//             mockApplication
-//         );
+    it("should create an application and return 200 if valid data is provided", async () => {
+        req.body = {
+            applicationInfo: {
+                appUId: "test-app-id",
+                appName: "Test App",
+                appDomain: "test.com",
+            },
+        };
 
-//         (redisService.addToDomainWhitelist as jest.Mock).mockResolvedValue({});
+        const mockApplication = {
+            id: 1,
+            name: "Test App",
+            domain: "test.com",
+        };
 
-//         await applicationCreate(req as Request, res as Response, prisma);
+        mockPrisma.application.create.mockResolvedValue(mockApplication);
+        mockAddToDomainWhitelist.mockResolvedValue({});
 
-//         expect(res.status).toHaveBeenCalledWith(200);
-//         expect(res.send).toHaveBeenCalled();
-//     });
-// });
+        await applicationCreate(req as Request, res as Response, prisma);
+
+        // Verify the mocks were called
+        expect(mockPrisma.application.create).toHaveBeenCalled();
+        expect(mockAddToDomainWhitelist).toHaveBeenCalled();
+        
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.send).toHaveBeenCalled();
+    });
+});
