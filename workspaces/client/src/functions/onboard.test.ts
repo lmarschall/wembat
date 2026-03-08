@@ -212,10 +212,21 @@ describe("onboard", () => {
             mockStore as Store
         );
 
-        // Überprüfen, ob die Bridge mit den korrekten Parametern aufgerufen wurde
         expect(mockBridge.invoke).toHaveBeenCalledWith(
             BridgeMessageType.StartAuthentication,
-            { challengeOptions: mockChallengeOptions }
+            { 
+                challengeOptions: {
+                    challenge: "testChallenge",
+                    extensions: { 
+                        prf: { 
+                            eval: { 
+                                // Hier erwarten wir nun den ArrayBuffer statt [99, 100]
+                                first: mockArrayBuffer 
+                            } 
+                        } 
+                    }
+                } 
+            }
         );
 
         // Überprüfen, ob der finale POST Request (/onboard) das korrekte Format hat
