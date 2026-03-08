@@ -1,130 +1,182 @@
-// //// typescript
-// // filepath: /home/lukas/Source/wembat/src/functions/register.test.ts
+import { describe, it, beforeEach, vi, expect, Mock } from "vitest";
+import { register } from "./register";
+import { Bridge, BridgeMessageType } from "../bridge";
+import type { AxiosInstance } from "axios";
 
-// import { describe, it, beforeEach, vi, expect, Mock } from "vitest";
-// import { register } from "./register";
-// import {
-// 	browserSupportsWebAuthn,
-// 	startRegistration,
-// } from "@simplewebauthn/browser";
-// import type { AxiosInstance } from "axios";
+describe("register", () => {
+    let mockAxios: Partial<AxiosInstance>;
+    let mockBridge: Partial<Bridge>;
 
-// // Browser-Funktionalitäten mocken
-// vi.mock("@simplewebauthn/browser", () => ({
-// 	browserSupportsWebAuthn: vi.fn(),
-// 	startRegistration: vi.fn(),
-// }));
+    beforeEach(() => {
+        vi.clearAllMocks();
 
-// describe("register", () => {
-// 	let mockAxios: Partial<AxiosInstance>;
+        // Einfaches Setup für Axios
+        mockAxios = {
+            post: vi.fn(),
+        };
 
-// 	beforeEach(() => {
-// 		vi.clearAllMocks();
-// 		(browserSupportsWebAuthn as Mock).mockReturnValue(true);
+        // Einfaches Setup für die Bridge
+        mockBridge = {
+            invoke: vi.fn(),
+        };
+    });
 
-// 		mockAxios = {
-// 			post: vi.fn() as Mock,
-// 		};
-// 	});
+    it("should return error if /request-register does not return status 200", async () => {
+        (mockAxios.post as Mock).mockResolvedValueOnce({
+            status: 400,
+            data: "Bad request",
+        });
 
-// 	it("sollte Fehler werfen, wenn WebAuthn nicht unterstützt wird", async () => {
-// 		(browserSupportsWebAuthn as Mock).mockReturnValue(false);
+        const result = await register(
+            mockAxios as AxiosInstance,
+            mockBridge as Bridge,
+            "test@user.com",
+            false
+        );
 
-// 		const result = await register(mockAxios as any, "test@user.com");
+        expect(result.success).toBe(false);
+        // Beachte: Die neue Struktur ist result.error.message (nicht mehr .error)
+        expect(result.error.message).toBe("Bad request");
+    });
 
-// 		expect(result.success).toBe(false);
-// 		expect(result.error.error).toBe(
-// 			"WebAuthn is not supported on this browser!"
-// 		);
-// 	});
+    it("should return error if bridge.invoke (startRegistration) fails", async () => {
+        (mockAxios.post as Mock).mockResolvedValueOnce({
+            status: 200,
+            data: JSON.stringify({
+                options: { challenge: "testChallenge" },
+            }),
+        });
 
-// 	it("sollte Fehler werfen, wenn /request-register nicht Status 200 liefert", async () => {
-// 		(mockAxios.post as Mock).mockResolvedValueOnce({
-// 			status: 400,
-// 			data: "Bad request",
-// 		});
+        (mockBridge.invoke as Mock).mockRejectedValueOnce(
+            new Error("Bridge communication failed")
+        );
 
-// 		const result = await register(mockAxios as any, "test@user.com");
+        const result = await register(
+            mockAxios as AxiosInstance,
+            mockBridge as Bridge,
+            "test@user.com",
+            false
+        );
 
-// 		expect(result.success).toBe(false);
-// 		expect(result.error.error).toBe("Bad request");
-// 	});
+        expect(result.success).toBe(false);
+        expect(result.error.message).toBe("Bridge communication failed");
+    });
 
-// 	it("sollte Fehler werfen, wenn startRegistration fehlschlägt", async () => {
-// 		(mockAxios.post as Mock).mockResolvedValueOnce({
-// 			status: 200,
-// 			data: JSON.stringify({
-// 				options: {
-// 					challenge: "testChallenge",
-// 				},
-// 			}),
-// 		});
-// 		(startRegistration as Mock).mockRejectedValue(
-// 			new Error("Registration failed")
-// 		);
+    it("should return error if PRF extension is disabled", async () => {
+        (mockAxios.post as Mock).mockResolvedValueOnce({
+            status: 200,
+            data: JSON.stringify({
+                options: { challenge: "testChallenge" },
+            }),
+        });
 
-// 		const result = await register(mockAxios as any, "test@user.com");
-// 		expect(result.success).toBe(false);
-// 		expect(result.error.error).toBe("Error: Registration failed");
-// 	});
+        // Simuliere eine Bridge-Antwort, bei der PRF fehlt oder auf false steht
+        (mockBridge.invoke as Mock).mockResolvedValueOnce({
+            clientExtensionResults: { prf: { enabled: false } },
+            id: "credentialId",
+            rawId: "rawId",
+            response: {},
+            type: "public-key",
+        });
 
-// 	it("sollte Fehler werfen, wenn /register nicht Status 200 liefert", async () => {
-// 		(mockAxios.post as Mock)
-// 			// /request-register
-// 			.mockResolvedValueOnce({
-// 				status: 200,
-// 				data: JSON.stringify({
-// 					options: { challenge: "testChallenge" },
-// 				}),
-// 			})
-// 			// /register
-// 			.mockResolvedValueOnce({
-// 				status: 400,
-// 				data: "Register endpoint error",
-// 			});
+        const result = await register(
+            mockAxios as AxiosInstance,
+            mockBridge as Bridge,
+            "test@user.com",
+            false
+        );
 
-// 		(startRegistration as Mock).mockResolvedValue({
-// 			clientExtensionResults: {},
-// 			id: "credentialId",
-// 			rawId: "rawId",
-// 			response: {},
-// 			type: "public-key",
-// 		});
+        expect(result.success).toBe(false);
+        expect(result.error.message).toBe("PRF extension disabled");
+    });
 
-// 		const result = await register(mockAxios as any, "test@user.com");
+    it("should return error if /register does not return status 200", async () => {
+        (mockAxios.post as Mock)
+            // 1. Call: /request-register
+            .mockResolvedValueOnce({
+                status: 200,
+                data: JSON.stringify({
+                    options: { challenge: "testChallenge" },
+                }),
+            })
+            // 2. Call: /register
+            .mockResolvedValueOnce({
+                status: 500,
+                data: "Internal Server Error",
+            });
 
-// 		expect(result.success).toBe(false);
-// 		expect(result.error.error).toBe("Register endpoint error");
-// 	});
+        // Simuliere korrekte Bridge-Antwort mit PRF = true
+        (mockBridge.invoke as Mock).mockResolvedValueOnce({
+            clientExtensionResults: { prf: { enabled: true } },
+            id: "credentialId",
+            rawId: "rawId",
+            response: {},
+            type: "public-key",
+        });
 
-// 	it("sollte success=true zurückgeben, wenn alles korrekt verläuft", async () => {
-// 		(mockAxios.post as Mock)
-// 			// /request-register
-// 			.mockResolvedValueOnce({
-// 				status: 200,
-// 				data: JSON.stringify({
-// 					options: { challenge: "testChallenge" },
-// 				}),
-// 			})
-// 			// /register
-// 			.mockResolvedValueOnce({
-// 				status: 200,
-// 				data: JSON.stringify({
-// 					verified: true,
-// 				}),
-// 			});
+        const result = await register(
+            mockAxios as AxiosInstance,
+            mockBridge as Bridge,
+            "test@user.com",
+            false
+        );
 
-// 		(startRegistration as Mock).mockResolvedValue({
-// 			clientExtensionResults: {},
-// 			id: "credentialId",
-// 			rawId: "rawId",
-// 			response: {},
-// 			type: "public-key",
-// 		});
+        expect(result.success).toBe(false);
+        expect(result.error.message).toBe("Internal Server Error");
+    });
 
-// 		const result = await register(mockAxios as any, "test@user.com");
+    it("should return success=true when everything succeeds", async () => {
+        const mockRequestRegisterData = {
+            options: { challenge: "testChallenge" },
+        };
 
-// 		expect(result.success).toBe(true);
-// 		expect(result.result.verified).toBe(true);
-// 	});
-// });
+        (mockAxios.post as Mock)
+            // 1. Call: /request-register
+            .mockResolvedValueOnce({
+                status: 200,
+                data: JSON.stringify(mockRequestRegisterData),
+            })
+            // 2. Call: /register
+            .mockResolvedValueOnce({
+                status: 200,
+                data: JSON.stringify({ verified: true }),
+            });
+
+        const mockCredentials = {
+            clientExtensionResults: { prf: { enabled: true } },
+            id: "credentialId",
+            rawId: "rawId",
+            response: {},
+            type: "public-key",
+        };
+
+        (mockBridge.invoke as Mock).mockResolvedValueOnce(mockCredentials);
+
+        const result = await register(
+            mockAxios as AxiosInstance,
+            mockBridge as Bridge,
+            "test@user.com",
+            true // autoRegister
+        );
+
+        // Überprüfen, ob invoke mit den exakten Parametern aufgerufen wurde
+        expect(mockBridge.invoke).toHaveBeenCalledWith(
+            BridgeMessageType.StartRegistration,
+            {
+                challengeOptions: mockRequestRegisterData,
+                autoRegister: true,
+            }
+        );
+
+        // Überprüfen, ob POST /register mit den exakten Parametern aufgerufen wurde
+        expect(mockAxios.post).toHaveBeenNthCalledWith(2, `/register`, {
+            registerChallengeResponse: {
+                credentials: mockCredentials,
+                challenge: "testChallenge",
+            },
+        });
+
+        expect(result.success).toBe(true);
+        expect(result.result.verified).toBe(true);
+    });
+});

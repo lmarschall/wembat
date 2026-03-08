@@ -1,4 +1,3 @@
-import { ml_kem768 } from '@noble/post-quantum/ml-kem.js';
 
 /**
  * Decodes a JSON Web Token (JWT) and returns the decoded payload.
@@ -186,59 +185,6 @@ export async function deriveEllipticKeypair() {
 	};
 }
 
-export function createQuantumSeed() {
-
-	const seed = new Uint8Array(64);
-    globalThis.crypto.getRandomValues(seed);
-
-	return seed;
-}
-
-export function deriveKeysFromSeed(seed: Uint8Array<ArrayBuffer>) {
-
-	const keyPair = ml_kem768.keygen(seed);
-
-	return {
-		publicKey: keyPair.publicKey,
-		privateKey: keyPair.secretKey
-	};
-}
-
-export async function deriveEncryptedQuantumSeed(encryptionKey: CryptoKey, seed: Uint8Array<ArrayBuffer>) {
-
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-
-    const encryptedBuffer = await globalThis.crypto.subtle.encrypt(
-        {
-            name: "AES-GCM",
-            iv: iv,
-        },
-        encryptionKey,
-        seed
-    );
-
-    return {
-        encryptedSeed: new Uint8Array(encryptedBuffer),
-        iv: iv
-    };
-}
-
-export async function deriveKeysFromEncryptedSeed(encryptionKey: CryptoKey, seedString: string, ivString: string) {
-    
-    const decryptedSeed = await crypto.subtle.decrypt(
-		{ name: "AES-GCM", iv: fromBase64(ivString) },
-		encryptionKey,
-		fromBase64(seedString)
-	);
-
-	const keyPair = ml_kem768.keygen(new Uint8Array(decryptedSeed));
-
-	return {
-		publicKey: keyPair.publicKey,
-		privateKey: keyPair.secretKey
-	};
-}
-
 export function fromBase64(base64String: string): Uint8Array<ArrayBuffer> {
   
 	// modern browsers
@@ -310,46 +256,3 @@ export async function encryptPrivateKeyString(privateKeyString: string, encrypti
 		iv
 	}
 }
-
-// export function createQuantumSession(recipientPublicKey) {
-//     // 1. Encapsulate
-//     // This function automatically:
-//     //  - Generates a random "Shared Secret" (32 bytes)
-//     //  - Creates the "Ciphertext" (lock) needed to send it
-//     const result = ml_kem768.encapsulate(recipientPublicKey);
-
-//     // result.sharedSecret -> KEEP SECRET (This is the Session Key)
-//     // result.cipherText   -> SEND TO USER
-
-//     // 2. KDF (Best Practice)
-//     // Use HKDF to turn the raw ML-KEM secret into a usable AES key
-//     const sessionKey = hkdf(
-//         sha256, 
-//         result.sharedSecret, 
-//         undefined, 
-//         'QuantumSessionKey_v1', 
-//         32
-//     );
-
-//     return {
-//         sessionKey: sessionKey,      // Use this to encrypt your actual data
-//         cipherText: result.cipherText // Send this public blob to the receiver
-//     };
-// }
-
-// export function recoverQuantumSession(cipherText, myPrivateKey) {
-//     // 1. Decapsulate
-//     // Uses the private key to unlock the ciphertext and reveal the SAME secret
-//     const rawSecret = ml_kem768.decapsulate(cipherText, myPrivateKey);
-
-//     // 2. KDF (Must match Sender exactly)
-//     const sessionKey = hkdf(
-//         sha256, 
-//         rawSecret, 
-//         undefined, 
-//         'QuantumSessionKey_v1', 
-//         32
-//     );
-
-//     return sessionKey; // This matches the Sender's key exactly
-// }
