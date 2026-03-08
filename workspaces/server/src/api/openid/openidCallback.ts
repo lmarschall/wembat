@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { BaseClient } from "openid-client";
-import { authStore } from "../auth-store";
+import { authStore } from "#api/auth-store";
 
 export async function openidCallback(req: Request, res: Response, openidClient: BaseClient | undefined, redirectUri: string): Promise<void> {
     try {

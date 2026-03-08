@@ -1,35 +1,39 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "./../generated/prisma/client";
+import { PrismaClient } from "#prisma";
+// Sauberer ESM-Import (Passe den Pfad an, falls link.ts woanders liegt)
+import { link } from "#api/webauthn/link";
+import { vi, describe, beforeEach, it, expect } from "vitest";
 
-// --- 1. PRISMA MOCK ---
-const mockPrisma = {
-    user: {
-        findUnique: jest.fn(),
-    },
-    device: {
-        upsert: jest.fn(),
-    },
-};
+// --- 1. HOISTING DER MOCK VARIABLEN ---
+const { mockPrisma, mockVerifyAuth } = vi.hoisted(() => {
+    return {
+        mockPrisma: {
+            user: {
+                findUnique: vi.fn(),
+            },
+            device: {
+                upsert: vi.fn(),
+            },
+        },
+        mockVerifyAuth: vi.fn(),
+    };
+});
 
-// Ensure this matches the exact import path in your link.ts file
-jest.mock("./../generated/prisma/client", () => ({
-    PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
+// --- 2. REGISTRIERUNG DER MOCKS ---
+// Nutzt jetzt deinen #prisma Alias anstelle des relativen Pfades
+vi.mock("#prisma", () => ({
+    PrismaClient: vi.fn().mockImplementation(() => mockPrisma),
 }));
 
-const prisma = (mockPrisma as unknown) as PrismaClient;
-
-// --- 2. WEBAUTHN MOCK ---
-const mockVerifyAuth = jest.fn();
-
-jest.mock("@simplewebauthn/server", () => ({
+// Externes Modul sauber mocken
+vi.mock("@simplewebauthn/server", () => ({
     __esModule: true,
     verifyRegistrationResponse: mockVerifyAuth,
 }));
 
-// --- 3. DYNAMIC IMPORT OF CONTROLLER ---
-// Load link AFTER the mocks are registered to prevent import hoisting bugs
-const { link } = require("./link");
+const prisma = (mockPrisma as unknown) as PrismaClient;
 
+// --- 3. TEST SUITE ---
 describe("link", () => {
     let req: Partial<Request>;
     let res: Partial<Response>;
@@ -40,10 +44,10 @@ describe("link", () => {
         };
         res = {
             locals: {},
-            status: jest.fn().mockReturnThis(),
-            send: jest.fn(),
+            status: vi.fn().mockReturnThis(),
+            send: vi.fn(),
         };
-        jest.clearAllMocks();
+        vi.clearAllMocks(); // Wichtig: vi statt jest
     });
 
     it("should return error if linkChallengeResponse is not present", async () => {

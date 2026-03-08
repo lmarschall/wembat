@@ -1,5 +1,5 @@
-import { randomBytes } from 'crypto'
-import { PrismaClient, Prisma } from "./../generated/prisma/client";
+import { randomBytes } from 'node:crypto'
+import { PrismaClient, Prisma } from "#prisma";
 
 import {
 	generateRegistrationOptions,
@@ -7,7 +7,7 @@ import {
 } from "@simplewebauthn/server";
 import { isoUint8Array } from '@simplewebauthn/server/helpers';
 import { Request, Response } from "express";
-import { UserInfo } from '../types';
+import { UserInfo } from '#api/types';
 
 type UserWithDevices = Prisma.UserGetPayload<{
 	include: { devices: true };

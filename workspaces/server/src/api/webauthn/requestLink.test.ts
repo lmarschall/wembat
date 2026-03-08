@@ -1,43 +1,51 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "./../generated/prisma/client";
+import { PrismaClient } from "#prisma";
+// Sauberer ESM-Import (Passe den Pfad an, falls requestLink woanders liegt)
+import { requestLink } from "#api/webauthn/requestLink";
+import { vi, describe, beforeEach, it, expect } from "vitest";
 
-// --- 1. PRISMA MOCK ---
-const mockPrisma = {
-  user: {
-    findUnique: jest.fn(),
-    update: jest.fn(),
-  },
-};
+// --- 1. HOISTING DER MOCK VARIABLEN ---
+const { 
+  mockPrisma, 
+  mockGenerateRegOptions, 
+  mockFromUTF8String 
+} = vi.hoisted(() => {
+  return {
+    mockPrisma: {
+      user: {
+        findUnique: vi.fn(),
+        update: vi.fn(),
+      },
+    },
+    mockGenerateRegOptions: vi.fn(),
+    mockFromUTF8String: vi.fn().mockImplementation((str: string) => Buffer.from(str)),
+  };
+});
 
-// Ensure this matches the exact import path in your requestLink.ts file
-jest.mock("./../generated/prisma/client", () => ({
-  PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
+// --- 2. REGISTRIERUNG DER MOCKS ---
+
+// Prisma Alias Mock
+vi.mock("#prisma", () => ({
+  PrismaClient: vi.fn().mockImplementation(() => mockPrisma),
 }));
 
-const prisma = (mockPrisma as unknown) as PrismaClient;
-
-// --- 2. WEBAUTHN SERVER MOCK ---
-const mockGenerateRegOptions = jest.fn();
-
-jest.mock("@simplewebauthn/server", () => ({
+// WebAuthn Server Hauptmodul
+vi.mock("@simplewebauthn/server", () => ({
   __esModule: true,
   generateRegistrationOptions: mockGenerateRegOptions,
 }));
 
-// --- 3. WEBAUTHN HELPERS MOCK ---
-const mockFromUTF8String = jest.fn().mockImplementation((str: string) => Buffer.from(str));
-
-jest.mock("@simplewebauthn/server/helpers", () => ({
+// WebAuthn Server Helpers Sub-Modul
+vi.mock("@simplewebauthn/server/helpers", () => ({
   __esModule: true,
   isoUint8Array: {
     fromUTF8String: mockFromUTF8String,
   },
 }));
 
-// --- 4. DYNAMIC IMPORT OF CONTROLLER ---
-// Load requestLink AFTER the mocks are registered to prevent import hoisting bugs
-const { requestLink } = require("./requestLink");
+const prisma = (mockPrisma as unknown) as PrismaClient;
 
+// --- 3. TEST SUITE ---
 describe("requestLink", () => {
   let req: Partial<Request>;
   let res: Partial<Response>;
@@ -46,11 +54,11 @@ describe("requestLink", () => {
     req = {};
     res = {
       locals: {},
-      status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
-      json: jest.fn(),
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn(),
+      json: vi.fn(),
     };
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("should return 400 if payload is not present", async () => {
@@ -139,7 +147,6 @@ describe("requestLink", () => {
 
     await requestLink(req as Request, res as Response, prisma);
 
-    // Using the explicit mock variables directly for your assertions!
     expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
       where: { mail: "test@example.com" },
       include: { devices: true },

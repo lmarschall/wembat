@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { authStore } from "../auth-store";
+import { authStore } from "#api/auth-store";
 
 export async function openidPoll(req: Request, res: Response): Promise<void> {
     try {

@@ -1,33 +1,36 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "./../generated/prisma/client";
+import { PrismaClient } from "#prisma";
+// Sauberer ESM Import ganz oben! Vitest kümmert sich um die richtige Reihenfolge.
+import { applicationCreate } from "#api/application/applicationCreate";
+import { vi, describe, beforeEach, it, expect } from "vitest";
 
-// --- 1. PRISMA MOCK ---
-const mockPrisma = {
-    application: {
-        create: jest.fn(),
-    },
-};
+// --- 1. HOISTING DER MOCK VARIABLEN ---
+// Alles was innerhalb von vi.mock verwendet wird, MUSS hier rein!
+const { mockPrisma, mockAddToDomainWhitelist } = vi.hoisted(() => {
+    return {
+        mockPrisma: {
+            application: {
+                create: vi.fn(),
+            },
+        },
+        mockAddToDomainWhitelist: vi.fn(),
+    };
+});
 
-// Ensure this matches the exact import path in your applicationCreate.ts file
-jest.mock("./../generated/prisma/client", () => ({
-    PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
+// --- 2. REGISTRIERUNG DER MOCKS ---
+vi.mock("#prisma", () => ({
+    PrismaClient: vi.fn().mockImplementation(() => mockPrisma),
+}));
+
+vi.mock("#redis", () => ({
+    redisService: {
+        addToDomainWhitelist: mockAddToDomainWhitelist,
+    }
 }));
 
 const prisma = (mockPrisma as unknown) as PrismaClient;
 
-// --- 2. REDIS MOCK ---
-const mockAddToDomainWhitelist = jest.fn();
-
-jest.mock("../../redis", () => ({
-    redisService: {
-      addToDomainWhitelist: mockAddToDomainWhitelist,
-    }
-}));
-
-// --- 3. DYNAMIC IMPORT OF CONTROLLER ---
-// Load applicationCreate AFTER the mocks are registered to prevent import hoisting bugs
-const { applicationCreate } = require("./applicationCreate");
-
+// --- 3. TEST SUITE ---
 describe("testApplicationCreate", () => {
     let req: Partial<Request>;
     let res: Partial<Response>;
@@ -37,10 +40,10 @@ describe("testApplicationCreate", () => {
             body: {},
         };
         res = {
-            status: jest.fn().mockReturnThis(),
-            send: jest.fn(),
+            status: vi.fn().mockReturnThis(),
+            send: vi.fn(),
         };
-        jest.clearAllMocks();
+        vi.clearAllMocks(); // Wichtig: vi statt jest
     });
 
     it("should return 500 if applicationInfo is not present", async () => {

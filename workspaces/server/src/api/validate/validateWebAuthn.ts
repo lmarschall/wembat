@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { decodeProtectedHeader, importJWK, jwtVerify } from "jose";
-import { cryptoService } from "../../crypto";
+import { cryptoService } from "#crypto";
 
 const serverUrl = process.env.API_SERVER_URL || "http://localhost:8080";
 

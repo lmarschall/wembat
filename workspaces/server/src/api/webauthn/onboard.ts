@@ -1,7 +1,6 @@
-import base64url from "base64url";
-import { UserWithDevices } from "../types";
+import { UserWithDevices } from "#api/types";
 import { verifyAuthenticationResponse, VerifyAuthenticationResponseOpts } from "@simplewebauthn/server";
-import { Device, PrismaClient } from "./../generated/prisma/client";
+import { Device, PrismaClient } from "#prisma";
 import { Request, Response } from "express";
 
 export async function onboard(req: Request, res: Response, prisma: PrismaClient): Promise<void> {

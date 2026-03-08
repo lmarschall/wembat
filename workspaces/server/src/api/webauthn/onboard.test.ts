@@ -1,32 +1,36 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "./../generated/prisma/client";
+import { PrismaClient } from "#prisma";
+// Sauberer ESM-Import (Passe den Pfad an, je nachdem in welchem Ordner onboard.ts liegt)
+import { onboard } from "#api/webauthn/onboard";
+import { vi, describe, beforeEach, it, expect } from "vitest";
 
-// --- 1. PRISMA MOCK ---
-const mockPrisma = {
-  application: { findUnique: jest.fn() },
-  user: { findUnique: jest.fn() },
-  session: { create: jest.fn() },
-};
+// --- 1. HOISTING DER MOCK VARIABLEN ---
+const { mockPrisma, mockVerifyAuth } = vi.hoisted(() => {
+  return {
+    mockPrisma: {
+      application: { findUnique: vi.fn() },
+      user: { findUnique: vi.fn() },
+      session: { create: vi.fn() },
+    },
+    mockVerifyAuth: vi.fn(),
+  };
+});
 
-// Ensure this matches the exact import path in your onboard.ts file
-jest.mock("./../generated/prisma/client", () => ({
-  PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
+// --- 2. REGISTRIERUNG DER MOCKS ---
+// Nutzt jetzt sauber deinen #prisma Alias
+vi.mock("#prisma", () => ({
+  PrismaClient: vi.fn().mockImplementation(() => mockPrisma),
 }));
 
-const prisma = (mockPrisma as unknown) as PrismaClient;
-
-// --- 2. WEBAUTHN MOCK ---
-const mockVerifyAuth = jest.fn();
-
-jest.mock("@simplewebauthn/server", () => ({
+// Externes WebAuthn Modul sauber mocken
+vi.mock("@simplewebauthn/server", () => ({
   __esModule: true,
   verifyAuthenticationResponse: mockVerifyAuth,
 }));
 
-// --- 3. DYNAMIC IMPORT OF CONTROLLER ---
-// Load onboard AFTER the mocks are registered to prevent import hoisting bugs
-const { onboard } = require("./onboard");
+const prisma = (mockPrisma as unknown) as PrismaClient;
 
+// --- 3. TEST SUITE ---
 describe("testOnboard", () => {
   let req: Partial<Request>;
   let res: Partial<Response>;
@@ -37,11 +41,11 @@ describe("testOnboard", () => {
     };
     res = {
       locals: {},
-      status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
-      json: jest.fn(),
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn(),
+      json: vi.fn(),
     };
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // Wichtig: vi statt jest
   });
 
   it("should throw error if onboardRequest is not present", async () => {

@@ -1,17 +1,20 @@
 {
-    "compilerOptions": {
-      "module": "commonjs",
-      "target": "es6",
-      "moduleResolution": "node",
-      "outDir": "dist",
-      "esModuleInterop": true,
-      "sourceMap": true,
-      "strict": true,
-      "forceConsistentCasingInFileNames": true,
-      "types": ["node", "jest"]
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "outDir": "dist",
+    "esModuleInterop": true,
+    "strict": true,
+    "baseUrl": ".",
+    "rootDir": "./",
+    "paths": {
+        "#prisma": ["./prisma/generated/client.ts"],
+        "#redis": ["./src/redis/index.ts"],
+        "#crypto": ["./src/crypto/index.ts"],
+        "#api": ["./src/api/index.ts"],
+        "#api/*": ["./src/api/*.ts"]
     },
-    "lib": ["es2015"],
-    "include": [
-        "./src/**/*"
-    ]
+  },
+  "include": ["src/**/*", "prisma/generated/**/*"]
 }

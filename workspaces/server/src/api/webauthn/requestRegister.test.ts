@@ -1,40 +1,48 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "./../generated/prisma/client";
+import { PrismaClient } from "#prisma";
+// Sauberer ESM-Import (Passe den Pfad an, falls requestRegister woanders liegt)
+import { requestRegister } from "#api/webauthn/requestRegister";
+import { vi, describe, beforeEach, it, expect } from "vitest";
 
-// --- 1. PRISMA MOCK ---
-const mockPrisma = {
-  user: {
-    upsert: jest.fn(),
-    update: jest.fn(),
-  },
-};
+// --- 1. HOISTING DER MOCK VARIABLEN ---
+const { 
+  mockPrisma, 
+  mockGenerateRegOptions, 
+  mockRandomBytes 
+} = vi.hoisted(() => {
+  return {
+    mockPrisma: {
+      user: {
+        upsert: vi.fn(),
+        update: vi.fn(),
+      },
+    },
+    mockGenerateRegOptions: vi.fn(),
+    mockRandomBytes: vi.fn().mockReturnValue(Buffer.from("mockedRandomBytes")),
+  };
+});
 
-// Ensure this matches the exact import path in your requestRegister.ts file
-jest.mock("./../generated/prisma/client", () => ({
-  PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
+// --- 2. REGISTRIERUNG DER MOCKS ---
+
+// Prisma Alias Mock
+vi.mock("#prisma", () => ({
+  PrismaClient: vi.fn().mockImplementation(() => mockPrisma),
 }));
 
-const prisma = (mockPrisma as unknown) as PrismaClient;
-
-// --- 2. WEBAUTHN MOCK ---
-const mockGenerateRegOptions = jest.fn();
-
-jest.mock("@simplewebauthn/server", () => ({
+// WebAuthn Server Mock
+vi.mock("@simplewebauthn/server", () => ({
   __esModule: true,
   generateRegistrationOptions: mockGenerateRegOptions,
 }));
 
-// --- 3. CRYPTO MOCK ---
-const mockRandomBytes = jest.fn().mockReturnValue(Buffer.from("mockedRandomBytes"));
-
-jest.mock("crypto", () => ({
+// Node Crypto Mock
+vi.mock("crypto", () => ({
   randomBytes: mockRandomBytes,
 }));
 
-// --- 4. DYNAMIC IMPORT OF CONTROLLER ---
-// Load requestRegister AFTER the mocks are registered to prevent import hoisting bugs
-const { requestRegister } = require("./requestRegister");
+const prisma = (mockPrisma as unknown) as PrismaClient;
 
+// --- 3. TEST SUITE ---
 describe("testRequestRegister", () => {
   let req: Partial<Request>;
   let res: Partial<Response>;
@@ -43,10 +51,10 @@ describe("testRequestRegister", () => {
     req = { body: {} };
     res = {
       locals: {},
-      status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn(),
     };
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // Wichtig: vi statt jest
   });
 
   it("should return 400 if userInfo is missing", async () => {
@@ -66,10 +74,8 @@ describe("testRequestRegister", () => {
   });
 
   it("should return 400 if user could not be created", async () => {
-    req.headers = req.headers || {};
-    res.locals = res.locals || {};
+    res.locals = { payload: { aud: "https://test.de", userMail: "test@user.com" } };
     req.body = { userInfo: { userMail: "test@user.com" } };
-    res.locals.payload = { aud: "https://test.de" };
     
     mockPrisma.user.upsert.mockRejectedValue(new Error("DB error"));
     
@@ -80,10 +86,8 @@ describe("testRequestRegister", () => {
   });
 
   it("should return 400 if generateRegistrationOptions fails", async () => {
-    req.headers = req.headers || {};
-    res.locals = res.locals || {};
+    res.locals = { payload: { aud: "https://test.de", userMail: "test@user.com" } };
     req.body = { userInfo: { userMail: "test@user.com" } };
-    res.locals.payload = { aud: "https://test.de" };
     
     mockPrisma.user.upsert.mockResolvedValue({
       uid: "testUserUid",
@@ -98,10 +102,8 @@ describe("testRequestRegister", () => {
   });
 
   it("should return 400 if user challenge could not be updated", async () => {
-    req.headers = req.headers || {};
-    res.locals = res.locals || {};
+    res.locals = { payload: { aud: "https://test.de", userMail: "test@user.com" } };
     req.body = { userInfo: { userMail: "test@user.com" } };
-    res.locals.payload = { aud: "https://test.de" };
     
     mockPrisma.user.upsert.mockResolvedValue({
       uid: "testUserUid",
@@ -117,10 +119,8 @@ describe("testRequestRegister", () => {
   });
 
   it("should return 200 and options if successful", async () => {
-    req.headers = req.headers || {};
-    res.locals = res.locals || {};
+    res.locals = { payload: { aud: "https://test.de", userMail: "test@user.com" } };
     req.body = { userInfo: { userMail: "test@user.com" } };
-    res.locals.payload = { aud: "https://test.de" };
     
     mockPrisma.user.upsert.mockResolvedValue({
       uid: "testUserUid",

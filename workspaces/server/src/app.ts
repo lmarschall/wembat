@@ -5,16 +5,16 @@ import bodyParser from "body-parser";
 import compression from "compression";
 import { rateLimit} from "express-rate-limit";
 
-import { apiRouter, initOpenIdClient } from "./api";
-import { initRedis, redisService } from "./redis";
-import { initCrypto, cryptoService } from "./crypto";
+import { apiRouter, initOpenIdClient } from "#api";
+import { initRedis, redisService } from "#redis";
+import { initCrypto, cryptoService } from "#crypto";
 import session from 'express-session';
 
 import dotenv from 'dotenv';
 
-import fs from 'fs';
-import path from 'path';
-import https from 'https';
+import fs from 'node:fs';
+import path from 'node:path';
+import https from 'node:https';
 
 dotenv.config();
 

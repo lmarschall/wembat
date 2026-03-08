@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { cryptoService } from "../../crypto";
+import { cryptoService } from "#crypto";
 
 export async function serverExportPublicKey(req: Request, res: Response): Promise<void> {
     try {

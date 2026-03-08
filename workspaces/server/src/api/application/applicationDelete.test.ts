@@ -1,32 +1,31 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "./../generated/prisma/client";
+import { PrismaClient } from "#prisma";
+import { applicationDelete } from "#api/application/applicationDelete";
+import { vi } from 'vitest';
 
-// --- 1. PRISMA MOCK ---
-const mockPrisma = {
-  application: {
-    delete: jest.fn(),
-  },
-};
+const { mockPrisma, mockRemoveFromDomainWhitelist } = vi.hoisted(() => {
+  return {
+    mockPrisma: {
+      application: {
+        delete: vi.fn(),
+      },
+    },
+    mockRemoveFromDomainWhitelist: vi.fn(),
+  };
+});
 
-// Ensure this matches the exact import path in your applicationDelete.ts file
-jest.mock("./../generated/prisma/client", () => ({
-  PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
+// 2. Jetzt laufen deine Mocks fehlerfrei, da die Variablen schon existieren
+vi.mock("#prisma", () => ({
+  PrismaClient: vi.fn().mockImplementation(() => mockPrisma),
 }));
 
-const prisma = (mockPrisma as unknown) as PrismaClient;
-
-// --- 2. REDIS MOCK ---
-const mockRemoveFromDomainWhitelist = jest.fn();
-
-jest.mock("../../redis", () => ({
+vi.mock("#redis", () => ({
   redisService: {
     removeFromDomainWhitelist: mockRemoveFromDomainWhitelist,
   }
 }));
 
-// --- 3. DYNAMIC IMPORT OF CONTROLLER ---
-// Load applicationDelete AFTER the mocks are registered to prevent import hoisting bugs
-const { applicationDelete } = require("./applicationDelete");
+const prisma = (mockPrisma as unknown) as PrismaClient;
 
 describe("testApplicationDelete", () => {
   let req: Partial<Request>;
@@ -37,10 +36,10 @@ describe("testApplicationDelete", () => {
       body: {},
     };
     res = {
-      status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn(),
     };
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("should return 500 if applicationInfo is not present", async () => {

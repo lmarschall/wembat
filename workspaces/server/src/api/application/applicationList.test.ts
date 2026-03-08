@@ -1,24 +1,28 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "./../generated/prisma/client";
+import { PrismaClient } from "#prisma";
+// Sauberer ESM-Import dank Vitest-Hoisting
+import { applicationList } from "#api/application/applicationList";
+import { vi, describe, beforeEach, it, expect } from "vitest";
 
-// --- 1. PRISMA MOCK ---
-const mockPrisma = {
-  application: {
-    findMany: jest.fn(),
-  },
-};
+// --- 1. HOISTING DER MOCK VARIABLEN ---
+const { mockPrisma } = vi.hoisted(() => {
+  return {
+    mockPrisma: {
+      application: {
+        findMany: vi.fn(),
+      },
+    },
+  };
+});
 
-// Ensure this matches the exact import path in your applicationList.ts file
-jest.mock("./../generated/prisma/client", () => ({
-  PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
+// --- 2. REGISTRIERUNG DER MOCKS ---
+vi.mock("#prisma", () => ({
+  PrismaClient: vi.fn().mockImplementation(() => mockPrisma),
 }));
 
 const prisma = (mockPrisma as unknown) as PrismaClient;
 
-// --- 2. DYNAMIC IMPORT OF CONTROLLER ---
-// Load applicationList AFTER the mocks are registered to prevent import hoisting bugs
-const { applicationList } = require("./applicationList");
-
+// --- 3. TEST SUITE ---
 describe("testApplicationList", () => {
   let req: Partial<Request>;
   let res: Partial<Response>;
@@ -28,11 +32,11 @@ describe("testApplicationList", () => {
       body: {},
     };
     res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
-      send: jest.fn(),
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+      send: vi.fn(),
     };
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // Wichtig: vi statt jest
   });
 
   it("should return a list of applications", async () => {

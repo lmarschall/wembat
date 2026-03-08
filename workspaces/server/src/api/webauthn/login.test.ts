@@ -1,39 +1,57 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "./../generated/prisma/client";
+import { PrismaClient } from "#prisma";
+// Sauberer ESM-Import (Passe den Pfad an, je nachdem wo deine login.ts liegt)
+import { login } from "#api/webauthn/login"; 
+import { vi, describe, beforeEach, it, expect } from "vitest";
 
-// 1. Define all Mocks FIRST
-const mockVerifyAuth = jest.fn();
-jest.mock("@simplewebauthn/server", () => ({
+// --- 1. HOISTING ALLER MOCK VARIABLEN ---
+const { 
+  mockVerifyAuth, 
+  mockCreateToken, 
+  mockCreateRefreshToken, 
+  mockAddToWebAuthnTokens, 
+  mockPrisma 
+} = vi.hoisted(() => {
+  return {
+    mockVerifyAuth: vi.fn(),
+    mockCreateToken: vi.fn(),
+    mockCreateRefreshToken: vi.fn(),
+    mockAddToWebAuthnTokens: vi.fn(),
+    mockPrisma: {
+      user: { findUnique: vi.fn() },
+      session: { create: vi.fn() },
+    },
+  };
+});
+
+// --- 2. REGISTRIERUNG DER MOCKS ---
+vi.mock("@simplewebauthn/server", () => ({
   __esModule: true,
   verifyAuthenticationResponse: mockVerifyAuth,
 }));
 
-const mockCreateToken = jest.fn();
-const mockCreateRefreshToken = jest.fn();
-jest.mock("../../crypto", () => ({
+// Nutzt jetzt deinen sauberen #crypto Alias
+vi.mock("#crypto", () => ({
   cryptoService: {
     createSessionToken: mockCreateToken,
     createSessionRefreshToken: mockCreateRefreshToken,
   },
 }));
 
-const mockAddToWebAuthnTokens = jest.fn();
-jest.mock("../../redis", () => ({
+// Nutzt jetzt deinen sauberen #redis Alias
+vi.mock("#redis", () => ({
   redisService: {
     addToWebAuthnTokens: mockAddToWebAuthnTokens,
   },
 }));
 
-const mockPrisma = {
-  user: { findUnique: jest.fn() },
-  session: { create: jest.fn() },
-};
+vi.mock("#prisma", () => ({
+  PrismaClient: vi.fn().mockImplementation(() => mockPrisma),
+}));
+
 const prisma = (mockPrisma as unknown) as PrismaClient;
 
-// 2. THE CRITICAL FIX: Load the function AFTER mocks are registered 
-// This prevents TypeScript from moving the import above our jest.mock calls.
-const { login } = require("./login");
-
+// --- 3. TEST SUITE ---
 describe("testLogin", () => {
   let req: Partial<Request>;
   let res: Partial<Response>;
@@ -42,12 +60,12 @@ describe("testLogin", () => {
     req = { body: {} };
     res = {
       locals: {},
-      status: jest.fn().mockReturnThis(),
-      cookie: jest.fn().mockReturnThis(),
-      send: jest.fn(),
-      json: jest.fn(),
+      status: vi.fn().mockReturnThis(),
+      cookie: vi.fn().mockReturnThis(),
+      send: vi.fn(),
+      json: vi.fn(),
     };
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // Wichtig: vi statt jest
   });
 
   it("should return error if loginChallengeResponse is missing", async () => {
@@ -186,6 +204,7 @@ describe("testLogin", () => {
     await login(req as Request, res as Response, prisma);
 
     expect(res.status).toHaveBeenCalledWith(200);
+    // expect.any(Object) funktioniert in Vitest genauso wie in Jest!
     expect(res.cookie).toHaveBeenCalledWith("refreshToken", "test-refresh-token", expect.any(Object));
     expect(res.send).toHaveBeenCalledWith(
       JSON.stringify({

@@ -1,22 +1,27 @@
 import { Request, Response } from "express";
+// Sauberer ESM-Import dank Vitest-Hoisting
+import { openidLogin } from "#api/openid/openidLogin";
+import { vi, describe, beforeEach, it, expect } from "vitest";
 
-// --- 1. OPENID-CLIENT MOCK ---
-const mockGeneratorsState = jest.fn();
+// --- 1. HOISTING DER MOCK VARIABLEN ---
+const { mockGeneratorsState } = vi.hoisted(() => {
+  return {
+    mockGeneratorsState: vi.fn(),
+  };
+});
 
+// --- 2. REGISTRIERUNG DES EXTERNS MOCKS ---
 // We mock the generators object from openid-client
-jest.mock("openid-client", () => ({
+vi.mock("openid-client", () => ({
   __esModule: true,
   generators: {
     state: mockGeneratorsState,
   },
   // BaseClient is just a type here, but we can provide a dummy if needed
-  BaseClient: jest.fn(), 
+  BaseClient: vi.fn(), 
 }));
 
-// --- 2. DYNAMIC IMPORT OF CONTROLLER ---
-// Load openidLogin AFTER the mocks are registered
-const { openidLogin } = require("./openidLogin");
-
+// --- 3. TEST SUITE ---
 describe("testOpenidLogin", () => {
   let req: Partial<Request>;
   let res: Partial<Response>;
@@ -29,17 +34,17 @@ describe("testOpenidLogin", () => {
       session: {} as any, 
     };
     res = {
-      redirect: jest.fn(),
-      status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
+      redirect: vi.fn(),
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn(),
     };
     
     // Create a fresh mock client for every test
     mockOpenidClient = {
-      authorizationUrl: jest.fn(),
+      authorizationUrl: vi.fn(),
     };
 
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // Wichtig: vi statt jest
   });
 
   it("should return 400 if openidClient is undefined", async () => {

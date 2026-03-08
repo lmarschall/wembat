@@ -1,30 +1,30 @@
 import { Router, Request, Response } from "express";
 import { BaseClient, Issuer } from 'openid-client';
 import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient } from './generated/prisma/client'
-import { applicationList } from "./application/applicationList";
-import { applicationCreate } from "./application/applicationCreate";
-import { applicationToken } from "./application/applicationToken";
-import { applicationUpdate } from "./application/applicationUpdate";
-import { applicationDelete } from "./application/applicationDelete";
-import { requestRegister } from "./webauthn/requestRegister";
-import { register } from "./webauthn/register";
-import { refresh } from "./webauthn/refresh";
-import { onboard } from "./webauthn/onboard";
-import { requestOnboard } from "./webauthn/requestOnboard";
-import { updateCredentials } from "./webauthn/updateCredentials";
-import { requestLogin } from "./webauthn/requestLogin";
-import { login } from "./webauthn/login";
-import { validateWebAuthnToken } from "./validate/validateWebAuthn";
-import { validateApplicationToken } from "./validate/validateApplication";
-import { validateAdminToken } from "./validate/validateAdmin";
-import { serverExportPublicKey } from "./server/serverExportPublicKey";
-import { deviceList } from "./device/deviceList";
-import { requestLink } from "./webauthn/requestLink";
-import { link } from "./webauthn/link";
-import { openidCallback } from "./openid/openidCallback";
-import { openidLogin } from "./openid/openidLogin";
-import { openidPoll } from "./openid/openidPoll";
+import { PrismaClient } from '#prisma'
+import { applicationList } from "#api/application/applicationList";
+import { applicationCreate } from "#api/application/applicationCreate";
+import { applicationToken } from "#api/application/applicationToken";
+import { applicationUpdate } from "#api/application/applicationUpdate";
+import { applicationDelete } from "#api/application/applicationDelete";
+import { requestRegister } from "#api/webauthn/requestRegister";
+import { register } from "#api/webauthn/register";
+import { refresh } from "#api/webauthn/refresh";
+import { onboard } from "#api/webauthn/onboard";
+import { requestOnboard } from "#api/webauthn/requestOnboard";
+import { updateCredentials } from "#api/webauthn/updateCredentials";
+import { requestLogin } from "#api/webauthn/requestLogin";
+import { login } from "#api/webauthn/login";
+import { validateWebAuthnToken } from "#api/validate/validateWebAuthn";
+import { validateApplicationToken } from "#api/validate/validateApplication";
+import { validateAdminToken } from "#api/validate/validateAdmin";
+import { serverExportPublicKey } from "#api/server/serverExportPublicKey";
+import { deviceList } from "#api/device/deviceList";
+import { requestLink } from "#api/webauthn/requestLink";
+import { link } from "#api/webauthn/link";
+import { openidCallback } from "#api/openid/openidCallback";
+import { openidLogin } from "#api/openid/openidLogin";
+import { openidPoll } from "#api/openid/openidPoll";
 
 import "dotenv/config";
 

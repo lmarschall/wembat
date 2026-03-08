@@ -3,15 +3,25 @@
   "version": "0.9.4",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "start": "node dist/app.js",
     "serve": "tsc && node dist/app.js",
     "lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix ./src/**/*.ts",
     "format": "prettier ./src/**/*.ts --write",
-    "test": "jest"
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "imports": {
+    "#prisma": "./dist/prisma/generated/client.js",
+    "#redis": "./dist/redis/index.js",
+    "#crypto": "./dist/crypto/index.js",
+    "#api": "./dist/src/api/index.js",
+    "#api/*": "./dist/src/api/*.js"
   },
   "dependencies": {
+    "@generated/prisma": "file:./prisma/generated",
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
     "@simplewebauthn/server": "^11.0.0",
@@ -34,6 +44,7 @@
     "@types/express-session": "^1.18.2",
     "@types/node": "^25.2.0",
     "@types/pg": "^8.16.0",
-    "prisma": "^7.3.0"
+    "prisma": "^7.3.0",
+    "vitest": "^4.0.18"
   }
 }

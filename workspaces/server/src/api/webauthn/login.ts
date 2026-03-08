@@ -1,9 +1,9 @@
-import { Device, Session, PrismaClient } from "./../generated/prisma/client";
+import { Device, Session, PrismaClient } from "#prisma";
 import { verifyAuthenticationResponse, VerifyAuthenticationResponseOpts } from "@simplewebauthn/server";
-import { LoginChallengeResponse, UserWithDevicesAndSessions } from "../types";
+import { LoginChallengeResponse, UserWithDevicesAndSessions } from "#api/types";
 import { Request, Response } from "express";
-import { cryptoService } from "../../crypto";
-import { redisService } from "../../redis";
+import { cryptoService } from "#crypto";
+import { redisService } from "#redis";
 
 export async function login(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {

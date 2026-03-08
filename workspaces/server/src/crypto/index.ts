@@ -8,9 +8,9 @@ import {
 	generateKeyPair,
 	GenerateKeyPairResult,
 } from "jose";
-import { Application, Session, User } from "./../api/generated/prisma/client"
-import { readFileSync } from "fs";
-import { join } from 'path';
+import { Application, Session, User } from "#prisma"
+import { readFileSync } from "node:fs";
+import { join } from 'node:path';
 
 interface KeyPair {
 	privateKey: KeyLike;

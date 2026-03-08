@@ -1,21 +1,26 @@
 import { Request, Response } from "express";
+// Sauberer ESM-Import dank Vitest-Hoisting (Passe den Pfad an, falls er abweicht)
+import { openidPoll } from "#api/openid/openidPoll";
+import { vi, describe, beforeEach, it, expect } from "vitest";
 
-// --- 1. AUTH STORE MOCK ---
-const mockAuthStoreGet = jest.fn();
-const mockAuthStoreDelete = jest.fn();
+// --- 1. HOISTING DER MOCK VARIABLEN ---
+const { mockAuthStoreGet, mockAuthStoreDelete } = vi.hoisted(() => {
+    return {
+        mockAuthStoreGet: vi.fn(),
+        mockAuthStoreDelete: vi.fn(),
+    };
+});
 
-// Ensure this matches the exact import path in your openidPoll.ts file
-jest.mock("../auth-store", () => ({
+// --- 2. REGISTRIERUNG DER MOCKS ---
+// Nutzt jetzt sauber deinen #api/auth-store Alias
+vi.mock("#api/auth-store", () => ({
     authStore: {
         get: mockAuthStoreGet,
         delete: mockAuthStoreDelete,
     },
 }));
 
-// --- 2. DYNAMIC IMPORT OF CONTROLLER ---
-// Load openidPoll AFTER the mocks are registered to prevent import hoisting bugs
-const { openidPoll } = require("./openidPoll");
-
+// --- 3. TEST SUITE ---
 describe("testOpenidPoll", () => {
     let req: Partial<Request>;
     let res: Partial<Response>;
@@ -25,11 +30,11 @@ describe("testOpenidPoll", () => {
             query: {},
         };
         res = {
-            status: jest.fn().mockReturnThis(),
-            send: jest.fn(),
-            json: jest.fn(),
+            status: vi.fn().mockReturnThis(),
+            send: vi.fn(),
+            json: vi.fn(),
         };
-        jest.clearAllMocks();
+        vi.clearAllMocks(); // Wichtig: vi statt jest
     });
 
     it("should return 400 if requestId is missing", async () => {

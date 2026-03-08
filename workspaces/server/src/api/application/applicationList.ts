@@ -1,4 +1,4 @@
-import { PrismaClient } from "./../generated/prisma/client";
+import { PrismaClient } from "#prisma";
 import { Request, Response } from "express";
 
 export async function applicationList(req: Request, res: Response, prisma: PrismaClient): Promise<void> {

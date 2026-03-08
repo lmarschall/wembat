@@ -1,21 +1,26 @@
 import { Request, Response } from "express";
+// Sauberer ESM-Import (Passe den Pfad an, falls openidCallback woanders im api-Ordner liegt)
+import { openidCallback } from "#api/openid/openidCallback";
+import { vi, describe, beforeEach, it, expect } from "vitest";
 
-// --- 1. AUTH STORE MOCK ---
-const mockAuthStoreFail = jest.fn();
-const mockAuthStoreSuccess = jest.fn();
+// --- 1. HOISTING DER MOCK VARIABLEN ---
+const { mockAuthStoreFail, mockAuthStoreSuccess } = vi.hoisted(() => {
+    return {
+        mockAuthStoreFail: vi.fn(),
+        mockAuthStoreSuccess: vi.fn(),
+    };
+});
 
-// Ensure this matches the exact import path in your openidCallback.ts file
-jest.mock("../auth-store", () => ({
+// --- 2. REGISTRIERUNG DER MOCKS ---
+// Nutzt jetzt sauber deinen #api/auth-store Alias
+vi.mock("#api/auth-store", () => ({
     authStore: {
         fail: mockAuthStoreFail,
         success: mockAuthStoreSuccess,
     },
 }));
 
-// --- 2. DYNAMIC IMPORT OF CONTROLLER ---
-// Load openidCallback AFTER the mocks are registered
-const { openidCallback } = require("./openidCallback");
-
+// --- 3. TEST SUITE ---
 describe("testOpenidCallback", () => {
     let req: Partial<Request>;
     let res: Partial<Response>;
@@ -28,19 +33,19 @@ describe("testOpenidCallback", () => {
             session: {} as any, 
         };
         res = {
-            setHeader: jest.fn(),
-            status: jest.fn().mockReturnThis(),
-            send: jest.fn(),
+            setHeader: vi.fn(),
+            status: vi.fn().mockReturnThis(),
+            send: vi.fn(),
         };
 
         // Create a fresh mock client for every test
         mockOpenidClient = {
-            callbackParams: jest.fn().mockReturnValue({ code: "mock-auth-code" }),
-            oauthCallback: jest.fn(),
-            userinfo: jest.fn(),
+            callbackParams: vi.fn().mockReturnValue({ code: "mock-auth-code" }),
+            oauthCallback: vi.fn(),
+            userinfo: vi.fn(),
         };
 
-        jest.clearAllMocks();
+        vi.clearAllMocks(); // Wichtig: vi statt jest
     });
 
     // Helper function to generate valid base64 state strings for testing

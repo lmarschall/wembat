@@ -1,7 +1,7 @@
-import { PrismaClient } from "./../generated/prisma/client";
+import { PrismaClient } from "#prisma";
 import { Request, Response } from "express";
-import { cryptoService } from "../../crypto";
-import { ApplicationInfo } from "../types";
+import { cryptoService } from "#crypto";
+import { ApplicationInfo } from "#api/types";
 
 export async function applicationToken(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {
