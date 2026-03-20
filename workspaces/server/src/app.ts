@@ -12,20 +12,16 @@ import session from 'express-session';
 
 import dotenv from 'dotenv';
 
-import fs from 'node:fs';
-import path from 'node:path';
-import https from 'node:https';
-
 dotenv.config();
 
 const port = 8080;
 const dashboardUrl = process.env.DASHBOARD_SERVER_URL || "http://localhost:9090";
 
-const sslOptions = {
-  // Pfad anpassen, falls die Keys woanders liegen
-  key: fs.readFileSync(path.join(__dirname, '../../../certs/localhost+2-key.pem')), 
-  cert: fs.readFileSync(path.join(__dirname, '../../../certs/localhost+2.pem'))
-};
+// const sslOptions = {
+//   // Pfad anpassen, falls die Keys woanders liegen
+//   key: fs.readFileSync(path.join(__dirname, '../../../certs/localhost+2-key.pem')), 
+//   cert: fs.readFileSync(path.join(__dirname, '../../../certs/localhost+2.pem'))
+// };
 
 // declare module 'express-session' {
 //   interface SessionData {
@@ -65,13 +61,13 @@ async function init() {
   const corsOptionsDelegate = async (req: any, callback: any) => {
     let corsOptions;
   
-    // const origin = req.header("Origin");
-    // const method = req.method;
-    // let isDomainAllowed = await redisService.checkForDomainInWhiteList(origin);
+    const origin = req.header("Origin");
+    const method = req.method;
+    let isDomainAllowed = await redisService.checkForDomainInWhiteList(origin);
     
-    // console.log(`Request from ${origin} with method ${method} is allowed: ${isDomainAllowed}`);
+    console.log(`Request from ${origin} with method ${method} is allowed: ${isDomainAllowed}`);
 
-    const isDomainAllowed = true;
+    // const isDomainAllowed = true;
   
     if (isDomainAllowed) {
       // Enable CORS for this request
@@ -113,7 +109,7 @@ async function init() {
 
   app.use("/api", apiRouter);
   
-  https.createServer(sslOptions, app).listen(port, () => {
+  app.listen(port, () => {
     return console.log(`server is listening on ${port}`);
   });
 }

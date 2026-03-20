@@ -109,7 +109,7 @@ function appendAlert(message: string, type: string) {
 async function register() {
   loading.value = true;
 
-  const registerResponse = await wembatClient.register(username.value, true);
+  const registerResponse = await wembatClient.register(username.value, false);
 
   if(registerResponse.success) {
     const verified = registerResponse.result;

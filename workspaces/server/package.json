@@ -7,18 +7,11 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/app.js",
-    "serve": "tsc && node dist/app.js",
+    "serve": "tsc && node dist/src/app.js",
     "lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix ./src/**/*.ts",
     "format": "prettier ./src/**/*.ts --write",
     "test": "vitest run",
     "test:watch": "vitest"
-  },
-  "imports": {
-    "#prisma": "./dist/prisma/generated/client.js",
-    "#redis": "./dist/redis/index.js",
-    "#crypto": "./dist/crypto/index.js",
-    "#api": "./dist/src/api/index.js",
-    "#api/*": "./dist/src/api/*.js"
   },
   "dependencies": {
     "@generated/prisma": "file:./prisma/generated",
@@ -38,7 +31,8 @@
     "jose": "^4.15.5",
     "openid-client": "^5.7.1",
     "pg": "^8.18.0",
-    "redis": "^4.0.6"
+    "redis": "^4.0.6",
+    "tsx": "^4.21.0"
   },
   "devDependencies": {
     "@types/express-session": "^1.18.2",

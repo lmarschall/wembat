@@ -10,7 +10,6 @@ import {
 } from "jose";
 import { Application, Session, User } from "#prisma"
 import { readFileSync } from "node:fs";
-import { join } from 'node:path';
 
 interface KeyPair {
 	privateKey: KeyLike;
@@ -22,12 +21,18 @@ export let cryptoService: CryptoService;
 export async function initCrypto(): Promise<boolean> {
 	try {
 		const algorithm = "ES256";
-		const pkcs8 = readFileSync(join(__dirname, "../../keys/privateKey.pem"), "utf8");
-		const ecPrivateKey = await importPKCS8(pkcs8, algorithm);
-		const spki = readFileSync(join(__dirname, "../../keys/publicKey.pem"), "utf8");
-		const ecPublicKey = await importSPKI(spki, algorithm);
+        
+        // use import.meta.url to create an absolute path
+        const privateKeyUrl = new URL("../../keys/privateKey.pem", import.meta.url);
+        const publicKeyUrl = new URL("../../keys/publicKey.pem", import.meta.url);
 
-		cryptoService = new CryptoService(ecPrivateKey, ecPublicKey);
+        const pkcs8 = readFileSync(privateKeyUrl, "utf8");
+        const ecPrivateKey = await importPKCS8(pkcs8, algorithm);
+        
+        const spki = readFileSync(publicKeyUrl, "utf8");
+        const ecPublicKey = await importSPKI(spki, algorithm);
+
+        cryptoService = new CryptoService(ecPrivateKey, ecPublicKey);
 
 		return true;
 	} catch (err) {
