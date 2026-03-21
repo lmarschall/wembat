@@ -9,6 +9,7 @@ import {
 	GenerateKeyPairResult,
 } from "jose";
 import { Application, Session, User } from "#prisma"
+import { configService } from "#config";
 import { readFileSync } from "node:fs";
 
 interface KeyPair {
@@ -23,8 +24,8 @@ export async function initCrypto(): Promise<boolean> {
 		const algorithm = "ES256";
         
         // use import.meta.url to create an absolute path
-        const privateKeyUrl = new URL("../../keys/privateKey.pem", import.meta.url);
-        const publicKeyUrl = new URL("../../keys/publicKey.pem", import.meta.url);
+        const privateKeyUrl = new URL("../../../keys/privateKey.pem", import.meta.url);
+        const publicKeyUrl = new URL("../../../keys/publicKey.pem", import.meta.url);
 
         const pkcs8 = readFileSync(privateKeyUrl, "utf8");
         const ecPrivateKey = await importPKCS8(pkcs8, algorithm);
@@ -50,7 +51,7 @@ export async function initCryptoTest(algorithm = "ES256") {
 
 export class CryptoService {
 	private keyPair: KeyPair;
-	private apiUrl: string = process.env.API_SERVER_URL || "http://localhost:8080";
+	private apiUrl: string = configService.getServerUrl();
 
 	constructor(privateKey: KeyLike, publicKey: KeyLike) {
 		this.keyPair = {

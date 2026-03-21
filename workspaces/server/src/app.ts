@@ -8,14 +8,11 @@ import { rateLimit} from "express-rate-limit";
 import { apiRouter, initOpenIdClient } from "#api";
 import { initRedis, redisService } from "#redis";
 import { initCrypto, cryptoService } from "#crypto";
+import { configService } from "#config";
 import session from 'express-session';
 
-import dotenv from 'dotenv';
-
-dotenv.config();
-
 const port = 8080;
-const dashboardUrl = process.env.DASHBOARD_SERVER_URL || "http://localhost:9090";
+const dashboardUrl = process.env.DASHBOARD_URL || "http://localhost:9090";
 
 // const sslOptions = {
 //   // Pfad anpassen, falls die Keys woanders liegen
@@ -54,7 +51,7 @@ async function init() {
     return;
   }
 
-  await initOpenIdClient();
+  // await initOpenIdClient();
   
   const app = express();
   
@@ -119,7 +116,7 @@ init();
 async function initAdmin(): Promise<boolean> {
 	try {
 		const token = await cryptoService.createAdminJWT();
-		console.log(`Dashboard Url: ${dashboardUrl}/${token}`);
+		console.log(`Dashboard Url: ${configService.getDashboardUrl()}/${token}`);
 		return true;
 	} catch (err) {
 		console.error(err);

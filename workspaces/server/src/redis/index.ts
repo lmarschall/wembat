@@ -3,6 +3,7 @@ import { createClient } from "redis";
 import "dotenv/config";
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '#prisma';
+import { configService } from "#config";
 
 const connectionString = `${process.env.DATABASE_URL}`
 const adapter = new PrismaPg({ connectionString })
@@ -28,7 +29,7 @@ export async function initRedis(): Promise<boolean> {
 export class RedisService {
 	private readonly port = process.env.REDIS_PORT || 6379;
 	private readonly host = process.env.REDIS_HOST || "127.0.0.1";
-	private readonly dashboardUrl = process.env.DASHBOARD_SERVER_URL || "http://localhost:9090";
+	private readonly dashboardUrl = configService.getDashboardUrl();
 
 	private readonly redisurl = `redis://${this.host}:${this.port}`;
 	private readonly client = createClient({ url: this.redisurl });

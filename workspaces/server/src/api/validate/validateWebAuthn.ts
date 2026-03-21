@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import { decodeProtectedHeader, importJWK, jwtVerify } from "jose";
 import { cryptoService } from "#crypto";
-
-const serverUrl = process.env.API_SERVER_URL || "http://localhost:8080";
+import { configService } from "#config";
+import { config } from "dotenv";
 
 export async function validateWebAuthnToken(
 	req: Request,
@@ -35,7 +35,7 @@ export async function validateWebAuthnToken(
 
 		const importedKey = await importJWK(spki, algorithm);
 		const { payload, protectedHeader } = await jwtVerify(jwt, importedKey, {
-			issuer: serverUrl,
+			issuer: configService.getServerUrl(),
 			algorithms: ["ES256"],
 		});
 		res.locals.payload = payload;

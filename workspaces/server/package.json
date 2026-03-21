@@ -6,18 +6,25 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/app.js",
+    "start": "node dist/src/app.js",
     "serve": "tsc && node dist/src/app.js",
     "lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix ./src/**/*.ts",
     "format": "prettier ./src/**/*.ts --write",
     "test": "vitest run",
     "test:watch": "vitest"
   },
+  "imports": {
+    "#prisma": "./dist/prisma/generated/client.js",
+    "#redis": "./dist/src/redis/index.js",
+    "#crypto": "./dist/src/crypto/index.js",
+    "#config": "./dist/src/config/index.js",
+    "#api": "./dist/src/api/index.js",
+    "#api/*": "./dist/src/api/*.js"
+  },
   "dependencies": {
-    "@generated/prisma": "file:./prisma/generated",
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
-    "@simplewebauthn/server": "^11.0.0",
+    "@simplewebauthn/server": "^13.3.0",
     "base64url": "^3.0.1",
     "body-parser": "^1.19.2",
     "compression": "^1.8.1",

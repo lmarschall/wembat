@@ -12,6 +12,7 @@
         "#prisma": ["./prisma/generated/client.ts"],
         "#redis": ["./src/redis/index.ts"],
         "#crypto": ["./src/crypto/index.ts"],
+        "#config": ["./src/config/index.ts"],
         "#api": ["./src/api/index.ts"],
         "#api/*": ["./src/api/*.ts"]
     },

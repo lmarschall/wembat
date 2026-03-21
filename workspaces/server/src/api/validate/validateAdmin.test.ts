@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { cryptoService, initCryptoTest } from "#crypto";
+import { initConfig } from "#config";
 import { validateAdminToken } from "#api/validate/validateAdmin";
 import { generateKeyPair } from "jose";
 import { vi, describe, beforeEach, it, expect, type Mock } from "vitest";
@@ -10,6 +11,7 @@ describe("validateAdminToken", () => {
     let next: Mock; // Nutzt den Typ von Vitest statt jest.Mock
 
     beforeEach(async () => {
+        await initConfig();
         await initCryptoTest();
 
         req = {

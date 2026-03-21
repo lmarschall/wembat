@@ -1,64 +1,61 @@
-# build stage
-FROM node:22.20 AS build
+# --- Build Stage ---
+FROM node:22.20-slim AS build
 
-# make the 'build' folder the current working directory
+# Install openssl for Prisma
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /usr/src/build
 
-# copy both 'package.json' and 'package-lock.json'
-COPY ./package*.json ./
-COPY ./workspaces/server/package*.json ./workspaces/server/
+# Copy root workspace manifests
+COPY package*.json ./
+# Copy workspace-specific manifests (allows npm ci to cache better)
+COPY workspaces/server/package*.json ./workspaces/server/
 
-# install project dependencies
 RUN npm ci
 
-# move to the server workspace
+# Copy source and prisma schema
+COPY workspaces/server/ ./workspaces/server/
+
 WORKDIR /usr/src/build/workspaces/server
 
-# copy source files
-COPY ./workspaces/server/ .
-
-# generate prisma models for prisma client
+# Generate Prisma Client and Build
 RUN npx prisma generate
-
-# build app with typescript
 RUN npm run build
 
-# run stage
+# --- Run Stage ---
 FROM node:22-bullseye-slim AS run
 
-# install postgresql client
-RUN apt-get update && apt-get install -y \
-    postgresql-client \
-    openssl \
-    && rm -rf /var/lib/apt/lists/* \
-    && mkdir -p /opt/data \
-    && chown -R node:node /opt/data
+# # Install runtime dependencies
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
-# create data volume
-VOLUME /opt/data
+# Setup data directory with correct permissions before VOLUME is defined
+RUN mkdir -p /opt/data/keys && chown -R node:node /opt/data
 
-# set environment variables
+USER node
+WORKDIR /usr/src/app
+# Set environment
 ENV NODE_ENV=production
 
-# create node user
-USER node
+# Copy manifests for production install
+COPY --chown=node:node package*.json ./
+COPY --chown=node:node workspaces/server/package*.json ./workspaces/server/
 
-# make the 'app' folder the current working directory
-WORKDIR /usr/src/app
-
-# copy root package files for workspace support
-COPY --chown=node:node ./package*.json /usr/src/app/
-COPY --chown=node:node ./workspaces/server/package*.json /usr/src/app/workspaces/server/
-
-# install project dependencies using workspace
+# Install only production dependencies
 RUN npm ci --workspace=@wembat/server --omit=dev
 
-# copy build files from build stage
-COPY --chown=node:node --from=build /usr/src/build/workspaces/server/dist /usr/src/app/dist
-COPY --chown=node:node --from=build /usr/src/build/workspaces/server/prisma /usr/src/app/prisma
-COPY --chown=node:node --from=build /usr/src/build/workspaces/server/entrypoint.sh /usr/src/app/entrypoint.sh
+# Copy built assets and Prisma files
+COPY --chown=node:node --from=build /usr/src/build/workspaces/server/dist ./dist
+COPY --chown=node:node --from=build /usr/src/build/workspaces/server/prisma ./prisma
+COPY --chown=node:node --from=build /usr/src/build/workspaces/server/entrypoint.sh ./entrypoint.sh
 
-# expose api port
+# Ensure entrypoint is executable
+RUN chmod +x ./entrypoint.sh
+
+# Persist the keys directory
+VOLUME /opt/data
+
 EXPOSE 8080
 
-CMD ["/bin/bash", "/usr/src/app/entrypoint.sh"]
+# Use ENTRYPOINT for the script and CMD for default arguments
+ENTRYPOINT ["bash", "./entrypoint.sh"]
+# CMD ["tail", "-f", "/dev/null"]
