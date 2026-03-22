@@ -1,16 +1,7 @@
 import { createClient } from "redis";
-
-import "dotenv/config";
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '#prisma';
 import { configService } from "#config";
-
-const connectionString = `${process.env.DATABASE_URL}`
-const adapter = new PrismaPg({ connectionString })
-
-// redis set for storing issued json web tokens
-// aims to whitelist all self generated json web tokens
-// and to prevent third party token forging
 
 export let redisService: RedisService;
 
@@ -27,13 +18,13 @@ export async function initRedis(): Promise<boolean> {
 }
 
 export class RedisService {
-	private readonly port = process.env.REDIS_PORT || 6379;
-	private readonly host = process.env.REDIS_HOST || "127.0.0.1";
+	
+	private readonly redisUrl = configService.getRedisUrl();
 	private readonly dashboardUrl = configService.getDashboardUrl();
-
-	private readonly redisurl = `redis://${this.host}:${this.port}`;
-	private readonly client = createClient({ url: this.redisurl });
-	private readonly prisma = new PrismaClient({adapter});
+	private readonly databaseUrl = configService.getDatabaseUrl();
+	private readonly client = createClient({ url: this.redisUrl });
+	private readonly pgAdapter = new PrismaPg({ connectionString: this.databaseUrl });
+	private readonly prisma = new PrismaClient({ adapter: this.pgAdapter });
 
 	constructor() {
 		this.client.on("connect", () => {
@@ -42,7 +33,7 @@ export class RedisService {
 	}
 
 	async connect() {
-		console.log(`connecting to redis cache ${this.redisurl}`);
+		console.log(`connecting to redis cache ${this.redisUrl}`);
 
 		await this.client.connect();
 	}

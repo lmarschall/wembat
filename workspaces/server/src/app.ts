@@ -5,14 +5,13 @@ import bodyParser from "body-parser";
 import compression from "compression";
 import { rateLimit} from "express-rate-limit";
 
-import { apiRouter, initOpenIdClient } from "#api";
+import { createAPIRouter, initOpenIdClient } from "#api";
 import { initRedis, redisService } from "#redis";
 import { initCrypto, cryptoService } from "#crypto";
-import { configService } from "#config";
+import { configService, initConfig } from "#config";
 import session from 'express-session';
 
 const port = 8080;
-const dashboardUrl = process.env.DASHBOARD_URL || "http://localhost:9090";
 
 // const sslOptions = {
 //   // Pfad anpassen, falls die Keys woanders liegen
@@ -35,6 +34,11 @@ const limiter = rateLimit({
 });
 
 async function init() {
+
+  if (!await initConfig()) {
+    console.error("Failed to initialize config");
+    return;
+  }
 
   if (!await initCrypto()) {
     console.error("Failed to initialize crypto");
@@ -63,8 +67,6 @@ async function init() {
     let isDomainAllowed = await redisService.checkForDomainInWhiteList(origin);
     
     console.log(`Request from ${origin} with method ${method} is allowed: ${isDomainAllowed}`);
-
-    // const isDomainAllowed = true;
   
     if (isDomainAllowed) {
       // Enable CORS for this request
@@ -96,7 +98,6 @@ async function init() {
   app.use(compression());
   app.use(bodyParser.json({ limit: "1mb" }));
 
-
   app.use(session({
     secret: 'super-secret-session-key',
     resave: false,
@@ -104,7 +105,7 @@ async function init() {
     cookie: { secure: false, httpOnly: true }
   }));
 
-  app.use("/api", apiRouter);
+  app.use("/api", createAPIRouter());
   
   app.listen(port, () => {
     return console.log(`server is listening on ${port}`);

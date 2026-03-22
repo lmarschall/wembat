@@ -50,8 +50,8 @@ export async function initCryptoTest(algorithm = "ES256") {
 }
 
 export class CryptoService {
-	private keyPair: KeyPair;
-	private apiUrl: string = configService.getServerUrl();
+	private readonly keyPair: KeyPair;
+	private readonly apiUrl: string = configService.getServerUrl();
 
 	constructor(privateKey: KeyLike, publicKey: KeyLike) {
 		this.keyPair = {

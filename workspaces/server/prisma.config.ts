@@ -1,11 +1,7 @@
 import 'dotenv/config'
-import { defineConfig, env } from 'prisma/config'
+import { defineConfig, env } from '@prisma/config'
 
-// Use a fallback string if DATABASE_URL is missing 
-// This allows 'prisma generate' to run without a real .env file
-const dbUrl = process.env.DATABASE_URL || "postgresql://placeholder:5432"
-
-console.log("Using Database URL: " + dbUrl);
+const dbUrl = `postgresql://${env('DATABASE_USER')}:${env('DATABASE_PASSWORD')}@${env('DATABASE_HOST')}:${env('DATABASE_PORT')}/${env('DATABASE_DB')}?connect_timeout=300`
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
@@ -14,6 +10,6 @@ export default defineConfig({
   },
   datasource: {
     // We use the variable we defined above
-    url: dbUrl,
+    url: dbUrl
   },
 })
