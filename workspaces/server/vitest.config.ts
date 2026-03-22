@@ -12,6 +12,7 @@ export default defineConfig({
       '#crypto': path.resolve(__dirname, './src/crypto/index.ts'), // Pfad prüfen!
       '#prisma': path.resolve(__dirname, './src/api/generated/prisma/client/index.d.ts'),
       '#redis': path.resolve(__dirname, './src/redis/index.ts'),
+      '#config': path.resolve(__dirname, './src/config/index.ts'),
       '#api': path.resolve(__dirname, './src/api'),
     },
   },

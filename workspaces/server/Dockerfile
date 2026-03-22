@@ -43,9 +43,12 @@ COPY --chown=node:node workspaces/server/package*.json ./workspaces/server/
 # Install only production dependencies
 RUN npm ci --workspace=@wembat/server --omit=dev
 
+WORKDIR /usr/src/app/workspaces/server
+
 # Copy built assets and Prisma files
 COPY --chown=node:node --from=build /usr/src/build/workspaces/server/dist ./dist
 COPY --chown=node:node --from=build /usr/src/build/workspaces/server/prisma ./prisma
+COPY --chown=node:node --from=build /usr/src/build/workspaces/server/prisma.config.ts ./prisma.config.ts
 COPY --chown=node:node --from=build /usr/src/build/workspaces/server/entrypoint.sh ./entrypoint.sh
 
 # Ensure entrypoint is executable
@@ -58,4 +61,3 @@ EXPOSE 8080
 
 # Use ENTRYPOINT for the script and CMD for default arguments
 ENTRYPOINT ["bash", "./entrypoint.sh"]
-# CMD ["tail", "-f", "/dev/null"]

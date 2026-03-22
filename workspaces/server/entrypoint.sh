@@ -4,10 +4,10 @@ set -e
 
 # Deploy migrations
 echo "Applying Prisma migrations..."
-# npx prisma migrate deploy
+npx prisma migrate deploy
 
 # Key Management
-KEYS_DIR="/opt/data/keys"
+KEYS_DIR="./keys"
 PRIVATE_KEY="$KEYS_DIR/privateKey.pem"
 PUBLIC_KEY="$KEYS_DIR/publicKey.pem"
 
@@ -27,7 +27,7 @@ fi
 echo "--- Starting API Server ---"
 
 # Use 'exec' so Node becomes PID 1 and handles SIGTERM/SIGINT properly
-node dist/src/app.js || echo "App crashed! Stalling so you can debug..."
+node ./dist/src/app.js || echo "App crashed! Stalling so you can debug..."
 
 # Keep alive even after crash
 tail -f /dev/null

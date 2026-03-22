@@ -1,6 +1,6 @@
-import { WembatActionResponse, WembatClientToken, WembatLoginResult, WembatMessage, WembatRegisterResult, WembatLinkResult, WembatToken } from "./types";
+import { WembatActionResponse, WembatClientToken, WembatLoginResult, WembatMessage, WembatRegisterResult, WembatLinkResult, WembatToken, WembatOnboardResult } from "./types";
 import { jwtDecode } from "./functions/helper";
-import { Bridge, BridgeMessageType, LinkContent, LoginContent, DecryptContent, EncryptContent, InitContent, StartRegistrationContent, StartAuthenticationContent, RegisterContent } from "./bridge";
+import { Bridge, BridgeMessageType, LinkContent, LoginContent, DecryptContent, EncryptContent, InitContent, StartRegistrationContent, StartAuthenticationContent, RegisterContent, OnboardContent } from "./bridge";
 import { browserSupportsWebAuthn, startAuthentication, startRegistration } from "@simplewebauthn/browser";
 import { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/types";
 import WorkerClass from './worker.ts?worker&inline';
@@ -115,11 +115,8 @@ class WembatClient {
 	 * @returns A promise that resolves to a WembatActionResponse containing the onboard result.
 	 */
 	public async onboard (): Promise<WembatActionResponse<WembatRegisterResult>> {
-		// const content: ActionContent = { message: wembatMessage, key: publicKey };
-		// const action: WorkerAction = { type: WorkerActionType.Decrypt, content: content };
-		// return this.sendRequest(action);
-		let blob: any;
-		return blob;
+		const content: OnboardContent = {};
+		return this.bridge.invoke<WembatActionResponse<WembatOnboardResult>>(BridgeMessageType.Onboard, content);
 	}
 
 	/**

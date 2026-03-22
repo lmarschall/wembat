@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "#prisma";
 import { applicationDelete } from "#api/application/applicationDelete";
-import { vi } from 'vitest';
+import { vi, describe, beforeEach, it, expect } from "vitest";
 
 const { mockPrisma, mockRemoveFromDomainWhitelist } = vi.hoisted(() => {
   return {

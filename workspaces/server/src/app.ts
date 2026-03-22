@@ -5,28 +5,13 @@ import bodyParser from "body-parser";
 import compression from "compression";
 import { rateLimit} from "express-rate-limit";
 
-import { createAPIRouter, initOpenIdClient } from "#api";
+import { createAPIRouter } from "#api";
 import { initRedis, redisService } from "#redis";
 import { initCrypto, cryptoService } from "#crypto";
 import { configService, initConfig } from "#config";
 import session from 'express-session';
 
 const port = 8080;
-
-// const sslOptions = {
-//   // Pfad anpassen, falls die Keys woanders liegen
-//   key: fs.readFileSync(path.join(__dirname, '../../../certs/localhost+2-key.pem')), 
-//   cert: fs.readFileSync(path.join(__dirname, '../../../certs/localhost+2.pem'))
-// };
-
-// declare module 'express-session' {
-//   interface SessionData {
-//     code_verifier?: string;
-//     state?: string;
-//   }
-// }
-
-
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

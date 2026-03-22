@@ -5,8 +5,7 @@ import {
 	importSPKI,
 	SignJWT,
 	KeyLike,
-	generateKeyPair,
-	GenerateKeyPairResult,
+	generateKeyPair
 } from "jose";
 import { Application, Session, User } from "#prisma"
 import { configService } from "#config";
@@ -43,7 +42,7 @@ export async function initCrypto(): Promise<boolean> {
 }
 
 export async function initCryptoTest(algorithm = "ES256") {
-	const keyPairs: GenerateKeyPairResult<KeyLike> = await generateKeyPair(
+	const keyPairs = await generateKeyPair(
 		algorithm
 	);
 	cryptoService = new CryptoService(keyPairs.privateKey, keyPairs.publicKey);

@@ -37,24 +37,24 @@ const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI || "";
 
 let openidClient: BaseClient | undefined;
 
-export async function initOpenIdClient() {
-  console.log("init openid");
-  const githubIssuer = new Issuer({
-	issuer: 'https://github.com',
-	authorization_endpoint: 'https://github.com/login/oauth/authorize',
-	token_endpoint: 'https://github.com/login/oauth/access_token',
-	userinfo_endpoint: 'https://api.github.com/user',
-  });
+// export async function initOpenIdClient() {
+//   console.log("init openid");
+//   const githubIssuer = new Issuer({
+// 	issuer: 'https://github.com',
+// 	authorization_endpoint: 'https://github.com/login/oauth/authorize',
+// 	token_endpoint: 'https://github.com/login/oauth/access_token',
+// 	userinfo_endpoint: 'https://api.github.com/user',
+//   });
 
-  openidClient = new githubIssuer.Client({
-	client_id: GITHUB_CLIENT_ID,
-	client_secret: GITHUB_CLIENT_SECRET,
-	redirect_uris: [GITHUB_REDIRECT_URI],
-	response_types: ['code'],
-  });
+//   openidClient = new githubIssuer.Client({
+// 	client_id: GITHUB_CLIENT_ID,
+// 	client_secret: GITHUB_CLIENT_SECRET,
+// 	redirect_uris: [GITHUB_REDIRECT_URI],
+// 	response_types: ['code'],
+//   });
   
-  console.log('GitHub OAuth Config geladen');
-}
+//   console.log('GitHub OAuth Config geladen');
+// }
 
 export function createAPIRouter(): Router {
 	const connectionString = configService.getDatabaseUrl();

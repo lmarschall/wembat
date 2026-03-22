@@ -2,7 +2,7 @@ import { Prisma } from "#prisma";
 import {
 	AuthenticationResponseJSON,
 	RegistrationResponseJSON,
-} from "@simplewebauthn/types";
+} from "@simplewebauthn/server";
 
 export type UserInfo = {
 	userMail: string;
