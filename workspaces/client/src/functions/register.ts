@@ -6,7 +6,6 @@ import {
 	WembatRegisterResult,
 } from "../types";
 import {
-	PublicKeyCredentialCreationOptionsJSON,
 	RegistrationResponseJSON,
 } from "@simplewebauthn/types";
 import { AxiosInstance } from "axios";
@@ -19,6 +18,7 @@ import { Store } from "../store";
  *
  * @param axiosClient - The Axios instance for making HTTP requests.
  * @param bridge - The post message bridge object to send data to the wembat frontend.
+ * @param store - The store to save authenticated information.
  * @param userMail - The email address of the user to register.
  * @param autoRegister - The boolean flag to determine if auto register process should be triggered
  * @returns A promise that resolves to a `WembatActionResponse` containing the registration result.
@@ -37,15 +37,12 @@ export async function register(
 	};
 
 	try {
-		console.log("request register");
 		const requestRegisterResponse = await axiosClient.post<string>(
 			`/request-register`,
 			{
 				userInfo: { userMail: userMail },
 			}
 		);
-
-		console.log(requestRegisterResponse);
 
 		if (requestRegisterResponse.status !== 200) throw new Error(requestRegisterResponse.data);
 
@@ -62,25 +59,18 @@ export async function register(
 		const content: StartRegistrationContent = { challengeOptions: challengeOptions, autoRegister };
 		const credentials: RegistrationResponseJSON = await bridge.invoke(BridgeMessageType.StartRegistration, content);
 
-		if (credentials.clientExtensionResults !== undefined) {
-			const credentialExtensions = credentials.clientExtensionResults as any;
-
-			console.log(credentialExtensions);
-
-			if (!credentialExtensions.prf?.enabled) throw new Error("PRF extension disabled");
-		}
-
-		console.log("Derive Encryption key");
-
+		if (credentials.clientExtensionResults == undefined) throw new Error("Client Extension Result undefined!");
+		
 		const credentialExtensions = credentials.clientExtensionResults as any;
+
+		if (!credentialExtensions.prf?.enabled) throw new Error("PRF extension disabled");
+
 		const inputKeyMaterial = new Uint8Array(
 			credentialExtensions?.prf.results.first
 		);
 		
 		const [version, saltString, ivString] = parseSecretString("");
 		const { encryptionKey, salt } = await deriveEncryptionKeyFromPRF(inputKeyMaterial, version, saltString);
-
-		console.log("Generating new keys");
 		
 		const keys = await deriveEllipticKeypair();
 		store.setKeys(keys.privateKey, keys.publicKey);
@@ -89,8 +79,6 @@ export async function register(
 		const privateKeyString = await saveCryptoKeyAsString(keys.privateKey);
 
 		const { encryptedBuffer, iv } = await encryptPrivateKeyString(privateKeyString, encryptionKey);
-
-		// Constructing the string
 		const cipherBlob = `v1|${toBase64(salt)}|${toBase64(iv)}`;
 
 		const registerResponse = await axiosClient.post<string>(`/register`, {

@@ -52,7 +52,7 @@ bridge.on(BridgeMessageType.Login, async (content: LoginContent) => {
 
 bridge.on(BridgeMessageType.Link, async (content: LinkContent) => {
   if (axiosClient == undefined) return null;
-  return link(axiosClient, bridge);
+  return link(axiosClient, store, bridge);
 });
 
 bridge.on(BridgeMessageType.Onboard, async (content: OnboardContent) => {

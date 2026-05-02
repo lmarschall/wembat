@@ -8,14 +8,10 @@ import {
 import { AuthenticationResponseJSON } from "@simplewebauthn/types";
 import {
 	bufferToArrayBuffer,
-	deriveEllipticKeypair,
 	deriveEncryptionKeyFromPRF,
-	encryptPrivateKeyString,
 	loadCryptoPrivateKeyFromString,
 	loadCryptoPublicKeyFromString,
 	parseSecretString,
-	saveCryptoKeyAsString,
-	toBase64,
 } from "./helper";
 import { AxiosInstance } from "axios";
 import { Bridge, BridgeMessageType, StartAuthenticationContent } from "../bridge";
@@ -41,8 +37,6 @@ export async function login(this: any,
 	};
 
 	try {
-		console.log("request login");
-
 		const loginRequestResponse = await axiosClient.post<string>(
 			`/request-login`,
 			{
@@ -98,11 +92,10 @@ export async function login(this: any,
 		const [version, saltString, ivString] = parseSecretString(loginReponseData.cipherBlob);
   		const { encryptionKey, salt } = await deriveEncryptionKeyFromPRF(inputKeyMaterial, version, saltString);
 
-		console.log("Loading existing keys");
 		const publicKey = await loadCryptoPublicKeyFromString(loginReponseData.publicUserKey);
 		const privateKey = await loadCryptoPrivateKeyFromString(loginReponseData.privateUserKeyEncrypted, encryptionKey, ivString);
+		
 		store.setKeys(privateKey, publicKey);
-
 		store.setUserMail(userMail);
 		store.setToken(token);
 

@@ -5,7 +5,7 @@ import { Store } from "../store";
 /**
  * Encrypts a Wembat message using the provided public key.
  *
- * @param privateKey - The private key used for encryption.
+ * @param store - The store to save authenticated information.
  * @param wembatMessage - The Wembat message to be encrypted.
  * @param publicKey - The public key used for encryption.
  * @returns A promise that resolves to a WembatActionResponse containing the encrypted message.

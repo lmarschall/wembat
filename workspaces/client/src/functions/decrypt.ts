@@ -5,7 +5,7 @@ import { Store } from "../store";
 /**
  * Decrypts a WembatMessage using the provided publicKey.
  *
- * @param privateKey - The CryptoKey used for decryption.
+ * @param store - The store to save authenticated information.
  * @param wembatMessage - The WembatMessage to decrypt.
  * @param publicKey - The CryptoKey used for decryption.
  * @returns A Promise that resolves to a WembatActionResponse containing the decrypted message.

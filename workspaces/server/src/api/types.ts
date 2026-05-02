@@ -21,11 +21,6 @@ export type RegisterChallengeResponse = {
 	cipherBlob: string;
 };
 
-export type linkChallengeResponse = {
-	challenge: string;
-	credentials: RegistrationResponseJSON;
-};
-
 export type LoginChallengeResponse = {
 	challenge: string;
 	credentials: AuthenticationResponseJSON;

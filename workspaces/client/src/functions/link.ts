@@ -3,14 +3,15 @@ import {
 	RequestLinkResponse,
 	WembatActionResponse,
 	WembatError,
-	WembatLinkResult,
-	WembatRegisterResult,
+	WembatLinkResult
 } from "../types";
 import {
 	RegistrationResponseJSON,
 } from "@simplewebauthn/types";
 import { AxiosInstance } from "axios";
 import { Bridge, BridgeMessageType, StartRegistrationContent } from "../bridge";
+import { bufferToArrayBuffer, deriveEllipticKeypair, deriveEncryptionKeyFromPRF, encryptPrivateKeyString, parseSecretString, saveCryptoKeyAsString, toBase64 } from "./helper";
+import { Store } from "../store";
 
 /**
  * Links a new device to the user's account.
@@ -20,6 +21,7 @@ import { Bridge, BridgeMessageType, StartRegistrationContent } from "../bridge";
  */
 export async function link(
 	axiosClient: AxiosInstance,
+	store: Store,
 	bridge: Bridge
 ): Promise<WembatActionResponse<WembatLinkResult>> {
 	const actionResponse: WembatActionResponse<WembatLinkResult> = {
@@ -29,6 +31,8 @@ export async function link(
 	};
 
 	try {
+		console.log("request link");
+
 		const requestLinkResponse = await axiosClient.post<string>(
 			`/request-link`,
 			{}
@@ -40,25 +44,57 @@ export async function link(
 			requestLinkResponse.data
 		);
 
-		const content: StartRegistrationContent = { challengeOptions: requestLinkResponseData, autoRegister: false };
+		const challengeOptions = requestLinkResponseData.options as any;
+
+		console.log(challengeOptions);
+				
+		challengeOptions.extensions.prf.eval.first = bufferToArrayBuffer(
+			challengeOptions.extensions.prf.eval.first
+		);
+
+		console.log(challengeOptions);
+
+		const content: StartRegistrationContent = { challengeOptions: challengeOptions, autoRegister: false };
 		const credentials: RegistrationResponseJSON = await bridge.invoke(BridgeMessageType.StartRegistration, content);
 
-		if (credentials.clientExtensionResults !== undefined) {
-			const credentialExtensions = credentials.clientExtensionResults as any;
+		if (credentials.clientExtensionResults == undefined) throw new Error("Client Extension Result undefined!");
 
-			if (!credentialExtensions.prf?.enabled) throw new Error("PRF extension disabled");
-		}
+		const credentialExtensions = credentials.clientExtensionResults as any;
+
+		if (!credentialExtensions.prf?.enabled) throw new Error("PRF extension disabled");
+
+		const inputKeyMaterial = new Uint8Array(
+			credentialExtensions?.prf.results.first
+		);
+
+		const [version, saltString, ivString] = parseSecretString("");
+		const { encryptionKey, salt } = await deriveEncryptionKeyFromPRF(inputKeyMaterial, version, saltString);
+
+		const keys = await deriveEllipticKeypair();
+		store.setKeys(keys.privateKey, keys.publicKey);
+
+		const publicKeyString = await saveCryptoKeyAsString(keys.publicKey);
+		const privateKeyString = await saveCryptoKeyAsString(keys.privateKey);
+
+		const { encryptedBuffer, iv } = await encryptPrivateKeyString(privateKeyString, encryptionKey);
+		const cipherBlob = `v1|${toBase64(salt)}|${toBase64(iv)}`;
 
 		const linkResponse = await axiosClient.post<string>(`/link`, {
 			linkChallengeResponse: {
 				credentials: credentials,
 				challenge: requestLinkResponseData.options.challenge,
+				privateKey: toBase64(new Uint8Array(encryptedBuffer)),
+				publicKey: publicKeyString,
+				cipherBlob: cipherBlob,
 			},
 		});
 
 		if (linkResponse.status !== 200) throw new Error(linkResponse.data);
 
 		const linkResponseData: RegisterResponse = JSON.parse(linkResponse.data);
+
+		if (!linkResponseData.verified)
+			throw new Error("Linking not verified");
 
 		const linkResult: WembatLinkResult = {
 			verified: linkResponseData.verified,

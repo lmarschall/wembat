@@ -1,28 +1,21 @@
 import { verifyRegistrationResponse, VerifyRegistrationResponseOpts } from "@simplewebauthn/server";
-import { linkChallengeResponse, RegisterChallengeResponse, UserWithDevices } from "#api/types";
+import { RegisterChallengeResponse, UserWithDevices } from "#api/types";
 import { Request, Response } from "express";
 import { PrismaClient } from "#prisma";
 
 export async function link(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {
-
-		// 1 check for register challenge response
-		// 2 check for rpId
-		// 3 check for expected origin
-		// 4 find user with challenge
-		// 5 verify registration response
-		// 6 create or update device for verified user
-
 		if (!req.body.linkChallengeResponse)
 			throw Error("Link Challenge Response not present");
-		const { challenge, credentials } =
-			req.body.linkChallengeResponse as linkChallengeResponse;
+		const { challenge, credentials, privateKey, publicKey, cipherBlob } =
+			req.body.linkChallengeResponse as RegisterChallengeResponse;
 
 		if(!res.locals.payload) throw Error("Payload not present");
 		const audience = res.locals.payload.aud;
 		const domain = audience.split("://")[1];
 		const rpId = domain.split(":")[0];
 		const expectedOrigin = res.locals.payload.aud;
+		const appUId = res.locals.payload.appUId;
 
 		// find user with expected challenge
 		const user = (await prisma.user
@@ -62,16 +55,9 @@ export async function link(req: Request, res: Response, prisma: PrismaClient): P
 		if (registrationInfo == null) throw Error("Registration Info not present");
 
 		// check if device is already registered with user, else create device registration for user
-		await prisma.device
-			.upsert({
-				where: {
-					credentialId: registrationInfo.credential.id,
-				},
-				update: {
-					userUId: user.uid,
-					counter: registrationInfo.credential.counter,
-				},
-				create: {
+		const userDevice = await prisma.device
+			.create({
+				data: {
 					userUId: user.uid,
 					credentialPublicKey: Buffer.from(registrationInfo.credential.publicKey),
 					credentialId: registrationInfo.credential.id,
@@ -82,6 +68,23 @@ export async function link(req: Request, res: Response, prisma: PrismaClient): P
 			.catch((err: any) => {
 				console.log(err);
 				throw Error("Device Regitration update or create failed");
+			});
+
+		// update the user challenge
+		await prisma.session
+			.create({
+				data: {
+					userUId: user.uid,
+					appUId: appUId,
+					deviceUId: userDevice.uid,
+					publicKey: publicKey,
+					privateKey: privateKey,
+					cipherBlob: cipherBlob
+				},
+			})
+			.catch((err: any) => {
+				console.log(err);
+				throw Error("Updating user challenge failed");
 			});
 
 		res.status(200).send(JSON.stringify({ verified: verified }));
