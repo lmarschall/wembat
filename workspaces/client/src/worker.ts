@@ -42,7 +42,7 @@ bridge.on(BridgeMessageType.Decrypt, async (content: DecryptContent) => {
 
 bridge.on(BridgeMessageType.Register, async (content: RegisterContent) => {
   if (axiosClient == undefined) return null;
-  return register(axiosClient, bridge, content.userMail, content.autoRegister);
+  return register(axiosClient, bridge, store, content.userMail, content.autoRegister);
 });
 
 bridge.on(BridgeMessageType.Login, async (content: LoginContent) => {

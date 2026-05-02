@@ -21,11 +21,11 @@ import { Bridge, BridgeMessageType, StartRegistrationContent } from "../bridge";
 export async function link(
 	axiosClient: AxiosInstance,
 	bridge: Bridge
-): Promise<WembatActionResponse<WembatRegisterResult>> {
-	const actionResponse: WembatActionResponse<WembatRegisterResult> = {
+): Promise<WembatActionResponse<WembatLinkResult>> {
+	const actionResponse: WembatActionResponse<WembatLinkResult> = {
 		success: false,
 		error: {} as WembatError,
-		result: {} as WembatRegisterResult,
+		result: {} as WembatLinkResult,
 	};
 
 	try {

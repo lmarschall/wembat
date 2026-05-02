@@ -15,11 +15,11 @@ export async function onboard(
 	axiosClient: AxiosInstance,
 	bridge: Bridge,
 	store: Store
-): Promise<WembatActionResponse<WembatRegisterResult>> {
+): Promise<WembatActionResponse<WembatOnboardResult>> {
 	const actionResponse: WembatActionResponse<WembatOnboardResult> = {
 		success: false,
 		error: {} as WembatError,
-		result: {} as WembatRegisterResult,
+		result: {} as WembatOnboardResult,
 	};
 
 	try {

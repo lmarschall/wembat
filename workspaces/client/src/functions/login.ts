@@ -98,51 +98,10 @@ export async function login(this: any,
 		const [version, saltString, ivString] = parseSecretString(loginReponseData.cipherBlob);
   		const { encryptionKey, salt } = await deriveEncryptionKeyFromPRF(inputKeyMaterial, version, saltString);
 
-		if (
-			saltString !== "" &&
-			ivString !== ""
-		) {
-			console.log("Loading existing keys");
-			const publicKey = await loadCryptoPublicKeyFromString(loginReponseData.publicUserKey);
-			const privateKey = await loadCryptoPrivateKeyFromString(loginReponseData.privateUserKeyEncrypted, encryptionKey, ivString);
-			store.setKeys(privateKey, publicKey);
-		} else {
-			console.log("Generating new keys");
-
-			const keys = await deriveEllipticKeypair();
-			store.setKeys(keys.privateKey, keys.publicKey);
-
-			const publicKeyString = await saveCryptoKeyAsString(keys.publicKey);
-			const privateKeyString = await saveCryptoKeyAsString(keys.privateKey);
-
-			const { encryptedBuffer, iv } = await encryptPrivateKeyString(privateKeyString, encryptionKey);
-
-			const headers = {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
-			};
-
-			// Constructing the string
-			const cipherBlob = `v1|${toBase64(salt)}|${toBase64(iv)}`;
-
-			const saveCredentialsResponse = await axiosClient.post<string>(
-				`/update-credentials`,
-				{
-					updateCredentialsRequest: {
-						privKey: toBase64(new Uint8Array(encryptedBuffer)),
-						pubKey: publicKeyString,
-						cipherBlob: cipherBlob,
-						sessionId: loginReponseData.sessionId,
-					},
-				},
-				{
-					headers: headers,
-				}
-			);
-
-			if (saveCredentialsResponse.status !== 200)
-				throw new Error(saveCredentialsResponse.data);
-		}
+		console.log("Loading existing keys");
+		const publicKey = await loadCryptoPublicKeyFromString(loginReponseData.publicUserKey);
+		const privateKey = await loadCryptoPrivateKeyFromString(loginReponseData.privateUserKeyEncrypted, encryptionKey, ivString);
+		store.setKeys(privateKey, publicKey);
 
 		store.setUserMail(userMail);
 		store.setToken(token);

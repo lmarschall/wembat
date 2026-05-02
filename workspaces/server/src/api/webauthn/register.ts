@@ -1,7 +1,9 @@
 import { verifyRegistrationResponse, VerifyRegistrationResponseOpts } from "@simplewebauthn/server";
-import { RegisterChallengeResponse, UserWithDevices } from "#api/types";
+import { RegisterChallengeResponse, UserWithDevices, UserWithDevicesAndSessions } from "#api/types";
 import { Request, Response } from "express";
-import { PrismaClient } from "#prisma";
+import { PrismaClient, Session } from "#prisma";
+import { redisService } from "#redis";
+import { cryptoService } from "#crypto";
 
 export async function register(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {
@@ -15,7 +17,7 @@ export async function register(req: Request, res: Response, prisma: PrismaClient
 
 		if (!req.body.registerChallengeResponse)
 			throw Error("Register Challenge Response not present");
-		const { challenge, credentials } =
+		const { challenge, credentials, privateKey, publicKey, cipherBlob } =
 			req.body.registerChallengeResponse as RegisterChallengeResponse;
 
 		if(!res.locals.payload) throw Error("Payload not present");
@@ -23,6 +25,7 @@ export async function register(req: Request, res: Response, prisma: PrismaClient
 		const domain = audience.split("://")[1];
 		const rpId = domain.split(":")[0];
 		const expectedOrigin = res.locals.payload.aud;
+		const appUId = res.locals.payload.appUId;
 
 		// find user with expected challenge
 		const user = (await prisma.user
@@ -32,12 +35,13 @@ export async function register(req: Request, res: Response, prisma: PrismaClient
 				},
 				include: {
 					devices: true,
+					sessions: true
 				},
 			})
 			.catch((err: any) => {
 				console.log(err);
 				throw Error("Could not find user for given challenge");
-			})) as UserWithDevices;
+			})) as UserWithDevicesAndSessions;
 
 		// user with challenge not found, return error
 		if (user == null) throw Error("Could not find user for given challenge");
@@ -62,29 +66,64 @@ export async function register(req: Request, res: Response, prisma: PrismaClient
 		if (registrationInfo == null) throw Error("Registration Info not present");
 
 		// check if device is already registered with user, else create device registration for user
-		await prisma.device
-			.upsert({
-				where: {
-					credentialId: registrationInfo.credential.id,
-				},
-				update: {
-					userUId: user.uid,
-					counter: registrationInfo.credential.counter,
-				},
-				create: {
+		const userDevice = await prisma.device
+			.create({
+				data: {
 					userUId: user.uid,
 					credentialPublicKey: Buffer.from(registrationInfo.credential.publicKey),
 					credentialId: registrationInfo.credential.id,
 					counter: registrationInfo.credential.counter,
 					transports: credentials.response.transports,
-				},
+				}
 			})
 			.catch((err: any) => {
 				console.log(err);
 				throw Error("Device Regitration update or create failed");
 			});
 
-		res.status(200).send(JSON.stringify({ verified: verified }));
+		const userSession = await prisma.session
+			.create({
+				data: {
+					userUId: user.uid,
+					appUId: appUId,
+					deviceUId: userDevice.uid,
+					privateKey: privateKey,
+					publicKey: publicKey,
+					cipherBlob: cipherBlob
+				}
+			})
+			.catch((err: any) => {
+				console.log(err);
+				throw new Error("Error while creating new session for user");
+			});
+
+		// On register we should only create a new device and a new session
+		// Else "onboarding" or "linking" is required
+
+		// create new json web token for api calls
+		const token = await cryptoService.createSessionToken(userSession, user, expectedOrigin);
+		const refreshToken = await cryptoService.createSessionRefreshToken(userSession, user, expectedOrigin);
+
+		// add self generated jwt to whitelist
+		await redisService.addToWebAuthnTokens(token);
+
+		res
+			.status(200)
+			.cookie('refreshToken', refreshToken, {
+				httpOnly: true,        // Prevents JavaScript access to the cookie
+				secure: true,          // Ensures the cookie is only sent over HTTPS
+				// sameSite: 'Strict',    // Helps prevent CSRF
+				sameSite: 'none',
+				path: '/',
+				maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+			})
+			.send(JSON.stringify({
+				verified: verified,
+				token: token,
+				sessionId: userSession.uid																	
+			}));
+
+		// res.status(200).send(JSON.stringify({ verified: verified }));
 	} catch (error: any) {
 		console.log(error);
 		res.status(400).send(error.message);

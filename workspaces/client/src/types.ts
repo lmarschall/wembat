@@ -103,6 +103,7 @@ export interface WembatRegisterResult {
 	 * Indicates whether the registration was successful.
 	 */
 	verified: boolean;
+	publicKey: CryptoKey | undefined;
 }
 
 /**
@@ -162,6 +163,8 @@ export interface RegisterResponse {
 	 * Indicates whether the registration is verified or not.
 	 */
 	verified: boolean;
+	token: string;
+	sessionId: string;
 }
 
 /**

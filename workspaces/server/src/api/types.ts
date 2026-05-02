@@ -16,6 +16,9 @@ export type SessionInfo = {
 export type RegisterChallengeResponse = {
 	challenge: string;
 	credentials: RegistrationResponseJSON;
+	privateKey: string;
+	publicKey: string;
+	cipherBlob: string;
 };
 
 export type linkChallengeResponse = {

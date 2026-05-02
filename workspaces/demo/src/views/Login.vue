@@ -112,8 +112,9 @@ async function register() {
   const registerResponse = await wembatClient.register(username.value, false);
 
   if(registerResponse.success) {
-    const verified = registerResponse.result;
-    appendAlert("Registration successful", "success");
+    const registerResult = registerResponse.result;
+    KeyService.setKey(registerResult.publicKey);
+    router.push("/");
   } else  {
     const errorResult = registerResponse.error;
     appendAlert(errorResult.message, "danger");

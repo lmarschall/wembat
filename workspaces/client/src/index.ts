@@ -54,7 +54,7 @@ class WembatClient {
 			console.log("start registration");
 			console.log(content);
 			const credentials: RegistrationResponseJSON = await startRegistration({
-				optionsJSON: content.challengeOptions.options,
+				optionsJSON: content.challengeOptions,
 				useAutoRegister: content.autoRegister,
 			}).catch((err: string) => {
 				console.error(err);
@@ -114,7 +114,7 @@ class WembatClient {
 	 * Onboards the new user device linked to the active wembat session.
 	 * @returns A promise that resolves to a WembatActionResponse containing the onboard result.
 	 */
-	public async onboard (): Promise<WembatActionResponse<WembatRegisterResult>> {
+	public async onboard (): Promise<WembatActionResponse<WembatOnboardResult>> {
 		const content: OnboardContent = {};
 		return this.bridge.invoke<WembatActionResponse<WembatOnboardResult>>(BridgeMessageType.Onboard, content);
 	}
@@ -123,7 +123,7 @@ class WembatClient {
 	 * Links the new user device to the active wembat session.
 	 * @returns A promise that resolves to a WembatActionResponse containing the link result.
 	 */
-	public async link (): Promise<WembatActionResponse<WembatRegisterResult>> {
+	public async link (): Promise<WembatActionResponse<WembatLinkResult>> {
 		const content: LinkContent = {};
 		return this.bridge.invoke<WembatActionResponse<WembatLinkResult>>(BridgeMessageType.Link, content);
 	}
