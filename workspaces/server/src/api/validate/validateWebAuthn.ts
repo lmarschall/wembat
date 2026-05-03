@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { decodeProtectedHeader, importJWK, jwtVerify } from "jose";
 import { cryptoService } from "#crypto";
 import { configService } from "#config";
-import { config } from "dotenv";
 
 export async function validateWebAuthnToken(
 	req: Request,

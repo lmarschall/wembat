@@ -70,11 +70,13 @@ export async function link(
 		const [version, saltString, ivString] = parseSecretString("");
 		const { encryptionKey, salt } = await deriveEncryptionKeyFromPRF(inputKeyMaterial, version, saltString);
 
-		const keys = await deriveEllipticKeypair();
-		store.setKeys(keys.privateKey, keys.publicKey);
+		const publicKey = store.getPublicKey();
+		const privateKey = store.getPrivateKey();
 
-		const publicKeyString = await saveCryptoKeyAsString(keys.publicKey);
-		const privateKeyString = await saveCryptoKeyAsString(keys.privateKey);
+		if (publicKey == undefined || privateKey == undefined) throw Error("Public or Private Key undefined");
+
+		const publicKeyString = await saveCryptoKeyAsString(publicKey);
+		const privateKeyString = await saveCryptoKeyAsString(privateKey);
 
 		const { encryptedBuffer, iv } = await encryptPrivateKeyString(privateKeyString, encryptionKey);
 		const cipherBlob = `v1|${toBase64(salt)}|${toBase64(iv)}`;

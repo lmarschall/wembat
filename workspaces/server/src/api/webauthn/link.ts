@@ -15,7 +15,6 @@ export async function link(req: Request, res: Response, prisma: PrismaClient): P
 		const domain = audience.split("://")[1];
 		const rpId = domain.split(":")[0];
 		const expectedOrigin = res.locals.payload.aud;
-		const appUId = res.locals.payload.appUId;
 
 		// find user with expected challenge
 		const user = (await prisma.user
@@ -70,12 +69,25 @@ export async function link(req: Request, res: Response, prisma: PrismaClient): P
 				throw Error("Device Regitration update or create failed");
 			});
 
+		const app = await prisma.application
+			.findUnique({
+				where: {
+					domain: domain,
+				},
+			})
+			.catch((err: any) => {
+				console.log(err);
+				throw Error("Could not find application for given domain");
+			}); 
+
+		if (app == null) throw Error("Could not find app");
+
 		// update the user challenge
 		await prisma.session
 			.create({
 				data: {
 					userUId: user.uid,
-					appUId: appUId,
+					appUId: app.uid,
 					deviceUId: userDevice.uid,
 					publicKey: publicKey,
 					privateKey: privateKey,
