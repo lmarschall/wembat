@@ -33,7 +33,7 @@ export interface WembatClientToken {
 /**
  * Represents the types of results that can be returned by a Wembat action.
  */
-export type WembatResult = WembatMessage | WembatToken | WembatRegisterResult | WembatLoginResult | WembatOnboardResult;
+export type WembatResult = WembatMessage | WembatToken | WembatRegisterResult | WembatLoginResult | WembatLinkResult;
 
 /**
  * Represents the response of a Wembat action.
