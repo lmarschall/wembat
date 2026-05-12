@@ -1,12 +1,11 @@
 // secure.worker.ts
 import axios, { AxiosInstance } from 'axios';
 import { encrypt } from './functions/encrypt';
-import { Bridge, BridgeMessageType, LinkContent, OnboardContent, DecryptContent, EncryptContent, InitContent, LoginContent, RegisterContent  } from './bridge';
+import { Bridge, BridgeMessageType, LinkContent, DecryptContent, EncryptContent, InitContent, LoginContent, RegisterContent  } from './bridge';
 import { decrypt } from './functions/decrypt';
 import { login } from './functions/login';
 import { register } from './functions/register';
 import { Store } from './store';
-import { onboard } from './functions/onboard';
 import { link } from './functions/link';
 
 const bridge = new Bridge(self as any);
@@ -53,9 +52,4 @@ bridge.on(BridgeMessageType.Login, async (content: LoginContent) => {
 bridge.on(BridgeMessageType.Link, async (content: LinkContent) => {
   if (axiosClient == undefined) return null;
   return link(axiosClient, store, bridge);
-});
-
-bridge.on(BridgeMessageType.Onboard, async (content: OnboardContent) => {
-  if (axiosClient == undefined) return null;
-  return onboard(axiosClient, bridge, store);
 });

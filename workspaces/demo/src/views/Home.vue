@@ -52,15 +52,6 @@
               <button
                 class="btn btn-secondary mx-auto"
                 type="submit"
-                @click="onboard()"
-                :disabled="loading"
-              >
-                Onboard Device
-              </button>
-
-              <button
-                class="btn btn-secondary mx-auto"
-                type="submit"
                 @click="token()"
                 :disabled="loading"
               >
@@ -127,16 +118,6 @@ function appendAlert(message: string, type: string) {
 async function logout() {
   KeyService.resetKey();
   router.push("/login");
-}
-
-async function onboard() {
-  const onboardResponse = await wembatClient.onboard();
-  if(onboardResponse.success) {
-    appendAlert("Onboarding successful", "success");
-  } else {
-    const errorResult = onboardResponse.error;
-    appendAlert(errorResult.error, "danger");
-  }
 }
 
 async function link() {

@@ -7,12 +7,11 @@ export enum BridgeMessageType {
 	Encrypt = 'encrypt-message',
 	Decrypt = 'decrypt-message',
 	Link = 'link-message',
-    Onboard = 'onboard-message',
 	StartAuthentication = 'start-authentication-message',
 	StartRegistration = 'start-registration-message',
 }
 
-export type BridgeMessageContent = InitContent | EncryptContent | DecryptContent | RegisterContent | LoginContent | LinkContent | OnboardContent | StartAuthenticationContent;
+export type BridgeMessageContent = InitContent | EncryptContent | DecryptContent | RegisterContent | LoginContent | LinkContent | StartAuthenticationContent;
 
 export interface InitContent {
 	token: string,
@@ -40,9 +39,6 @@ export interface LoginContent {
 }
 
 export interface LinkContent {
-}
-
-export interface OnboardContent {
 }
 
 export interface StartAuthenticationContent {

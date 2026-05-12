@@ -132,16 +132,6 @@ export interface WembatLoginResult {
 }
 
 /**
- * Represents the result of the Wembat onboarding process.
- */
-export interface WembatOnboardResult {
-	/**
-	 * Indicates whether the onboarding process was successfully verified.
-	 */
-	verified: boolean;
-}
-
-/**
  * Represents the response object for registering a request.
  */
 export interface RequestRegisterResponse {
@@ -203,16 +193,6 @@ export interface LoginResponse {
 	cipherBlob: string;
 }
 
-/**
- * Represents the response object for a request to onboard.
- */
-export interface RequestOnboardResponse {
-	options: PublicKeyCredentialRequestOptionsJSON;
-}
-
 export interface TokenResponse {
 	token: string;
-}
-
-export interface OnboardResponse {
 }

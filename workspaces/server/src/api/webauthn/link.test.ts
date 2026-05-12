@@ -13,7 +13,14 @@ const { mockPrisma, mockVerifyAuth } = vi.hoisted(() => {
             },
             device: {
                 upsert: vi.fn(),
+                create: vi.fn(), // <-- Hinzugefügt
             },
+            application: {
+                findUnique: vi.fn(), // <-- Hinzugefügt
+            },
+            session: {
+                create: vi.fn(), // <-- Hinzugefügt
+            }
         },
         mockVerifyAuth: vi.fn(),
     };
@@ -148,7 +155,7 @@ describe("link", () => {
         expect(res.send).toHaveBeenCalledWith("Registration Info not present");
     });
 
-    it("should return error if prisma.device.upsert fails", async () => {
+    it("should return error if prisma.device.create fails", async () => { // <-- Titel geändert auf create
         res.locals = res.locals || {};
         req.body.linkChallengeResponse = {
             challenge: "testChallenge",
@@ -173,7 +180,9 @@ describe("link", () => {
             verified: true,
             registrationInfo: fakeRegistrationInfo,
         });
-        mockPrisma.device.upsert.mockRejectedValue(new Error("Upsert error"));
+        
+        // <-- Auf create umgestellt
+        mockPrisma.device.create.mockRejectedValue(new Error("Create error"));
 
         await link(req as Request, res as Response, prisma);
         
@@ -206,7 +215,11 @@ describe("link", () => {
             verified: true,
             registrationInfo: fakeRegistrationInfo,
         });
-        mockPrisma.device.upsert.mockResolvedValue({}); // simulate successful upsert
+        
+        // <-- Auf create umgestellt und App / Session hinzugefügt
+        mockPrisma.device.create.mockResolvedValue({ uid: "deviceUid" }); 
+        mockPrisma.application.findUnique.mockResolvedValue({ uid: "appUid" });
+        mockPrisma.session.create.mockResolvedValue({ uid: "sessionUid" });
 
         await link(req as Request, res as Response, prisma);
         

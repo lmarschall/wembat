@@ -5,27 +5,19 @@ import { Store } from "../store";
 import type { AxiosInstance } from "axios";
 import {
     bufferToArrayBuffer,
-    deriveEllipticKeypair,
     deriveEncryptionKeyFromPRF,
-    encryptPrivateKeyString,
     loadCryptoPrivateKeyFromString,
     loadCryptoPublicKeyFromString,
     parseSecretString,
-    saveCryptoKeyAsString,
-    toBase64,
 } from "./helper";
 
 // Kryptografische Helferfunktionen mocken, um schnelle & isolierte Unit-Tests zu garantieren
 vi.mock("./helper", () => ({
     bufferToArrayBuffer: vi.fn(),
-    deriveEllipticKeypair: vi.fn(),
     deriveEncryptionKeyFromPRF: vi.fn(),
-    encryptPrivateKeyString: vi.fn(),
     loadCryptoPrivateKeyFromString: vi.fn(),
     loadCryptoPublicKeyFromString: vi.fn(),
     parseSecretString: vi.fn(),
-    saveCryptoKeyAsString: vi.fn(),
-    toBase64: vi.fn(),
 }));
 
 describe("login", () => {
@@ -128,7 +120,41 @@ describe("login", () => {
         expect(result.error.message).toBe("Login not verified");
     });
 
-    it("should load existing keys and return success=true if cipherBlob has salt and iv", async () => {
+    it("should return error if clientExtensionResults is undefined", async () => {
+        // 1. /request-login
+        (mockAxios.post as Mock).mockResolvedValueOnce({
+            status: 200,
+            data: JSON.stringify({
+                options: { challenge: "testChallenge", extensions: { prf: { eval: { first: [1, 2] } } } },
+            }),
+        });
+
+        // Bridge returns NO clientExtensionResults
+        (mockBridge.invoke as Mock).mockResolvedValueOnce({
+            id: "someId",
+            rawId: "someRawId",
+            type: "public-key",
+            response: {}
+        });
+
+        // 2. /login
+        (mockAxios.post as Mock).mockResolvedValueOnce({
+            status: 200,
+            data: JSON.stringify({ verified: true }),
+        });
+
+        const result = await login(
+            mockAxios as AxiosInstance,
+            mockBridge as Bridge,
+            mockStore as Store,
+            "test@user.com"
+        );
+
+        expect(result.success).toBe(false);
+        expect(result.error.message).toBe("Credentials not instance of PublicKeyCredential");
+    });
+
+    it("should load existing keys and return success=true", async () => {
         // 1. /request-login
         (mockAxios.post as Mock).mockResolvedValueOnce({
             status: 200,
@@ -156,7 +182,7 @@ describe("login", () => {
 
         // Helper Mocks für existierende Keys
         (parseSecretString as Mock).mockReturnValue(["v1", "mockSalt", "mockIv"]);
-        (deriveEncryptionKeyFromPRF as Mock).mockResolvedValue({ encryptionKey: {} });
+        (deriveEncryptionKeyFromPRF as Mock).mockResolvedValue({ encryptionKey: {}, salt: new Uint8Array() });
         (loadCryptoPublicKeyFromString as Mock).mockResolvedValue(dummyPublicKey);
         (loadCryptoPrivateKeyFromString as Mock).mockResolvedValue(dummyPrivateKey);
 
@@ -180,63 +206,5 @@ describe("login", () => {
         expect(result.success).toBe(true);
         expect(result.result.verified).toBe(true);
         expect(result.result.publicKey).toBe(dummyPublicKey);
-    });
-
-    it("should generate new keys and call /update-credentials if cipherBlob is empty", async () => {
-        // 1. /request-login
-        (mockAxios.post as Mock).mockResolvedValueOnce({
-            status: 200,
-            data: JSON.stringify({
-                options: { challenge: "testChallenge", extensions: { prf: { eval: { first: [1, 2] } } } },
-            }),
-        });
-
-        // Bridge
-        (mockBridge.invoke as Mock).mockResolvedValueOnce({
-            clientExtensionResults: { prf: { results: { first: [1, 2] } } },
-        });
-
-        // 2. /login (Liefert kein salt/iv im cipherBlob, z.B. bei neuer Session)
-        (mockAxios.post as Mock).mockResolvedValueOnce({
-            status: 200,
-            data: JSON.stringify({
-                verified: true,
-                token: "testToken",
-                cipherBlob: "",
-                sessionId: "testSession123"
-            }),
-        });
-
-        // Helper Mocks für generierung neuer Keys
-        (parseSecretString as Mock).mockReturnValue(["", "", ""]);
-        (deriveEncryptionKeyFromPRF as Mock).mockResolvedValue({ encryptionKey: {}, salt: new Uint8Array([1, 1]) });
-        (deriveEllipticKeypair as Mock).mockResolvedValue({ publicKey: dummyPublicKey, privateKey: dummyPrivateKey });
-        (saveCryptoKeyAsString as Mock).mockResolvedValue("mockStringKey");
-        (encryptPrivateKeyString as Mock).mockResolvedValue({ encryptedBuffer: new ArrayBuffer(2), iv: new Uint8Array([2, 2]) });
-        (toBase64 as Mock).mockReturnValue("b64String");
-
-        // 3. /update-credentials
-        (mockAxios.post as Mock).mockResolvedValueOnce({
-            status: 200,
-            data: "OK",
-        });
-
-        const result = await login(
-            mockAxios as AxiosInstance,
-            mockBridge as Bridge,
-            mockStore as Store,
-            "test@user.com"
-        );
-
-        // Überprüfen, ob neue Keys erstellt und an den Server gesendet wurden
-        expect(deriveEllipticKeypair).toHaveBeenCalled();
-        expect(mockStore.setKeys).toHaveBeenCalledWith(dummyPrivateKey, dummyPublicKey);
-        
-        // Es sollten insgesamt 3 POST-Requests gemacht worden sein
-        expect(mockAxios.post).toHaveBeenCalledTimes(3);
-        expect(mockAxios.post).toHaveBeenNthCalledWith(3, `/update-credentials`, expect.any(Object), expect.any(Object));
-
-        expect(result.success).toBe(true);
-        expect(result.result.verified).toBe(true);
     });
 });

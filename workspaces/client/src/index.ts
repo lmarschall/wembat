@@ -111,15 +111,6 @@ class WembatClient {
 	}
 
 	/**
-	 * Onboards the new user device linked to the active wembat session.
-	 * @returns A promise that resolves to a WembatActionResponse containing the onboard result.
-	 */
-	public async onboard (): Promise<WembatActionResponse<WembatOnboardResult>> {
-		const content: OnboardContent = {};
-		return this.bridge.invoke<WembatActionResponse<WembatOnboardResult>>(BridgeMessageType.Onboard, content);
-	}
-
-	/**
 	 * Links the new user device to the active wembat session.
 	 * @returns A promise that resolves to a WembatActionResponse containing the link result.
 	 */

@@ -1,27 +1,41 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "#prisma";
-// Sauberer ESM-Import (Passe den Pfad an, falls register.ts woanders liegt)
 import { register } from "#api/webauthn/register";
 import { vi, describe, beforeEach, it, expect } from "vitest";
 
 // --- 1. HOISTING DER MOCK VARIABLEN ---
-const { mockPrisma, mockVerifyAuth } = vi.hoisted(() => {
+const { mockPrisma, mockVerifyAuth, mockAddToWebAuthnTokens, mockCryptoService } = vi.hoisted(() => {
   return {
+    mockAddToWebAuthnTokens: vi.fn(),
     mockPrisma: {
       user: { findUnique: vi.fn() },
-      device: { upsert: vi.fn() },
+      device: { create: vi.fn() },
+      session: { create: vi.fn() }, // <-- Neu: Session Mock
     },
     mockVerifyAuth: vi.fn(),
+    mockCryptoService: { // <-- Neu: CryptoService Mock
+      createSessionToken: vi.fn(),
+      createSessionRefreshToken: vi.fn(),
+    }
   };
 });
 
 // --- 2. REGISTRIERUNG DER MOCKS ---
-// Nutzt jetzt sauber deinen #prisma Alias
 vi.mock("#prisma", () => ({
   PrismaClient: vi.fn().mockImplementation(() => mockPrisma),
 }));
 
-// Externes Modul sauber mocken
+vi.mock("#redis", () => ({
+  redisService: {
+    addToWebAuthnTokens: mockAddToWebAuthnTokens,
+  },
+}));
+
+// Neu: #crypto Mock
+vi.mock("#crypto", () => ({
+  cryptoService: mockCryptoService,
+}));
+
 vi.mock("@simplewebauthn/server", () => ({
   __esModule: true,
   verifyRegistrationResponse: mockVerifyAuth,
@@ -39,9 +53,10 @@ describe("testRegister", () => {
     res = {
       locals: {},
       status: vi.fn().mockReturnThis(),
+      cookie: vi.fn().mockReturnThis(), // <-- Neu: res.cookie muss kettbar (chainable) sein
       send: vi.fn(),
     };
-    vi.clearAllMocks(); // Wichtig: vi statt jest
+    vi.clearAllMocks();
   });
 
   it("should return 400 if registerChallengeResponse is not present", async () => {
@@ -137,7 +152,7 @@ describe("testRegister", () => {
     expect(res.send).toHaveBeenCalledWith("Registration Info not present");
   });
 
-  it("should return 400 if device upsert fails", async () => {
+  it("should return 400 if device create fails", async () => {
     res.locals = { payload: { aud: "https://example.com" } };
     req.body = {
       registerChallengeResponse: {
@@ -165,7 +180,7 @@ describe("testRegister", () => {
       },
     });
     
-    mockPrisma.device.upsert.mockRejectedValue(
+    mockPrisma.device.create.mockRejectedValue(
       new Error("Device Regitration update or create failed")
     );
 
@@ -176,13 +191,17 @@ describe("testRegister", () => {
   });
 
   it("should return 200 and verified if successful", async () => {
-    res.locals = { payload: { aud: "https://example.com" } };
+    // payload braucht jetzt auch appUId, da es im Code aufgerufen wird
+    res.locals = { payload: { aud: "https://example.com", appUId: "testAppUid" } };
     req.body = {
       registerChallengeResponse: {
         challenge: "testChallenge",
         credentials: {
           response: { transports: ["usb"] },
         },
+        privateKey: "privKey",
+        publicKey: "pubKey",
+        cipherBlob: "blob"
       },
     };
     
@@ -203,11 +222,29 @@ describe("testRegister", () => {
       },
     });
     
-    mockPrisma.device.upsert.mockResolvedValue({});
+    // Mocks für die neuen DB und Crypto Aufrufe
+    mockPrisma.device.create.mockResolvedValue({ uid: "deviceUid" });
+    mockPrisma.session.create.mockResolvedValue({ uid: "sessionUid" });
+    mockCryptoService.createSessionToken.mockResolvedValue("mockedToken");
+    mockCryptoService.createSessionRefreshToken.mockResolvedValue("mockedRefreshToken");
+    mockAddToWebAuthnTokens.mockResolvedValue(true);
 
     await register(req as Request, res as Response, prisma);
 
+    // Wir prüfen ob der Cookie korrekt gesetzt wurde
+    expect(res.cookie).toHaveBeenCalledWith(
+        'refreshToken', 
+        'mockedRefreshToken', 
+        expect.any(Object)
+    );
+
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.send).toHaveBeenCalledWith(JSON.stringify({ verified: true }));
+    
+    // Erwarteter JSON Body hat sich in deiner Implementierung geändert!
+    expect(res.send).toHaveBeenCalledWith(JSON.stringify({ 
+        verified: true,
+        token: "mockedToken",
+        sessionId: "sessionUid"
+    }));
   });
 });
