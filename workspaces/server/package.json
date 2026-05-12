@@ -28,7 +28,6 @@
     "base64url": "^3.0.1",
     "body-parser": "^2.2.2",
     "compression": "^1.8.1",
-    "connect-history-api-fallback": "^2.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
@@ -37,16 +36,13 @@
     "helmet": "^8.1.0",
     "jose": "^4.15.9",
     "openid-client": "^5.7.1",
-    "pg": "^8.20.0",
-    "redis": "^5.11.0",
-    "tsx": "^4.21.0"
+    "redis": "^5.11.0"
   },
   "devDependencies": {
     "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.19",
     "@types/express-session": "^1.18.2",
     "@types/node": "^25.5.0",
-    "@types/pg": "^8.20.0",
     "prisma": "^7.5.0",
     "vitest": "^4.1.0"
   }
