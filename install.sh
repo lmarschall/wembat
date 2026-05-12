@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # download env template and docker compose
-curl -o .env.template https://raw.githubusercontent.com/lmarschall/wembat/main/setup/.env.template
-curl -o docker-compose.yml https://raw.githubusercontent.com/lmarschall/wembat/main/setup/docker-compose.yml
+curl -o .env.template https://raw.githubusercontent.com/lmarschall/wembat/main/.env.template
+curl -o docker-compose.yml https://raw.githubusercontent.com/lmarschall/wembat/main/docker-compose.yml
 
 # define the template file and output file
 TEMPLATE_FILE=".env.template"

@@ -1,84 +1,95 @@
-//// typescript
-// filepath: /home/lukas/Source/wembat/src/functions/encrypt.test.ts
-
-import { describe, it, expect, beforeAll, vi, Mock } from "vitest";
+import { describe, it, expect, beforeEach, vi, Mock } from "vitest";
 import { encrypt } from "./encrypt";
-import { deriveEncryptionKey, ab2str } from "./helper";
+import { deriveEncryptionKey, toBase64 } from "./helper";
 import { WembatMessage } from "../types";
+import { Store } from "../store";
 
-// window.crypto in Node-Umgebung mocken
-beforeAll(() => {
-	Object.defineProperty(globalThis, "window", {
-		value: {
-			crypto: {
-				getRandomValues: vi.fn().mockImplementation((arr: Uint8Array) => {
-					// mock z.B. gefülltes Array
-					for (let i = 0; i < arr.length; i++) arr[i] = i;
-					return arr;
-				}),
-				subtle: {
-					encrypt: vi.fn(),
-				},
-			},
-		},
-	});
-});
-
+// Helper-Funktionen isoliert mocken
 vi.mock("./helper", () => ({
-	deriveEncryptionKey: vi.fn(),
-	ab2str: vi.fn(),
+    deriveEncryptionKey: vi.fn(),
+    toBase64: vi.fn(),
 }));
 
 describe("encrypt", () => {
-	it("wirft Fehler, wenn privateKey nicht vorhanden ist", async () => {
-		const result = await encrypt(
-			undefined,
-			{} as WembatMessage,
-			{} as CryptoKey
-		);
-		expect(result.success).toBe(false);
-		expect(result.error.error).toBe("Private Key undefined!");
-	});
+    let mockStore: Partial<Store>;
+    
+    const dummyPrivateKey = { type: "private" } as unknown as CryptoKey;
+    const dummyPublicKey = { type: "public" } as unknown as CryptoKey;
+    const dummyEncryptionKey = { type: "secret" } as unknown as CryptoKey;
 
-	it("verschlüsselt erfolgreich und gibt Objekte zurück", async () => {
-		(deriveEncryptionKey as Mock).mockResolvedValue("mockEncKey");
-		(ab2str as Mock).mockReturnValue("mockedString");
+    const mockMsg: WembatMessage = {
+        message: "Hello World",
+        encrypted: "",
+        iv: "",
+    };
 
-		(globalThis.window.crypto.subtle.encrypt as Mock).mockResolvedValue(
-			new ArrayBuffer(8)
-		);
+    beforeEach(() => {
+        vi.clearAllMocks();
 
-		const mockPrivateKey = {} as CryptoKey;
-		const mockPublicKey = {} as CryptoKey;
-		const mockMsg: WembatMessage = {
-			message: "Hello World",
-			encrypted: "",
-			iv: "",
-		};
+        mockStore = {
+            getPrivateKey: vi.fn().mockReturnValue(dummyPrivateKey),
+        };
 
-		const result = await encrypt(mockPrivateKey, mockMsg, mockPublicKey);
+        // Sauberes Mocking der nativen Web Crypto API über Spies (kein window-Hack mehr nötig!)
+        vi.spyOn(globalThis.crypto, 'getRandomValues').mockImplementation((arr: any) => {
+            // Füllt das Array mit Dummy-Werten (z.B. 1), um einen vorhersehbaren IV zu simulieren
+            arr.fill(1);
+            return arr;
+        });
 
-		expect(deriveEncryptionKey).toHaveBeenCalledWith(
-			mockPrivateKey,
-			mockPublicKey
-		);
-		expect(globalThis.window.crypto.subtle.encrypt).toHaveBeenCalled();
-		expect(result.success).toBe(true);
-		expect(result.result.encrypted).toBe("mockedString");
-		expect(result.result.iv).toBe("mockedString");
-	});
+        vi.spyOn(globalThis.crypto.subtle, 'encrypt').mockResolvedValue(new ArrayBuffer(8));
+    });
 
-	it("gibt Fehler zurück, wenn encrypt fehlschlägt", async () => {
-		(deriveEncryptionKey as Mock).mockResolvedValue("mockEncKey");
-		(globalThis.window.crypto.subtle.encrypt as Mock).mockRejectedValue(
-			new Error("Encryption failed")
-		);
+    it("should return error if privateKey is undefined in store", async () => {
+        (mockStore.getPrivateKey as Mock).mockReturnValue(undefined);
 
-		const mockKey = {} as CryptoKey;
-		const mockMsg: WembatMessage = { message: "test", encrypted: "", iv: "" };
-		const result = await encrypt(mockKey, mockMsg, mockKey);
+        const result = await encrypt(
+            mockStore as Store,
+            mockMsg,
+            dummyPublicKey
+        );
 
-		expect(result.success).toBe(false);
-		expect(result.error.error).toBe("Encryption failed");
-	});
+        expect(result.success).toBe(false);
+        expect(result.error.message).toBe("Private Key undefined!");
+    });
+
+    it("should encrypt successfully and return base64 encoded strings", async () => {
+        (deriveEncryptionKey as Mock).mockResolvedValue(dummyEncryptionKey);
+        
+        // Wir simulieren, dass toBase64 je nach Aufruf (zuerst Payload, dann IV) unterschiedliche Strings liefert
+        (toBase64 as Mock)
+            .mockReturnValueOnce("mockBase64Cipher")
+            .mockReturnValueOnce("mockBase64Iv");
+
+        const result = await encrypt(mockStore as Store, mockMsg, dummyPublicKey);
+
+        // Prüfen, ob der Schlüssel korrekt abgeleitet wurde
+        expect(deriveEncryptionKey).toHaveBeenCalledWith(dummyPrivateKey, dummyPublicKey);
+        
+        // Prüfen, ob die echte kryptografische Verschlüsselung (in unserem Fall der Spy) aufgerufen wurde
+        expect(globalThis.crypto.subtle.encrypt).toHaveBeenCalledWith(
+            { name: "AES-GCM", iv: expect.any(Uint8Array) },
+            dummyEncryptionKey,
+            expect.any(Uint8Array) // Der kodierte "Hello World" Text
+        );
+
+        expect(result.success).toBe(true);
+        expect(result.result.encrypted).toBe("mockBase64Cipher");
+        expect(result.result.iv).toBe("mockBase64Iv");
+        expect(result.result.message).toBe(""); // Wie in der Funktion definiert, wird message geleert
+    });
+
+    it("should return error if crypto.subtle.encrypt fails", async () => {
+        (deriveEncryptionKey as Mock).mockResolvedValue(dummyEncryptionKey);
+        
+        // Verschlüsselung schlägt fehl
+        vi.spyOn(globalThis.crypto.subtle, 'encrypt').mockRejectedValueOnce(
+            new Error("Encryption failed")
+        );
+
+        const result = await encrypt(mockStore as Store, mockMsg, dummyPublicKey);
+
+        expect(result.success).toBe(false);
+        expect(result.error.message).toBe("Encryption failed");
+    });
 });

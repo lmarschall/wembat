@@ -23,6 +23,12 @@
     "includes": "src",
     "out": "docs/client"
   },
+  "include": [
+    "src/**/*.ts",
+    "workspaces/client/src/**/*.d.ts",  // <--- This line is CRITICAL for your custom definition to work
+    "src/**/*.tsx",
+    "src/**/*.vue"
+  ]
   // "include": ["package/src/**/*.ts", "package/src/**/*.d.ts", "package/src/**/*.tsx", "package/src/**/*.vue"],
   // "references": [{ "path": "./tsconfig.node.json" }]
 }

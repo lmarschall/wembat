@@ -1,16 +1,17 @@
 import cors from "cors";
 import helmet from "helmet";
-import express, { NextFunction, Request } from "express";
+import express, { NextFunction, Request, Response } from "express";
 import bodyParser from "body-parser";
 import compression from "compression";
 import { rateLimit} from "express-rate-limit";
 
-import { apiRouter } from "./api";
-import { initRedis, redisService } from "./redis";
-import { initCrypto, cryptoService } from "./crypto";
+import { createAPIRouter } from "#api";
+import { initRedis, redisService } from "#redis";
+import { initCrypto, cryptoService } from "#crypto";
+import { configService, initConfig } from "#config";
+import session from 'express-session';
 
 const port = 8080;
-const dashboardUrl = process.env.DASHBOARD_URL || "http://localhost:9090";
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -18,6 +19,11 @@ const limiter = rateLimit({
 });
 
 async function init() {
+
+  if (!await initConfig()) {
+    console.error("Failed to initialize config");
+    return;
+  }
 
   if (!await initCrypto()) {
     console.error("Failed to initialize crypto");
@@ -33,6 +39,8 @@ async function init() {
     console.error("Failed to initialize admin");
     return;
   }
+
+  // await initOpenIdClient();
   
   const app = express();
   
@@ -41,7 +49,7 @@ async function init() {
   
     const origin = req.header("Origin");
     const method = req.method;
-    const isDomainAllowed = await redisService.checkForDomainInWhiteList(origin);
+    let isDomainAllowed = await redisService.checkForDomainInWhiteList(origin);
     
     console.log(`Request from ${origin} with method ${method} is allowed: ${isDomainAllowed}`);
   
@@ -69,12 +77,20 @@ async function init() {
   
   app.use(limiter);
   app.use(cors(corsOptionsDelegate));
-  app.set("trust proxy", true);
+  // app.set("trust proxy", true);
   app.use((req: any, res: any, next: NextFunction) => cookieParser(req, res, next));
   app.use(helmet());
   app.use(compression());
   app.use(bodyParser.json({ limit: "1mb" }));
-  app.use("/api", apiRouter);
+
+  app.use(session({
+    secret: 'super-secret-session-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false, httpOnly: true }
+  }));
+
+  app.use("/api", createAPIRouter());
   
   app.listen(port, () => {
     return console.log(`server is listening on ${port}`);
@@ -86,7 +102,7 @@ init();
 async function initAdmin(): Promise<boolean> {
 	try {
 		const token = await cryptoService.createAdminJWT();
-		console.log(`Dashboard Url: ${dashboardUrl}/${token}`);
+		console.log(`Dashboard Url: ${configService.getDashboardUrl()}/${token}`);
 		return true;
 	} catch (err) {
 		console.error(err);

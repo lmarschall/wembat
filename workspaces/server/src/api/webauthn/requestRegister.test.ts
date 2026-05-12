@@ -1,28 +1,48 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
-import { requestRegister } from "./requestRegister";
-import { generateRegistrationOptions } from "@simplewebauthn/server";
-import { randomBytes } from "crypto";
+import { PrismaClient } from "#prisma";
+// Sauberer ESM-Import (Passe den Pfad an, falls requestRegister woanders liegt)
+import { requestRegister } from "#api/webauthn/requestRegister";
+import { vi, describe, beforeEach, it, expect } from "vitest";
 
-jest.mock("@prisma/client", () => ({
-  PrismaClient: jest.fn().mockImplementation(() => ({
-    user: {
-      upsert: jest.fn(),
-      update: jest.fn(),
+// --- 1. HOISTING DER MOCK VARIABLEN ---
+const { 
+  mockPrisma, 
+  mockGenerateRegOptions, 
+  mockRandomBytes 
+} = vi.hoisted(() => {
+  return {
+    mockPrisma: {
+      user: {
+        upsert: vi.fn(),
+        update: vi.fn(),
+      },
     },
-  })),
+    mockGenerateRegOptions: vi.fn(),
+    mockRandomBytes: vi.fn().mockReturnValue(Buffer.from("mockedRandomBytes")),
+  };
+});
+
+// --- 2. REGISTRIERUNG DER MOCKS ---
+
+// Prisma Alias Mock
+vi.mock("#prisma", () => ({
+  PrismaClient: vi.fn().mockImplementation(() => mockPrisma),
 }));
 
-jest.mock("@simplewebauthn/server", () => ({
-  generateRegistrationOptions: jest.fn(),
+// WebAuthn Server Mock
+vi.mock("@simplewebauthn/server", () => ({
+  __esModule: true,
+  generateRegistrationOptions: mockGenerateRegOptions,
 }));
 
-jest.mock("crypto", () => ({
-  randomBytes: jest.fn().mockReturnValue(Buffer.from("mockedRandomBytes")),
+// Node Crypto Mock
+vi.mock("crypto", () => ({
+  randomBytes: mockRandomBytes,
 }));
 
-const prisma = new PrismaClient();
+const prisma = (mockPrisma as unknown) as PrismaClient;
 
+// --- 3. TEST SUITE ---
 describe("testRequestRegister", () => {
   let req: Partial<Request>;
   let res: Partial<Response>;
@@ -31,80 +51,86 @@ describe("testRequestRegister", () => {
     req = { body: {} };
     res = {
       locals: {},
-      status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn(),
     };
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // Wichtig: vi statt jest
   });
 
   it("should return 400 if userInfo is missing", async () => {
     await requestRegister(req as Request, res as Response, prisma);
+    
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.send).toHaveBeenCalledWith("User info not present");
   });
 
   it("should return 400 if payload is missing", async () => {
     req.body = { userInfo: { userMail: "test@user.com" } };
+    
     await requestRegister(req as Request, res as Response, prisma);
+    
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.send).toHaveBeenCalledWith("Payload not present");
   });
 
   it("should return 400 if user could not be created", async () => {
-    req.headers = req.headers || {};
-    res.locals = res.locals || {};
+    res.locals = { payload: { aud: "https://test.de", userMail: "test@user.com" } };
     req.body = { userInfo: { userMail: "test@user.com" } };
-    res.locals.payload = { aud: "https://test.de" };
-    (prisma.user.upsert as jest.Mock).mockRejectedValue(new Error("DB error"));
+    
+    mockPrisma.user.upsert.mockRejectedValue(new Error("DB error"));
+    
     await requestRegister(req as Request, res as Response, prisma);
+    
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.send).toHaveBeenCalledWith("User could not be found or created in database");
   });
 
   it("should return 400 if generateRegistrationOptions fails", async () => {
-    req.headers = req.headers || {};
-    res.locals = res.locals || {};
+    res.locals = { payload: { aud: "https://test.de", userMail: "test@user.com" } };
     req.body = { userInfo: { userMail: "test@user.com" } };
-    res.locals.payload = { aud: "https://test.de" };
-    (prisma.user.upsert as jest.Mock).mockResolvedValue({
+    
+    mockPrisma.user.upsert.mockResolvedValue({
       uid: "testUserUid",
       devices: [],
     });
-    (generateRegistrationOptions as jest.Mock).mockRejectedValue(new Error("Gen error"));
+    mockGenerateRegOptions.mockRejectedValue(new Error("Gen error"));
+    
     await requestRegister(req as Request, res as Response, prisma);
+    
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.send).toHaveBeenCalledWith("Registration Option could not be generated");
   });
 
   it("should return 400 if user challenge could not be updated", async () => {
-    req.headers = req.headers || {};
-    res.locals = res.locals || {};
+    res.locals = { payload: { aud: "https://test.de", userMail: "test@user.com" } };
     req.body = { userInfo: { userMail: "test@user.com" } };
-    res.locals.payload = { aud: "https://test.de" };
-    (prisma.user.upsert as jest.Mock).mockResolvedValue({
+    
+    mockPrisma.user.upsert.mockResolvedValue({
       uid: "testUserUid",
       devices: [],
     });
-    (generateRegistrationOptions as jest.Mock).mockResolvedValue({ challenge: "testChallenge" });
-    (prisma.user.update as jest.Mock).mockRejectedValue(new Error("Update error"));
+    mockGenerateRegOptions.mockResolvedValue({ challenge: "testChallenge" });
+    mockPrisma.user.update.mockRejectedValue(new Error("Update error"));
+    
     await requestRegister(req as Request, res as Response, prisma);
+    
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.send).toHaveBeenCalledWith("User challenge could not be updated");
   });
 
   it("should return 200 and options if successful", async () => {
-    req.headers = req.headers || {};
-    res.locals = res.locals || {};
+    res.locals = { payload: { aud: "https://test.de", userMail: "test@user.com" } };
     req.body = { userInfo: { userMail: "test@user.com" } };
-    res.locals.payload = { aud: "https://test.de" };
-    (prisma.user.upsert as jest.Mock).mockResolvedValue({
+    
+    mockPrisma.user.upsert.mockResolvedValue({
       uid: "testUserUid",
       devices: [],
     });
-    (generateRegistrationOptions as jest.Mock).mockResolvedValue({ challenge: "mockChallenge" });
-    (prisma.user.update as jest.Mock).mockResolvedValue({ challenge: "mockChallenge" });
+    mockGenerateRegOptions.mockResolvedValue({ challenge: "mockChallenge" });
+    mockPrisma.user.update.mockResolvedValue({ challenge: "mockChallenge" });
 
     await requestRegister(req as Request, res as Response, prisma);
+    
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.send).toHaveBeenCalledWith(JSON.stringify({ options: { challenge: "mockChallenge" } }));
   });

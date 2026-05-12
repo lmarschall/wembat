@@ -1,7 +1,6 @@
-import base64url from "base64url";
-import { UserWithDevices } from "../types";
+import { UserWithDevices } from "#api/types";
 import { verifyAuthenticationResponse, VerifyAuthenticationResponseOpts } from "@simplewebauthn/server";
-import { Device, PrismaClient } from "@prisma/client";
+import { Device, PrismaClient } from "#prisma";
 import { Request, Response } from "express";
 
 export async function onboard(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
@@ -17,7 +16,7 @@ export async function onboard(req: Request, res: Response, prisma: PrismaClient)
 		if (!req.body.onboardRequest)
 			throw Error("Challenge Response not present");
 
-		const { privateKey, publicKey, nonce, credentials, challenge } =
+		const { privateKey, publicKey, cipherBlob, credentials, challenge } =
 			req.body.onboardRequest;
 
 		if(!res.locals.payload) throw Error("Payload not present");
@@ -102,7 +101,7 @@ export async function onboard(req: Request, res: Response, prisma: PrismaClient)
 					deviceUId: userDevice.uid,
 					publicKey: publicKey,
 					privateKey: privateKey,
-					nonce: nonce
+					cipherBlob: cipherBlob
 				},
 			})
 			.catch((err: any) => {

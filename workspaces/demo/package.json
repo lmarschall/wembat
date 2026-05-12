@@ -8,10 +8,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@wembat/client": "^0.9.4",
+    "@wembat/client": "file:../client",
     "axios": "^1.12.2",
     "bootstrap": "^5.3.2",
     "vue": "^3.2.25",
     "vue-router": "^4.0.16"
+  },
+  "devDependencies": {
+    "vite-plugin-mkcert": "^1.17.10"
   }
 }

@@ -1,62 +1,71 @@
-//// typescript
-// filepath: /home/lukas/Source/wembat/backend/src/api/webauthn/login.test.ts
-
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
-import { login } from "./login";
-import { cryptoService, initCryptoTest } from "../../crypto";
-import { redisService } from "../../redis";
-import { verifyAuthenticationResponse } from "@simplewebauthn/server";
+import { PrismaClient } from "#prisma";
+// Sauberer ESM-Import (Passe den Pfad an, je nachdem wo deine login.ts liegt)
+import { login } from "#api/webauthn/login"; 
+import { vi, describe, beforeEach, it, expect } from "vitest";
 
-// Alle Abhängigkeiten mocken: Prisma, cryptoService, addToWebAuthnTokens, verifyAuthenticationResponse
-jest.mock("@prisma/client", () => {
+// --- 1. HOISTING ALLER MOCK VARIABLEN ---
+const { 
+  mockVerifyAuth, 
+  mockCreateToken, 
+  mockCreateRefreshToken, 
+  mockAddToWebAuthnTokens, 
+  mockPrisma 
+} = vi.hoisted(() => {
   return {
-    PrismaClient: jest.fn().mockImplementation(() => ({
-      user: {
-        findUnique: jest.fn(),
-      },
-      session: {
-        create: jest.fn(),
-      },
-    })),
+    mockVerifyAuth: vi.fn(),
+    mockCreateToken: vi.fn(),
+    mockCreateRefreshToken: vi.fn(),
+    mockAddToWebAuthnTokens: vi.fn(),
+    mockPrisma: {
+      user: { findUnique: vi.fn() },
+      session: { create: vi.fn() },
+    },
   };
 });
 
-jest.mock("../../crypto", () => ({
+// --- 2. REGISTRIERUNG DER MOCKS ---
+vi.mock("@simplewebauthn/server", () => ({
+  __esModule: true,
+  verifyAuthenticationResponse: mockVerifyAuth,
+}));
+
+// Nutzt jetzt deinen sauberen #crypto Alias
+vi.mock("#crypto", () => ({
   cryptoService: {
-    createSessionToken: jest.fn(),
-    createSessionRefreshToken: jest.fn(),
+    createSessionToken: mockCreateToken,
+    createSessionRefreshToken: mockCreateRefreshToken,
   },
 }));
 
-jest.mock("../../redis", () => ({
+// Nutzt jetzt deinen sauberen #redis Alias
+vi.mock("#redis", () => ({
   redisService: {
-    addToWebAuthnTokens: jest.fn(),
-  }
+    addToWebAuthnTokens: mockAddToWebAuthnTokens,
+  },
 }));
 
-jest.mock("@simplewebauthn/server", () => ({
-  verifyAuthenticationResponse: jest.fn(),
+vi.mock("#prisma", () => ({
+  PrismaClient: vi.fn().mockImplementation(() => mockPrisma),
 }));
 
-const prisma = new PrismaClient();
+const prisma = (mockPrisma as unknown) as PrismaClient;
 
+// --- 3. TEST SUITE ---
 describe("testLogin", () => {
   let req: Partial<Request>;
   let res: Partial<Response>;
 
   beforeEach(async () => {
-    req = {
-      body: {},
-    };
+    req = { body: {} };
     res = {
       locals: {},
-      status: jest.fn().mockReturnThis(),
-      cookie: jest.fn().mockReturnThis(),
-      send: jest.fn(),
-      json: jest.fn(),
+      status: vi.fn().mockReturnThis(),
+      cookie: vi.fn().mockReturnThis(),
+      send: vi.fn(),
+      json: vi.fn(),
     };
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // Wichtig: vi statt jest
   });
 
   it("should return error if loginChallengeResponse is missing", async () => {
@@ -74,7 +83,6 @@ describe("testLogin", () => {
       },
     };
 
-    // res.locals.payload nicht setzen
     await login(req as Request, res as Response, prisma);
 
     expect(res.status).toHaveBeenCalledWith(400);
@@ -90,12 +98,9 @@ describe("testLogin", () => {
         credentials: {},
       },
     };
-    res.locals.payload = {
-      aud: "https://test.com",
-      appUId: "testAppId",
-    };
+    res.locals.payload = { aud: "https://test.com", appUId: "testAppId" };
 
-    (prisma.user.findUnique as jest.Mock).mockRejectedValue(new Error("User with given challenge not found"));
+    mockPrisma.user.findUnique.mockRejectedValue(new Error("User with given challenge not found"));
 
     await login(req as Request, res as Response, prisma);
 
@@ -112,19 +117,16 @@ describe("testLogin", () => {
         credentials: { rawId: "device-uid" },
       },
     };
-    res.locals.payload = {
-      aud: "https://test.com",
-      appUId: "testAppId",
-    };
+    res.locals.payload = { aud: "https://test.com", appUId: "testAppId" };
 
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+    mockPrisma.user.findUnique.mockResolvedValue({
       uid: "testUserId",
       challenge: "some-challenge",
       devices: [{ uid: "device1", credentialId: "device-uid", counter: 0 }],
       sessions: [],
     });
 
-    (verifyAuthenticationResponse as jest.Mock).mockRejectedValue(new Error("Authentication Response could not be verified"));
+    mockVerifyAuth.mockRejectedValue(new Error("Authentication Response could not be verified"));
 
     await login(req as Request, res as Response, prisma);
 
@@ -141,23 +143,18 @@ describe("testLogin", () => {
         credentials: { rawId: "device-uid" },
       },
     };
-    res.locals.payload = {
-      aud: "https://test.com",
-      appUId: "testAppId",
-    };
+    res.locals.payload = { aud: "https://test.com", appUId: "testAppId" };
 
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+    mockPrisma.user.findUnique.mockResolvedValue({
       uid: "testUserId",
       challenge: "some-challenge",
       devices: [{ uid: "device1", credentialId: "device-uid", counter: 0 }],
       sessions: [{ appUId: "testAppId", deviceUId: "otherDeviceUid" }],
     });
 
-    (verifyAuthenticationResponse as jest.Mock).mockResolvedValue({
+    mockVerifyAuth.mockResolvedValue({
       verified: true,
-      authenticationInfo: {
-        newCounter: 1,
-      },
+      authenticationInfo: { newCounter: 1 },
     });
 
     await login(req as Request, res as Response, prisma);
@@ -175,46 +172,39 @@ describe("testLogin", () => {
         credentials: { rawId: "device-uid" },
       },
     };
+    res.locals.payload = { aud: "https://test.com", appUId: "testAppId" };
 
-    res.locals.payload = {
-      aud: "https://test.com",
-      appUId: "testAppId",
-    };
-
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+    mockPrisma.user.findUnique.mockResolvedValue({
       uid: "testUserId",
       challenge: "some-challenge",
       devices: [{ uid: "device1", credentialId: "device-uid", counter: 0 }],
       sessions: [],
     });
 
-    // WebAuthn-Verification simulieren
-    (verifyAuthenticationResponse as jest.Mock).mockResolvedValue({
+    mockVerifyAuth.mockResolvedValue({
       verified: true,
-      authenticationInfo: {
-        newCounter: 1,
-      },
+      authenticationInfo: { newCounter: 1 },
     });
 
-    // Session in DB erstellen
-    (prisma.session.create as jest.Mock).mockResolvedValue({
+    mockPrisma.session.create.mockResolvedValue({
       uid: "sessionId",
       userUId: "testUserId",
       appUId: "testAppId",
       deviceUId: "device1",
       publicKey: "publicKey",
       privateKey: "privateKey",
+      cipherBlob: "cipherBlob",
       nonce: 1234,
     });
 
-    // createSessionToken und createSessionRefreshToken mocken
-    (cryptoService.createSessionToken as jest.Mock).mockResolvedValue("test-session-token");
-    (cryptoService.createSessionRefreshToken as jest.Mock).mockResolvedValue("test-refresh-token");
-    (redisService.addToWebAuthnTokens as jest.Mock).mockResolvedValue({});
+    mockCreateToken.mockResolvedValue("test-session-token");
+    mockCreateRefreshToken.mockResolvedValue("test-refresh-token");
+    mockAddToWebAuthnTokens.mockResolvedValue({});
 
     await login(req as Request, res as Response, prisma);
 
     expect(res.status).toHaveBeenCalledWith(200);
+    // expect.any(Object) funktioniert in Vitest genauso wie in Jest!
     expect(res.cookie).toHaveBeenCalledWith("refreshToken", "test-refresh-token", expect.any(Object));
     expect(res.send).toHaveBeenCalledWith(
       JSON.stringify({
@@ -223,7 +213,7 @@ describe("testLogin", () => {
         sessionId: "sessionId",
         publicUserKey: "publicKey",
         privateUserKeyEncrypted: "privateKey",
-        nonce: 1234,
+        cipherBlob: "cipherBlob",
       })
     );
   });

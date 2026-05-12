@@ -64,7 +64,7 @@ export interface WembatError {
 	/**
 	 * The error message.
 	 */
-	error: string;
+	message: string;
 }
 
 
@@ -103,6 +103,7 @@ export interface WembatRegisterResult {
 	 * Indicates whether the registration was successful.
 	 */
 	verified: boolean;
+	publicKey: CryptoKey | undefined;
 }
 
 /**
@@ -127,17 +128,7 @@ export interface WembatLoginResult {
 	/**
 	 * The JSON Web Token (JWT) associated with the user's session.
 	 */
-	token: string;
-}
-
-/**
- * Represents the result of the Wembat onboarding process.
- */
-export interface WembatOnboardResult {
-	/**
-	 * Indicates whether the onboarding process was successfully verified.
-	 */
-	verified: boolean;
+	publicKey: CryptoKey | undefined;
 }
 
 /**
@@ -162,6 +153,8 @@ export interface RegisterResponse {
 	 * Indicates whether the registration is verified or not.
 	 */
 	verified: boolean;
+	token: string;
+	sessionId: string;
 }
 
 /**
@@ -190,32 +183,16 @@ export interface LoginResponse {
 	 */
 	sessionId: string;
 
-	/**
-	 * The public key of the user.
-	 */
 	publicUserKey: string;
 
-	/**
-	 * The encrypted private key of the user.
-	 */
 	privateUserKeyEncrypted: string;
 
 	/**
-	 * A unique nonce value associated with the login request.
+	 * Secret string containing the iv, salt and seed
 	 */
-	nonce: string;
-}
-
-/**
- * Represents the response object for a request to onboard.
- */
-export interface RequestOnboardResponse {
-	options: PublicKeyCredentialRequestOptionsJSON;
+	cipherBlob: string;
 }
 
 export interface TokenResponse {
 	token: string;
-}
-
-export interface OnboardResponse {
 }

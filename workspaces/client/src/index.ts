@@ -1,14 +1,9 @@
-import axios, { AxiosInstance } from "axios";
-
-import { WembatActionResponse, WembatClientToken, WembatLoginResult, WembatMessage, WembatRegisterResult, WembatToken } from "./types";
-import { register } from "./functions/register";
-import { decrypt } from "./functions/decrypt";
-import { login } from "./functions/login";
-import { encrypt } from "./functions/encrypt";
-import { onboard } from "./functions/onboard";
+import { WembatActionResponse, WembatClientToken, WembatLoginResult, WembatMessage, WembatRegisterResult, WembatLinkResult, WembatToken, WembatOnboardResult } from "./types";
 import { jwtDecode } from "./functions/helper";
-import { token } from "./functions/token";
-import { link } from "./functions/link";
+import { Bridge, BridgeMessageType, LinkContent, LoginContent, DecryptContent, EncryptContent, InitContent, StartRegistrationContent, StartAuthenticationContent, RegisterContent, OnboardContent } from "./bridge";
+import { browserSupportsWebAuthn, startAuthentication, startRegistration } from "@simplewebauthn/browser";
+import { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/types";
+import WorkerClass from './worker.ts?worker&inline';
 
 export * from "./types";
 
@@ -16,11 +11,8 @@ export * from "./types";
  * Represents a client for interacting with the Wembat API.
  */
 class WembatClient {
-	readonly #apiUrl: string;
-	readonly #axiosClient: AxiosInstance;
-	#jwt: string | undefined;
-	#publicKey: CryptoKey | undefined;
-	#privateKey: CryptoKey | undefined;
+	private readonly worker: Worker;
+	private readonly bridge: Bridge;
 
 	/**
 	 * Creates an instance of WembatClient.
@@ -34,22 +26,43 @@ class WembatClient {
 			throw new Error("Invalid application token");
 		}
 
-		this.#apiUrl = tokenPayload.iss;
-		this.#axiosClient = axios.create({
-			baseURL: `${this.#apiUrl}/api/webauthn`,
-			validateStatus: function (status) {
-				return status == 200 || status == 400;
-			},
-			transformResponse: (res) => res,
-			responseType: "text",
+		if (!browserSupportsWebAuthn())
+			throw new Error("WebAuthn is not supported on this browser!");
+
+		// const conditionalUISupported = await browserSupportsWebAuthnAutofill();
+
+		const content: InitContent = {token: applicationToken, tokenPayload: tokenPayload};
+
+		this.worker = new WorkerClass();
+		this.bridge = new Bridge(this.worker);
+		this.bridge.invoke(BridgeMessageType.Init, content);
+
+		this.bridge.on(BridgeMessageType.StartAuthentication, async (content: StartAuthenticationContent) => {
+			console.log("start login");
+			console.log(content);
+			const credentials: AuthenticationResponseJSON = await startAuthentication(
+				{
+					optionsJSON: content.challengeOptions,
+				}
+			).catch((err: string) => {
+				throw new Error(err);
+			});
+			return credentials;
 		});
 
-		this.#axiosClient.defaults.headers.common["Content-Type"] =
-			"application/json";
-		this.#axiosClient.defaults.headers.common["Authorization"] =
-			`Bearer ${this.#jwt}`;
-		this.#axiosClient.defaults.headers.common["Wembat-App-Token"] =
-			`Bearer ${applicationToken}`;
+		this.bridge.on(BridgeMessageType.StartRegistration, async (content: StartRegistrationContent) => {
+			console.log("start registration");
+			console.log(content);
+			const credentials: RegistrationResponseJSON = await startRegistration({
+				optionsJSON: content.challengeOptions,
+				useAutoRegister: content.autoRegister,
+			}).catch((err: string) => {
+				console.error(err);
+				throw new Error(err);
+			});
+			console.log("finished registration");
+			return credentials;
+		});
 	}
 
 	/**
@@ -60,7 +73,8 @@ class WembatClient {
 	 * @returns A promise that resolves to a WembatActionResponse containing the encrypted Wembat message.
 	 */
 	public async encrypt (wembatMessage: WembatMessage, publicKey: CryptoKey): Promise<WembatActionResponse<WembatMessage>> {
-		return await encrypt(this.#privateKey, wembatMessage, publicKey);
+		const content: EncryptContent = { message: wembatMessage, key: publicKey };
+		return this.bridge.invoke<WembatActionResponse<WembatMessage>>(BridgeMessageType.Encrypt, content);
 	}
 
 	/**
@@ -71,7 +85,8 @@ class WembatClient {
 	 * @returns A promise that resolves to a WembatActionResponse containing the decrypted Wembat message.
 	 */
 	public async decrypt (wembatMessage: WembatMessage, publicKey: CryptoKey): Promise<WembatActionResponse<WembatMessage>> {
-		return await decrypt(this.#privateKey, wembatMessage, publicKey);
+		const content: DecryptContent = { message: wembatMessage, key: publicKey };
+		return this.bridge.invoke<WembatActionResponse<WembatMessage>>(BridgeMessageType.Decrypt, content);
 	}
 
 	/**
@@ -81,7 +96,8 @@ class WembatClient {
 	 * @returns A Promise that resolves to a WembatActionResponse containing the registration result.
 	 */
 	public async register (userMail: string, autoRegister: boolean = false): Promise<WembatActionResponse<WembatRegisterResult>> {
-		return await register(this.#axiosClient, userMail, autoRegister);
+		const content: RegisterContent = { userMail, autoRegister };
+		return this.bridge.invoke<WembatActionResponse<WembatRegisterResult>>(BridgeMessageType.Register, content);
 	}
 
 	/**
@@ -90,29 +106,17 @@ class WembatClient {
 	 * @returns A promise that resolves to a WembatActionResponse containing the login result.
 	 */
 	public async login (userMail: string, autoLogin: boolean = false): Promise<WembatActionResponse<WembatLoginResult>> {
-		const [loginResult, privateKey, publicKey, jwt] = await login(this.#axiosClient, userMail, autoLogin);
-		this.#privateKey = privateKey;
-		this.#publicKey = publicKey;
-		this.#jwt = jwt;
-		this.#axiosClient.defaults.headers.common["Authorization"] =
-			`Bearer ${this.#jwt}`;
-		return loginResult;
-	}
-
-	/**
-	 * Onboards the new user device linked to the active wembat session.
-	 * @returns A promise that resolves to a WembatActionResponse containing the onboard result.
-	 */
-	public async onboard (): Promise<WembatActionResponse<WembatRegisterResult>> {
-		return await onboard(this.#axiosClient, this.#publicKey, this.#privateKey);
+		const content: LoginContent = { userMail, autoLogin };
+		return this.bridge.invoke<WembatActionResponse<WembatLoginResult>>(BridgeMessageType.Login, content);
 	}
 
 	/**
 	 * Links the new user device to the active wembat session.
 	 * @returns A promise that resolves to a WembatActionResponse containing the link result.
 	 */
-	public async link (): Promise<WembatActionResponse<WembatRegisterResult>> {
-		return await link(this.#axiosClient);
+	public async link (): Promise<WembatActionResponse<WembatLinkResult>> {
+		const content: LinkContent = {};
+		return this.bridge.invoke<WembatActionResponse<WembatLinkResult>>(BridgeMessageType.Link, content);
 	}
 
 	/**
@@ -120,7 +124,11 @@ class WembatClient {
 	 * @returns A promise that resolves to a WembatActionResponse containing the token.
 	 */
 	public async token (): Promise<WembatActionResponse<WembatToken>> {
-		return await token(this.#axiosClient, this.#jwt);
+		// const content: ActionContent = { message: wembatMessage, key: publicKey };
+		// const action: WorkerAction = { type: WorkerActionType.Decrypt, content: content };
+		// return this.sendRequest(action);
+		let blob: any;
+		return blob;
 	}
 
 	/**
@@ -128,7 +136,9 @@ class WembatClient {
 	 * @returns The crypto public key.
 	 */
 	public getCryptoPublicKey() {
-		return this.#publicKey;
+		// return this.#publicKey;
+		let blob: any;
+		return blob;
 	}
 }
 

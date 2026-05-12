@@ -1,7 +1,7 @@
-import { PrismaClient } from "@prisma/client";
-import { SessionInfo, UserWithDevicesAndSessions } from "../types";
+import { PrismaClient } from "#prisma";
+import { SessionInfo, UserWithDevicesAndSessions } from "#api/types";
 import { Request, Response } from "express";
-import { cryptoService } from "../../crypto";
+import { cryptoService } from "#crypto";
 
 export async function refresh(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {

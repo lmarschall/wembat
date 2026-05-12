@@ -1,28 +1,38 @@
-//// typescript
-// filepath: /home/lukas/Source/wembat/backend/src/api/webauthn/requestOnboard.test.ts
-
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
-import { requestOnboard } from "./requestOnboard";
-import { generateAuthenticationOptions } from "@simplewebauthn/server";
+import { PrismaClient } from "#prisma";
+// Sauberer ESM-Import (Pfad anpassen, falls requestOnboard woanders liegt)
+import { requestOnboard } from "#api/webauthn/requestOnboard";
+import { vi, describe, beforeEach, it, expect } from "vitest";
 
-jest.mock("@prisma/client", () => {
+// --- 1. HOISTING DER MOCK VARIABLEN ---
+const { mockPrisma, mockGenerateAuthOptions } = vi.hoisted(() => {
   return {
-    PrismaClient: jest.fn().mockImplementation(() => ({
+    mockPrisma: {
       user: {
-        findUnique: jest.fn(),
-        update: jest.fn(),
+        findUnique: vi.fn(),
+        update: vi.fn(),
       },
-    })),
+    },
+    mockGenerateAuthOptions: vi.fn(),
   };
 });
 
-jest.mock("@simplewebauthn/server", () => ({
-  generateAuthenticationOptions: jest.fn(),
+// --- 2. REGISTRIERUNG DER MOCKS ---
+
+// Prisma Alias Mock
+vi.mock("#prisma", () => ({
+  PrismaClient: vi.fn().mockImplementation(() => mockPrisma),
 }));
 
-const prisma = new PrismaClient();
+// WebAuthn Server Mock
+vi.mock("@simplewebauthn/server", () => ({
+  __esModule: true,
+  generateAuthenticationOptions: mockGenerateAuthOptions,
+}));
 
+const prisma = (mockPrisma as unknown) as PrismaClient;
+
+// --- 3. TEST SUITE ---
 describe("testRequestOnboard", () => {
   let req: Partial<Request>;
   let res: Partial<Response>;
@@ -31,10 +41,10 @@ describe("testRequestOnboard", () => {
     req = {};
     res = {
       locals: {},
-      status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn(),
     };
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // Wichtig: vi statt jest
   });
 
   it("should return 400 if payload is missing", async () => {
@@ -45,10 +55,9 @@ describe("testRequestOnboard", () => {
   });
 
   it("should return 400 if user not found", async () => {
-    req.headers = req.headers || {};
-    res.locals = res.locals || {};
-    res.locals.payload = { aud: "https://example.de", userMail: "test@user.com" };
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
+    res.locals = { payload: { aud: "https://example.de", userMail: "test@user.com" } };
+    
+    mockPrisma.user.findUnique.mockResolvedValue(null);
 
     await requestOnboard(req as Request, res as Response, prisma);
 
@@ -57,14 +66,13 @@ describe("testRequestOnboard", () => {
   });
 
   it("should return 400 if generateAuthenticationOptions fails", async () => {
-    req.headers = req.headers || {};
-    res.locals = res.locals || {};
-    res.locals.payload = { aud: "https://example.de", userMail: "test@user.com" };
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+    res.locals = { payload: { aud: "https://example.de", userMail: "test@user.com" } };
+    
+    mockPrisma.user.findUnique.mockResolvedValue({
       uid: "testUserUid",
       devices: [],
     });
-    (generateAuthenticationOptions as jest.Mock).mockRejectedValue(
+    mockGenerateAuthOptions.mockRejectedValue(
       new Error("Authentication Options could not be generated")
     );
 
@@ -75,18 +83,17 @@ describe("testRequestOnboard", () => {
   });
 
   it("should return 400 if updating user challenge fails", async () => {
-    req.headers = req.headers || {};
-    res.locals = res.locals || {};
-    res.locals.payload = { aud: "https://example.de", userMail: "test@user.com" };
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+    res.locals = { payload: { aud: "https://example.de", userMail: "test@user.com" } };
+    
+    mockPrisma.user.findUnique.mockResolvedValue({
       uid: "testUserUid",
       devices: [],
     });
-    (generateAuthenticationOptions as jest.Mock).mockResolvedValue({
+    mockGenerateAuthOptions.mockResolvedValue({
       challenge: "test-challenge",
       allowCredentials: [],
     });
-    (prisma.user.update as jest.Mock).mockRejectedValue(
+    mockPrisma.user.update.mockRejectedValue(
       new Error("Updating user challenge failed")
     );
 
@@ -97,18 +104,17 @@ describe("testRequestOnboard", () => {
   });
 
   it("should return 200 and options when successful", async () => {
-    req.headers = req.headers || {};
-    res.locals = res.locals || {};
-    res.locals.payload = { aud: "https://example.de", userMail: "test@user.com" };
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+    res.locals = { payload: { aud: "https://example.de", userMail: "test@user.com" } };
+    
+    mockPrisma.user.findUnique.mockResolvedValue({
       uid: "testUserUid",
       devices: [{ credentialId: "123", transports: ["usb"] }],
     });
-    (generateAuthenticationOptions as jest.Mock).mockResolvedValue({
+    mockGenerateAuthOptions.mockResolvedValue({
       challenge: "test-challenge",
       allowCredentials: [{ id: "123", transports: ["usb"] }],
     });
-    (prisma.user.update as jest.Mock).mockResolvedValue({
+    mockPrisma.user.update.mockResolvedValue({
       uid: "testUserUid",
       challenge: "test-challenge",
     });

@@ -1,5 +1,5 @@
-import { randomBytes } from 'crypto'
-import { PrismaClient, Prisma } from "@prisma/client";
+import { randomBytes } from 'node:crypto'
+import { PrismaClient, Prisma } from "#prisma";
 
 import {
 	generateRegistrationOptions,
@@ -7,7 +7,7 @@ import {
 } from "@simplewebauthn/server";
 import { isoUint8Array } from '@simplewebauthn/server/helpers';
 import { Request, Response } from "express";
-import { UserInfo } from '../types';
+import { UserInfo } from '#api/types';
 
 type UserWithDevices = Prisma.UserGetPayload<{
 	include: { devices: true };
@@ -54,7 +54,7 @@ export async function requestRegister(req: Request, res: Response, prisma: Prism
 				throw Error("User could not be found or created in database");
 			})) as UserWithDevices;
 
-		if (user.devices.length > 0) throw Error("User already registered with one device, please login and link a new device");
+		if (user.devices.length > 0) throw Error("User already registered with one device, please login and link the new device");
 
 		const opts: GenerateRegistrationOptionsOpts = {
 			rpName: rpName,
@@ -69,11 +69,15 @@ export async function requestRegister(req: Request, res: Response, prisma: Prism
 			})),
 			authenticatorSelection: {
 				residentKey: "preferred",
-				userVerification: "preferred",
+				userVerification: "discouraged",
 			},
 			supportedAlgorithmIDs: [-7, -257],
 			extensions: {
-				prf: {}
+				prf: {
+					eval: {
+						first: user.salt,
+					},
+				},
 			} as any,
 		}
 

@@ -1,30 +1,35 @@
-//// typescript
-// filepath: /home/lukas/Source/wembat/backend/src/api/webauthn/refresh.test.ts
-
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
-import { refresh } from "./refresh";
-import { cryptoService } from "../../crypto";
+import { PrismaClient } from "#prisma";
+// Sauberer ESM-Import (Pfad anpassen, falls refresh.ts woanders liegt)
+import { refresh } from "#api/webauthn/refresh";
+import { vi, describe, beforeEach, it, expect } from "vitest";
 
-// Prisma und cryptoService mocken
-jest.mock("@prisma/client", () => {
+// --- 1. HOISTING DER MOCK VARIABLEN ---
+const { mockPrisma, mockCreateSessionToken } = vi.hoisted(() => {
   return {
-    PrismaClient: jest.fn().mockImplementation(() => ({
+    mockPrisma: {
       user: {
-        findUnique: jest.fn(),
+        findUnique: vi.fn(),
       },
-    })),
+    },
+    mockCreateSessionToken: vi.fn(),
   };
 });
 
-jest.mock("../../crypto", () => ({
+// --- 2. REGISTRIERUNG DER MOCKS ---
+vi.mock("#prisma", () => ({
+  PrismaClient: vi.fn().mockImplementation(() => mockPrisma),
+}));
+
+vi.mock("#crypto", () => ({
   cryptoService: {
-    createSessionToken: jest.fn(),
+    createSessionToken: mockCreateSessionToken,
   },
 }));
 
-const prisma = new PrismaClient();
+const prisma = (mockPrisma as unknown) as PrismaClient;
 
+// --- 3. TEST SUITE ---
 describe("testRefresh", () => {
   let req: Partial<Request>;
   let res: Partial<Response>;
@@ -36,14 +41,13 @@ describe("testRefresh", () => {
     };
     res = {
       locals: {},
-      status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn(),
     };
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("should return error if refreshToken cookie is missing", async () => {
-    // refreshToken nicht vorhanden
     await refresh(req as Request, res as Response, prisma);
 
     expect(res.status).toHaveBeenCalledWith(400);
@@ -52,7 +56,6 @@ describe("testRefresh", () => {
 
   it("should return error if userInfo is missing", async () => {
     req.cookies = { refreshToken: "test-refresh-token" };
-    // userInfo nicht definiert
     await refresh(req as Request, res as Response, prisma);
 
     expect(res.status).toHaveBeenCalledWith(400);
@@ -67,7 +70,6 @@ describe("testRefresh", () => {
         sessionId: "session123",
       },
     };
-    // res.locals.payload nicht gesetzt
 
     await refresh(req as Request, res as Response, prisma);
 
@@ -76,8 +78,7 @@ describe("testRefresh", () => {
   });
 
   it("should return error if user not found in database", async () => {
-    req.headers = req.headers || {};
-    res.locals = res.locals || {};
+    res.locals = { payload: { aud: "https://example.de" } };
     req.cookies = { refreshToken: "test-refresh-token" };
     req.body = {
       userInfo: {
@@ -85,12 +86,8 @@ describe("testRefresh", () => {
         sessionId: "session123",
       },
     };
-    res.locals.payload = {
-      aud: "https://example.de",
-    };
 
-    // findUnique wirft einen Fehler
-    (prisma.user.findUnique as jest.Mock).mockRejectedValue(
+    mockPrisma.user.findUnique.mockRejectedValue(
       new Error("User could not be found in database")
     );
 
@@ -101,8 +98,7 @@ describe("testRefresh", () => {
   });
 
   it("should return error if user is null", async () => {
-    req.headers = req.headers || {};
-    res.locals = res.locals || {};
+    res.locals = { payload: { aud: "https://example.de" } };
     req.cookies = { refreshToken: "test-refresh-token" };
     req.body = {
       userInfo: {
@@ -110,11 +106,8 @@ describe("testRefresh", () => {
         sessionId: "session123",
       },
     };
-    res.locals.payload = {
-      aud: "https://example.de",
-    };
 
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
+    mockPrisma.user.findUnique.mockResolvedValue(null);
 
     await refresh(req as Request, res as Response, prisma);
 
@@ -123,8 +116,7 @@ describe("testRefresh", () => {
   });
 
   it("should return error if user session not found", async () => {
-    req.headers = req.headers || {};
-    res.locals = res.locals || {};
+    res.locals = { payload: { aud: "https://example.de" } };
     req.cookies = { refreshToken: "test-refresh-token" };
     req.body = {
       userInfo: {
@@ -132,12 +124,8 @@ describe("testRefresh", () => {
         sessionId: "session123",
       },
     };
-    res.locals.payload = {
-      aud: "https://example.de",
-    };
 
-    // findUnique gibt einen User ohne passende Session zurück
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+    mockPrisma.user.findUnique.mockResolvedValue({
       uid: "testUserId",
       mail: "test@user.com",
       devices: [],
@@ -151,8 +139,7 @@ describe("testRefresh", () => {
   });
 
   it("should return 200 and token if refresh is valid", async () => {
-    req.headers = req.headers || {};
-    res.locals = res.locals || {};
+    res.locals = { payload: { aud: "https://example.de" } };
     req.cookies = { refreshToken: "test-refresh-token" };
     req.body = {
       userInfo: {
@@ -160,12 +147,8 @@ describe("testRefresh", () => {
         sessionId: "session123",
       },
     };
-    res.locals.payload = {
-      aud: "https://example.de",
-    };
 
-    // findUnique gibt User + Session zurück
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+    mockPrisma.user.findUnique.mockResolvedValue({
       uid: "testUserId",
       mail: "test@user.com",
       devices: [],
@@ -182,7 +165,7 @@ describe("testRefresh", () => {
       ],
     });
 
-    (cryptoService.createSessionToken as jest.Mock).mockResolvedValue("test-session-token");
+    mockCreateSessionToken.mockResolvedValue("test-session-token");
 
     await refresh(req as Request, res as Response, prisma);
 

@@ -3,26 +3,51 @@
   "version": "0.9.4",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/app.js",
-    "serve": "tsc && node dist/app.js",
+    "start": "node dist/src/app.js",
+    "serve": "tsc && node dist/src/app.js",
     "lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix ./src/**/*.ts",
     "format": "prettier ./src/**/*.ts --write",
-    "test": "jest"
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "imports": {
+    "#prisma": "./dist/prisma/generated/client.js",
+    "#redis": "./dist/src/redis/index.js",
+    "#crypto": "./dist/src/crypto/index.js",
+    "#config": "./dist/src/config/index.js",
+    "#api": "./dist/src/api/index.js",
+    "#api/*": "./dist/src/api/*.js"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0",
-    "@simplewebauthn/server": "^11.0.0",
+    "@prisma/adapter-pg": "^7.5.0",
+    "@prisma/client": "^7.5.0",
+    "@simplewebauthn/server": "^13.3.0",
     "base64url": "^3.0.1",
-    "body-parser": "^1.19.2",
+    "body-parser": "^2.2.2",
     "compression": "^1.8.1",
     "connect-history-api-fallback": "^2.0.0",
-    "cors": "^2.8.5",
-    "express": "^4.19.2",
-    "express-rate-limit": "^7.4.0",
-    "helmet": "^5.0.2",
-    "jose": "^4.15.5",
-    "redis": "^4.0.6"
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.3.1",
+    "express-session": "^1.19.0",
+    "helmet": "^8.1.0",
+    "jose": "^4.15.9",
+    "openid-client": "^5.7.1",
+    "pg": "^8.20.0",
+    "redis": "^5.11.0",
+    "tsx": "^4.21.0"
+  },
+  "devDependencies": {
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
+    "@types/express-session": "^1.18.2",
+    "@types/node": "^25.5.0",
+    "@types/pg": "^8.20.0",
+    "prisma": "^7.5.0",
+    "vitest": "^4.1.0"
   }
 }

@@ -1,7 +1,7 @@
-import { Application, PrismaClient } from "@prisma/client";
+import { Application, PrismaClient } from "#prisma";
 import { Request, Response } from "express";
-import { ApplicationInfo } from "../types";
-import { redisService } from "../../redis";
+import { ApplicationInfo } from "#api/types";
+import { redisService } from "#redis";
 
 export async function applicationUpdate(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {

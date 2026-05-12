@@ -1,6 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "#prisma";
 import { Request, Response } from "express";
-import { UserWithDevices } from "../types";
+import { UserWithDevices } from "#api/types";
 
 export async function deviceList(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
     try {

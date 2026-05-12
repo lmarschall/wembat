@@ -1,49 +1,33 @@
 #!/usr/bin/bash
+# Exit immediately if a command exits with a non-zero status
+set -e
 
-DB_HOST=$DATABASE_HOST
-DB_PORT=5432
-DB_USER=$DATABASE_USER
-
-echo "Database Host: $DB_HOST"
-echo "Database Port: $DB_PORT"
-echo "Database User: $DB_USER"
-
-# Function to check if PostgreSQL is ready
-until pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER"; do
-  echo "Waiting for PostgreSQL to initialize..."
-  sleep 1
-done
-
-echo "Postgres is ready!"
-
-# deploy migrations to database
-echo "Apply Primsa migrations..."
+# Deploy migrations
+echo "Applying Prisma migrations..."
 npx prisma migrate deploy
 
-KEYS_DIR="/opt/data/keys"
+# Key Management
+KEYS_DIR="./keys"
+PRIVATE_KEY="$KEYS_DIR/privateKey.pem"
+PUBLIC_KEY="$KEYS_DIR/publicKey.pem"
 
-echo "Checking for key directory..."
-# Check if the directory exists
-if [ -d "$KEYS_DIR" ]; then
-  echo "Directory exists."
-else
-  mkdir -p $KEYS_DIR
-  echo "Directory created."
+if [ ! -d "$KEYS_DIR" ]; then
+  mkdir -p "$KEYS_DIR"
 fi
 
-echo "Key directory: $KEYS_DIR/privateKey.pem"
-echo "Key directory: $KEYS_DIR/publicKey.pem"
-
-echo "Checking for keys..."
-# Check if the directory contains any files
-if [ "$(ls -A $KEYS_DIR)" ]; then
-  echo "Keys exist in the directory."
-else
-  openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 -out $KEYS_DIR/privateKey.pem -outform PEM
-  openssl ec -in $KEYS_DIR/privateKey.pem -pubout -out $KEYS_DIR/publicKey.pem
+if [ ! -f "$PRIVATE_KEY" ]; then
+  echo "Generating new EC keys..."
+  openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 -out "$PRIVATE_KEY"
+  openssl ec -in "$PRIVATE_KEY" -pubout -out "$PUBLIC_KEY"
   echo "Keys created."
+else
+  echo "Existing keys found, skipping generation."
 fi
 
-# start api server
-echo "Starting API server..."
-node dist/app.js
+echo "--- Starting API Server ---"
+
+# Use 'exec' so Node becomes PID 1 and handles SIGTERM/SIGINT properly
+node ./dist/src/app.js || echo "App crashed! Stalling so you can debug..."
+
+# Keep alive even after crash
+tail -f /dev/null

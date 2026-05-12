@@ -39,7 +39,7 @@ CREATE TABLE "Session" (
     "deviceUId" TEXT NOT NULL,
     "publicKey" TEXT NOT NULL DEFAULT E'',
     "privateKey" TEXT NOT NULL DEFAULT E'',
-    "nonce" TEXT NOT NULL DEFAULT E'',
+    "cipherBlob" TEXT NOT NULL DEFAULT E'',
 
     CONSTRAINT "Session_pkey" PRIMARY KEY ("uid")
 );

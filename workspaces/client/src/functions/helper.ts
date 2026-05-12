@@ -1,30 +1,3 @@
-import { WembatClientToken } from "../types";
-
-/**
- * Converts a string to an ArrayBuffer.
- *
- * @param str - The string to convert.
- * @returns The converted ArrayBuffer.
- */
-export function str2ab(str: string): ArrayBuffer {
-	str = atob(str);
-	const buf = new ArrayBuffer(str.length);
-	const bufView = new Uint8Array(buf);
-	for (let i = 0, strLen = str.length; i < strLen; i++) {
-		bufView[i] = str.charCodeAt(i);
-	}
-	return buf;
-}
-
-/**
- * Converts an ArrayBuffer to a string using base64 encoding.
- *
- * @param buf - The ArrayBuffer to convert.
- * @returns The base64 encoded string.
- */
-export function ab2str(buf: ArrayBuffer): string {
-	return btoa(String.fromCharCode.apply(null, [...new Uint8Array(buf)]));
-}
 
 /**
  * Decodes a JSON Web Token (JWT) and returns the decoded payload.
@@ -78,7 +51,7 @@ export async function deriveEncryptionKey(
 	publicKey: CryptoKey
 ): Promise<CryptoKey> {
 	if (privateKey !== undefined && publicKey !== undefined) {
-		const encryptionKey = await window.crypto.subtle.deriveKey(
+		const encryptionKey = await globalThis.crypto.subtle.deriveKey(
 			{
 				name: "ECDH",
 				public: publicKey,
@@ -93,7 +66,7 @@ export async function deriveEncryptionKey(
 		);
 		return encryptionKey;
 	} else {
-		throw Error("Could not derive Encryption Key");
+		throw new Error("Could not derive Encryption Key");
 	}
 }
 
@@ -118,20 +91,19 @@ export async function saveCryptoKeyAsString(
 export async function loadCryptoPublicKeyFromString(
 	pubKeyString: string
 ): Promise<CryptoKey> {
-	if (pubKeyString !== "") {
-		return await window.crypto.subtle.importKey(
-			"jwk",
-			JSON.parse(pubKeyString),
-			{
-				name: "ECDH",
-				namedCurve: "P-384",
-			},
-			true,
-			[]
-		);
-	} else {
-		throw Error("Public Key String empty");
-	}
+
+	if (pubKeyString === "") throw new Error("Public Key String empty");
+	
+	return await globalThis.crypto.subtle.importKey(
+		"jwk",
+		JSON.parse(pubKeyString),
+		{
+			name: "ECDH",
+			namedCurve: "P-384",
+		},
+		true,
+		[]
+	);
 }
 
 /**
@@ -141,20 +113,146 @@ export async function loadCryptoPublicKeyFromString(
  * @throws {Error} If the private key string is empty.
  */
 export async function loadCryptoPrivateKeyFromString(
-	privateKeyString: string
+	privateKeyString: string,
+	encryptionKey: CryptoKey,
+	ivString: string
 ): Promise<CryptoKey> {
-	if (privateKeyString !== "") {
-		return await window.crypto.subtle.importKey(
-			"jwk",
-			JSON.parse(privateKeyString),
-			{
-				name: "ECDH",
-				namedCurve: "P-384",
-			},
-			true,
-			["deriveKey", "deriveBits"]
-		);
+
+	if (privateKeyString === "") throw new Error("Private Key String empty");
+
+	const decoder = new TextDecoder();
+
+	const decryptedPrivateUserKey = await crypto.subtle.decrypt(
+		{ name: "AES-GCM", iv: fromBase64(ivString) },
+		encryptionKey,
+		fromBase64(privateKeyString)
+	);
+
+	return await globalThis.crypto.subtle.importKey(
+		"jwk",
+		JSON.parse(decoder.decode(decryptedPrivateUserKey)),
+		{
+			name: "ECDH",
+			namedCurve: "P-384",
+		},
+		true,
+		["deriveKey", "deriveBits"]
+	);
+}
+
+export async function deriveEncryptionKeyFromPRF(inputKeyMaterial: Uint8Array<any>, version: string, existingSalt = "") {
+
+	const salt = existingSalt == "" ? globalThis.crypto.getRandomValues(new Uint8Array(32)) : fromBase64(existingSalt);
+
+	const keyDerivationKey = await globalThis.crypto.subtle.importKey(
+		"raw",
+		inputKeyMaterial,
+		"HKDF",
+		false,
+		["deriveKey"]
+	);
+
+	const info = new TextEncoder().encode("encryption key");
+
+	const encryptionKey = await crypto.subtle.deriveKey(
+		{ name: "HKDF", info, salt, hash: "SHA-256" },
+		keyDerivationKey,
+		{ name: "AES-GCM", length: 256 },
+		false,
+		["encrypt", "decrypt"]
+	);
+
+	return {
+		encryptionKey,
+		salt
+	}
+}
+
+export async function deriveEllipticKeypair() {
+
+	const keyPair = await crypto.subtle.generateKey(
+		{
+			name: "ECDH",
+			namedCurve: "P-384",
+		},
+		true,
+		["deriveKey", "deriveBits"]
+	);
+
+	return {
+		publicKey: keyPair.publicKey,
+		privateKey: keyPair.privateKey
+	};
+}
+
+export function fromBase64(base64String: string): Uint8Array<ArrayBuffer> {
+  
+	// modern browsers
+	if ((Uint8Array as any).fromBase64) {
+		return (Uint8Array as any).fromBase64(base64String);
+	}
+
+	// legacy fallback
+	const binaryString = atob(base64String);
+	const len = binaryString.length;
+	const bytes = new Uint8Array(len);
+
+	// Direct loop is faster than Uint8Array.from() with a callback
+	for (let i = 0; i < len; i++) {
+		bytes[i] = binaryString.charCodeAt(i);
+	}
+
+	return bytes;
+}
+
+export function toBase64(bytes: Uint8Array<ArrayBuffer>): string {
+
+	// modern browsers
+	if ((bytes as any).toBase64) {
+		return (bytes as any).toBase64();
+	}
+
+	// legacy fallback
+	const binaryString = Array.from(bytes, (byte) => String.fromCharCode(byte)).join("");
+  
+  	return btoa(binaryString);
+}
+
+/**
+ * Safely parses the secret string into 5 parts.
+ * Returns 5 empty strings if the input is invalid or empty.
+ */
+export function parseSecretString(safeSecret: string) {
+
+	// new session
+	if (safeSecret === "") {
+		return ["", "", ""];
+	}
+  
+	// split the string
+	const parts = safeSecret.split('|');
+
+	// if we have exactly 3 parts
+	if (parts.length === 3) {
+		return parts;
 	} else {
-		throw Error("Private Key String empty");
+		throw new Error("Failed to parse cipher blob");
+	}
+}
+
+export async function encryptPrivateKeyString(privateKeyString: string, encryptionKey: CryptoKey) {
+	const iv = crypto.getRandomValues(new Uint8Array(12));
+	const encoder = new TextEncoder();
+	const encoded = encoder.encode(privateKeyString);
+
+	const encryptedBuffer = await crypto.subtle.encrypt(
+		{ name: "AES-GCM", iv: iv },
+		encryptionKey,
+		encoded
+	);
+
+	return {
+		encryptedBuffer,
+		iv
 	}
 }

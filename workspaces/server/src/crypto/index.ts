@@ -5,11 +5,11 @@ import {
 	importSPKI,
 	SignJWT,
 	KeyLike,
-	generateKeyPair,
-	GenerateKeyPairResult,
+	generateKeyPair
 } from "jose";
-import { Application, Session, User } from "@prisma/client";
-import { readFileSync } from "fs";
+import { Application, Session, User } from "#prisma"
+import { configService } from "#config";
+import { readFileSync } from "node:fs";
 
 interface KeyPair {
 	privateKey: KeyLike;
@@ -21,12 +21,18 @@ export let cryptoService: CryptoService;
 export async function initCrypto(): Promise<boolean> {
 	try {
 		const algorithm = "ES256";
-		const pkcs8 = readFileSync("/opt/data/keys/privateKey.pem", "utf8");
-		const ecPrivateKey = await importPKCS8(pkcs8, algorithm);
-		const spki = readFileSync("/opt/data/keys/publicKey.pem", "utf8");
-		const ecPublicKey = await importSPKI(spki, algorithm);
+        
+        // use import.meta.url to create an absolute path
+        const privateKeyUrl = new URL("../../../keys/privateKey.pem", import.meta.url);
+        const publicKeyUrl = new URL("../../../keys/publicKey.pem", import.meta.url);
 
-		cryptoService = new CryptoService(ecPrivateKey, ecPublicKey);
+        const pkcs8 = readFileSync(privateKeyUrl, "utf8");
+        const ecPrivateKey = await importPKCS8(pkcs8, algorithm);
+        
+        const spki = readFileSync(publicKeyUrl, "utf8");
+        const ecPublicKey = await importSPKI(spki, algorithm);
+
+        cryptoService = new CryptoService(ecPrivateKey, ecPublicKey);
 
 		return true;
 	} catch (err) {
@@ -36,15 +42,15 @@ export async function initCrypto(): Promise<boolean> {
 }
 
 export async function initCryptoTest(algorithm = "ES256") {
-	const keyPairs: GenerateKeyPairResult<KeyLike> = await generateKeyPair(
+	const keyPairs = await generateKeyPair(
 		algorithm
 	);
 	cryptoService = new CryptoService(keyPairs.privateKey, keyPairs.publicKey);
 }
 
 export class CryptoService {
-	private keyPair: KeyPair;
-	private apiUrl: string = process.env.SERVER_URL || "http://localhost:8080";
+	private readonly keyPair: KeyPair;
+	private readonly apiUrl: string = configService.getServerUrl();
 
 	constructor(privateKey: KeyLike, publicKey: KeyLike) {
 		this.keyPair = {

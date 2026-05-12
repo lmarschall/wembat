@@ -1,30 +1,46 @@
-//// typescript
-// filepath: /home/lukas/Source/wembat/backend/src/api/webauthn/link.test.ts
-
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
-import { link } from "./link";
-import { verifyRegistrationResponse, VerifyRegistrationResponseOpts } from "@simplewebauthn/server";
+import { PrismaClient } from "#prisma";
+// Sauberer ESM-Import (Passe den Pfad an, falls link.ts woanders liegt)
+import { link } from "#api/webauthn/link";
+import { vi, describe, beforeEach, it, expect } from "vitest";
 
-// Mock PrismaClient
-jest.mock("@prisma/client", () => ({
-    PrismaClient: jest.fn().mockImplementation(() => ({
-        user: {
-            findUnique: jest.fn(),
+// --- 1. HOISTING DER MOCK VARIABLEN ---
+const { mockPrisma, mockVerifyAuth } = vi.hoisted(() => {
+    return {
+        mockPrisma: {
+            user: {
+                findUnique: vi.fn(),
+            },
+            device: {
+                upsert: vi.fn(),
+                create: vi.fn(), // <-- Hinzugefügt
+            },
+            application: {
+                findUnique: vi.fn(), // <-- Hinzugefügt
+            },
+            session: {
+                create: vi.fn(), // <-- Hinzugefügt
+            }
         },
-        device: {
-            upsert: jest.fn(),
-        },
-    })),
+        mockVerifyAuth: vi.fn(),
+    };
+});
+
+// --- 2. REGISTRIERUNG DER MOCKS ---
+// Nutzt jetzt deinen #prisma Alias anstelle des relativen Pfades
+vi.mock("#prisma", () => ({
+    PrismaClient: vi.fn().mockImplementation(() => mockPrisma),
 }));
 
-// Mock verifyRegistrationResponse from simplewebauthn/server
-jest.mock("@simplewebauthn/server", () => ({
-    verifyRegistrationResponse: jest.fn(),
+// Externes Modul sauber mocken
+vi.mock("@simplewebauthn/server", () => ({
+    __esModule: true,
+    verifyRegistrationResponse: mockVerifyAuth,
 }));
 
-const prisma = new PrismaClient();
+const prisma = (mockPrisma as unknown) as PrismaClient;
 
+// --- 3. TEST SUITE ---
 describe("link", () => {
     let req: Partial<Request>;
     let res: Partial<Response>;
@@ -35,10 +51,10 @@ describe("link", () => {
         };
         res = {
             locals: {},
-            status: jest.fn().mockReturnThis(),
-            send: jest.fn(),
+            status: vi.fn().mockReturnThis(),
+            send: vi.fn(),
         };
-        jest.clearAllMocks();
+        vi.clearAllMocks(); // Wichtig: vi statt jest
     });
 
     it("should return error if linkChallengeResponse is not present", async () => {
@@ -49,7 +65,9 @@ describe("link", () => {
 
     it("should return error if payload is not present", async () => {
         req.body.linkChallengeResponse = { challenge: "testChallenge", credentials: {} };
+        
         await link(req as Request, res as Response, prisma);
+        
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.send).toHaveBeenCalledWith("Payload not present");
     });
@@ -58,9 +76,11 @@ describe("link", () => {
         res.locals = res.locals || {};
         req.body.linkChallengeResponse = { challenge: "testChallenge", credentials: {} };
         res.locals.payload = { aud: "https://example.com", userMail: "test@example.com" };
-        (prisma.user.findUnique as jest.Mock).mockRejectedValue(new Error("DB error"));
+        
+        mockPrisma.user.findUnique.mockRejectedValue(new Error("DB error"));
         
         await link(req as Request, res as Response, prisma);
+        
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.send).toHaveBeenCalledWith("Could not find user for given challenge");
     });
@@ -69,9 +89,11 @@ describe("link", () => {
         res.locals = res.locals || {};
         req.body.linkChallengeResponse = { challenge: "testChallenge", credentials: {} };
         res.locals.payload = { aud: "https://example.com", userMail: "test@example.com" };
-        (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
+        
+        mockPrisma.user.findUnique.mockResolvedValue(null);
         
         await link(req as Request, res as Response, prisma);
+        
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.send).toHaveBeenCalledWith("Could not find user for given challenge");
     });
@@ -85,10 +107,12 @@ describe("link", () => {
             challenge: "testChallenge",
             devices: [],
         };
-        (prisma.user.findUnique as jest.Mock).mockResolvedValue(fakeUser);
-        (verifyRegistrationResponse as jest.Mock).mockRejectedValue(new Error("Verification failed"));
+        
+        mockPrisma.user.findUnique.mockResolvedValue(fakeUser);
+        mockVerifyAuth.mockRejectedValue(new Error("Verification failed"));
 
         await link(req as Request, res as Response, prisma);
+        
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.send).toHaveBeenCalledWith("Registration Response could not be verified");
     });
@@ -102,10 +126,12 @@ describe("link", () => {
             challenge: "testChallenge",
             devices: [],
         };
-        (prisma.user.findUnique as jest.Mock).mockResolvedValue(fakeUser);
-        (verifyRegistrationResponse as jest.Mock).mockResolvedValue({ verified: false });
+        
+        mockPrisma.user.findUnique.mockResolvedValue(fakeUser);
+        mockVerifyAuth.mockResolvedValue({ verified: false });
         
         await link(req as Request, res as Response, prisma);
+        
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.send).toHaveBeenCalledWith("Could not verifiy reponse");
     });
@@ -119,15 +145,17 @@ describe("link", () => {
             challenge: "testChallenge",
             devices: [],
         };
-        (prisma.user.findUnique as jest.Mock).mockResolvedValue(fakeUser);
-        (verifyRegistrationResponse as jest.Mock).mockResolvedValue({ verified: true, registrationInfo: null });
+        
+        mockPrisma.user.findUnique.mockResolvedValue(fakeUser);
+        mockVerifyAuth.mockResolvedValue({ verified: true, registrationInfo: null });
         
         await link(req as Request, res as Response, prisma);
+        
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.send).toHaveBeenCalledWith("Registration Info not present");
     });
 
-    it("should return error if prisma.device.upsert fails", async () => {
+    it("should return error if prisma.device.create fails", async () => { // <-- Titel geändert auf create
         res.locals = res.locals || {};
         req.body.linkChallengeResponse = {
             challenge: "testChallenge",
@@ -146,14 +174,18 @@ describe("link", () => {
                 counter: 5,
             },
         };
-        (prisma.user.findUnique as jest.Mock).mockResolvedValue(fakeUser);
-        (verifyRegistrationResponse as jest.Mock).mockResolvedValue({
+        
+        mockPrisma.user.findUnique.mockResolvedValue(fakeUser);
+        mockVerifyAuth.mockResolvedValue({
             verified: true,
             registrationInfo: fakeRegistrationInfo,
         });
-        (prisma.device.upsert as jest.Mock).mockRejectedValue(new Error("Upsert error"));
+        
+        // <-- Auf create umgestellt
+        mockPrisma.device.create.mockRejectedValue(new Error("Create error"));
 
         await link(req as Request, res as Response, prisma);
+        
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.send).toHaveBeenCalledWith("Device Regitration update or create failed");
     });
@@ -177,14 +209,20 @@ describe("link", () => {
                 counter: 5,
             },
         };
-        (prisma.user.findUnique as jest.Mock).mockResolvedValue(fakeUser);
-        (verifyRegistrationResponse as jest.Mock).mockResolvedValue({
+        
+        mockPrisma.user.findUnique.mockResolvedValue(fakeUser);
+        mockVerifyAuth.mockResolvedValue({
             verified: true,
             registrationInfo: fakeRegistrationInfo,
         });
-        (prisma.device.upsert as jest.Mock).mockResolvedValue({}); // simulate successful upsert
+        
+        // <-- Auf create umgestellt und App / Session hinzugefügt
+        mockPrisma.device.create.mockResolvedValue({ uid: "deviceUid" }); 
+        mockPrisma.application.findUnique.mockResolvedValue({ uid: "appUid" });
+        mockPrisma.session.create.mockResolvedValue({ uid: "sessionUid" });
 
         await link(req as Request, res as Response, prisma);
+        
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.send).toHaveBeenCalledWith(JSON.stringify({ verified: true }));
     });

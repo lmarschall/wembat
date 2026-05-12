@@ -35,6 +35,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
+    "@noble/post-quantum": "^0.5.4",
     "@simplewebauthn/browser": "^11.0.0",
     "axios": "^1.12.0"
   }

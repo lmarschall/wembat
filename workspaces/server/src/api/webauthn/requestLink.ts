@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaClient, Prisma } from "#prisma";
 
 import {
 	generateRegistrationOptions,
@@ -47,6 +47,8 @@ export async function requestLink(req: Request, res: Response, prisma: PrismaCli
 		
 		if (user == null) throw Error("User could not be found in database");
 
+		console.log(user.salt);
+
 		const opts: GenerateRegistrationOptionsOpts = {
 			rpName: rpName,
 			rpID: rpId,
@@ -64,9 +66,15 @@ export async function requestLink(req: Request, res: Response, prisma: PrismaCli
 			},
 			supportedAlgorithmIDs: [-7, -257],
 			extensions: {
-				prf: {}
+				prf: {
+					eval: {
+						first: user.salt,
+					},
+				},
 			} as any,
 		}
+
+		console.log(opts);
 
 		const options = await generateRegistrationOptions(opts).catch(
 			(err) => {
@@ -74,6 +82,8 @@ export async function requestLink(req: Request, res: Response, prisma: PrismaCli
 				throw Error("Registration Option could not be generated");
 			}
 		);
+
+		console.log(options);
 
 		await prisma.user
 			.update({

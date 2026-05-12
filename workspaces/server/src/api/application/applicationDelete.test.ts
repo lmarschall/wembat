@@ -1,29 +1,31 @@
-//// typescript
-// filepath: /home/lukas/Source/wembat/backend/src/api/application/applicationDelete.test.ts
-
 import { Request, Response } from "express";
-import { applicationDelete } from "./applicationDelete";
-import { PrismaClient } from "@prisma/client";
-import { redisService } from "../../redis";
+import { PrismaClient } from "#prisma";
+import { applicationDelete } from "#api/application/applicationDelete";
+import { vi, describe, beforeEach, it, expect } from "vitest";
 
-// Prisma mocken
-jest.mock("@prisma/client", () => {
+const { mockPrisma, mockRemoveFromDomainWhitelist } = vi.hoisted(() => {
   return {
-    PrismaClient: jest.fn().mockImplementation(() => ({
+    mockPrisma: {
       application: {
-        delete: jest.fn(),
+        delete: vi.fn(),
       },
-    })),
+    },
+    mockRemoveFromDomainWhitelist: vi.fn(),
   };
 });
 
-jest.mock("../../redis", () => ({
+// 2. Jetzt laufen deine Mocks fehlerfrei, da die Variablen schon existieren
+vi.mock("#prisma", () => ({
+  PrismaClient: vi.fn().mockImplementation(() => mockPrisma),
+}));
+
+vi.mock("#redis", () => ({
   redisService: {
-    removeFromDomainWhitelist: jest.fn(),
+    removeFromDomainWhitelist: mockRemoveFromDomainWhitelist,
   }
 }));
 
-const prisma = new PrismaClient();
+const prisma = (mockPrisma as unknown) as PrismaClient;
 
 describe("testApplicationDelete", () => {
   let req: Partial<Request>;
@@ -34,10 +36,10 @@ describe("testApplicationDelete", () => {
       body: {},
     };
     res = {
-      status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn(),
     };
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("should return 500 if applicationInfo is not present", async () => {
@@ -56,8 +58,7 @@ describe("testApplicationDelete", () => {
       },
     };
 
-    // Prisma so mocken, dass ein Fehler geworfen wird
-    (prisma.application.delete as jest.Mock).mockRejectedValue(
+    mockPrisma.application.delete.mockRejectedValue(
       new Error("Error while deleting application")
     );
 
@@ -76,25 +77,22 @@ describe("testApplicationDelete", () => {
       },
     };
 
-    // Domain vorher zum Whitelist-Array hinzufügen
-    // redisService.addToDomainWhitelist("https://test.com");
-
     const mockApplication = {
       uid: "test-app-id",
       name: "Test App",
       domain: "test.com",
     };
 
-    // Mock für erfolgreichen Löschvorgang
-    (prisma.application.delete as jest.Mock).mockResolvedValue(mockApplication);
-
-    (redisService.removeFromDomainWhitelist as jest.Mock).mockResolvedValue({});
+    mockPrisma.application.delete.mockResolvedValue(mockApplication);
+    mockRemoveFromDomainWhitelist.mockResolvedValue({});
 
     await applicationDelete(req as Request, res as Response, prisma);
 
+    // Verify our explicitly mocked functions were called correctly
+    expect(mockPrisma.application.delete).toHaveBeenCalled();
+    expect(mockRemoveFromDomainWhitelist).toHaveBeenCalledWith("https://test.com"); // Assuming your controller prepends https://
+
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.send).toHaveBeenCalled();
-    // Prüfen, ob die Domain aus der Whitelist entfernt wurde
-    // expect(domainWhitelist).not.toContain("https://test.com");
   });
 });

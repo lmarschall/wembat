@@ -7,3 +7,5 @@ keys
 
 docs/.vitepress/dist
 docs/.vitepress/cache
+
+certs

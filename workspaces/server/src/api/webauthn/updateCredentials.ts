@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "#prisma";
 import { Request, Response } from "express";
 
 export async function updateCredentials(req: Request, res: Response, prisma: PrismaClient): Promise<void> {
@@ -14,7 +14,7 @@ export async function updateCredentials(req: Request, res: Response, prisma: Pri
 		if (!req.body.updateCredentialsRequest)
 			throw Error("Challenge Response not present");
 
-		const { privKey, pubKey, nonce, sessionId } =
+		const { privKey, pubKey, cipherBlob, sessionId } =
 			req.body.updateCredentialsRequest;
 		
 		// update the user challenge
@@ -26,7 +26,7 @@ export async function updateCredentials(req: Request, res: Response, prisma: Pri
 				data: {
 					publicKey: pubKey,
 					privateKey: privKey,
-					nonce: nonce
+					cipherBlob: cipherBlob
 				},
 			})
 			.catch((err: any) => {

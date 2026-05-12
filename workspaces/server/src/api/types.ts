@@ -1,8 +1,8 @@
-import { Prisma } from "@prisma/client";
+import { Prisma } from "#prisma";
 import {
 	AuthenticationResponseJSON,
 	RegistrationResponseJSON,
-} from "@simplewebauthn/types";
+} from "@simplewebauthn/server";
 
 export type UserInfo = {
 	userMail: string;
@@ -16,11 +16,9 @@ export type SessionInfo = {
 export type RegisterChallengeResponse = {
 	challenge: string;
 	credentials: RegistrationResponseJSON;
-};
-
-export type linkChallengeResponse = {
-	challenge: string;
-	credentials: RegistrationResponseJSON;
+	privateKey: string;
+	publicKey: string;
+	cipherBlob: string;
 };
 
 export type LoginChallengeResponse = {

@@ -1,11 +1,13 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
-import basicSsl from "@vitejs/plugin-basic-ssl";
+import mkcert from 'vite-plugin-mkcert';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-	plugins: [vue(), basicSsl()],
+	plugins: [vue(), mkcert()],
 	server: {
-		https: true,
-	},
+		host: 'localhost',
+		port: 5173,
+		https: true
+	}
 });

@@ -1,30 +1,37 @@
-//// typescript
-// filepath: /home/lukas/Source/wembat/backend/src/api/application/applicationToken.test.ts
-
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
-import { applicationToken } from "./applicationToken";
-import { cryptoService } from "../../crypto";
+import { PrismaClient } from "#prisma";
+// Sauberer ESM-Import dank Vitest-Hoisting
+import { applicationToken } from "#api/application/applicationToken";
+import { vi, describe, beforeEach, it, expect } from "vitest";
 
-// Prisma-Client und cryptoService mocken
-jest.mock("@prisma/client", () => {
+// --- 1. HOISTING DER MOCK VARIABLEN ---
+const { mockPrisma, mockCreateApplicationJWT } = vi.hoisted(() => {
   return {
-    PrismaClient: jest.fn().mockImplementation(() => ({
+    mockPrisma: {
       application: {
-        findUnique: jest.fn(),
+        findUnique: vi.fn(),
       },
-    })),
+    },
+    mockCreateApplicationJWT: vi.fn(),
   };
 });
 
-jest.mock("../../crypto", () => ({
+// --- 2. REGISTRIERUNG DER MOCKS ---
+vi.mock("#prisma", () => ({
+  PrismaClient: vi.fn().mockImplementation(() => mockPrisma),
+}));
+
+// WICHTIG: Statt "../../crypto" nutzen wir jetzt konsistent deinen neuen Alias!
+// Stelle sicher, dass applicationToken.ts den Service auch über "#crypto" importiert.
+vi.mock("#crypto", () => ({
   cryptoService: {
-    createApplicationJWT: jest.fn(),
+    createApplicationJWT: mockCreateApplicationJWT,
   },
 }));
 
-const prisma = new PrismaClient();
+const prisma = (mockPrisma as unknown) as PrismaClient;
 
+// --- 3. TEST SUITE ---
 describe("testApplicationToken", () => {
   let req: Partial<Request>;
   let res: Partial<Response>;
@@ -34,15 +41,15 @@ describe("testApplicationToken", () => {
       body: {},
     };
     res = {
-      status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
-      json: jest.fn(),
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn(),
+      json: vi.fn(),
     };
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // vi statt jest
   });
 
   it("should return 500 if applicationInfo is not present", async () => {
-    // Hier setzen wir req.body absichtlich nicht
+    // req.body is intentionally left empty
     await applicationToken(req as Request, res as Response, prisma);
 
     expect(res.status).toHaveBeenCalledWith(500);
@@ -52,8 +59,8 @@ describe("testApplicationToken", () => {
   it("should return 500 if application not found", async () => {
     req.body = { applicationInfo: { appUId: "test-app-id" } };
 
-    // Mock findUnique, damit es keinen Eintrag zurückgibt
-    (prisma.application.findUnique as jest.Mock).mockResolvedValue(undefined);
+    // Mock findUnique to return no record
+    mockPrisma.application.findUnique.mockResolvedValue(null);
 
     await applicationToken(req as Request, res as Response, prisma);
 
@@ -64,8 +71,8 @@ describe("testApplicationToken", () => {
   it("should return 500 if database error occurs", async () => {
     req.body = { applicationInfo: { appUId: "test-app-id" } };
 
-    // Mock findUnique, damit es einen DB-Fehler wirft
-    (prisma.application.findUnique as jest.Mock).mockRejectedValue(
+    // Mock findUnique to throw a DB error
+    mockPrisma.application.findUnique.mockRejectedValue(
       new Error("Database error")
     );
 
@@ -78,15 +85,14 @@ describe("testApplicationToken", () => {
   it("should return 500 if JWT creation fails", async () => {
     req.body = { applicationInfo: { appUId: "test-app-id" } };
 
-    // Mock findUnique, damit es einen gültigen Anwendungsdatensatz zurückgibt
-    (prisma.application.findUnique as jest.Mock).mockResolvedValue({
+    mockPrisma.application.findUnique.mockResolvedValue({
       uid: "test-app-id",
       name: "Test App",
       domain: "test.com",
     });
 
-    // Mock createApplicationJWT mit einem Fehler
-    (cryptoService.createApplicationJWT as jest.Mock).mockRejectedValue(
+    // Mock createApplicationJWT to throw an error
+    mockCreateApplicationJWT.mockRejectedValue(
       new Error("JWT creation failed")
     );
 
@@ -107,11 +113,8 @@ describe("testApplicationToken", () => {
 
     const mockToken = "mock-jwt-token";
 
-    // Mock findUnique, damit es einen gültigen Anwendungsdatensatz zurückgibt
-    (prisma.application.findUnique as jest.Mock).mockResolvedValue(mockApp);
-
-    // Mock createApplicationJWT, damit es einen gültigen Token zurückgibt
-    (cryptoService.createApplicationJWT as jest.Mock).mockResolvedValue(mockToken);
+    mockPrisma.application.findUnique.mockResolvedValue(mockApp);
+    mockCreateApplicationJWT.mockResolvedValue(mockToken);
 
     await applicationToken(req as Request, res as Response, prisma);
 

@@ -1,16 +1,17 @@
-import { deriveEncryptionKey, str2ab } from "./helper";
+import { deriveEncryptionKey, fromBase64 } from "./helper";
 import { WembatActionResponse, WembatError, WembatMessage } from "../types";
+import { Store } from "../store";
 
 /**
  * Decrypts a WembatMessage using the provided publicKey.
  *
- * @param privateKey - The CryptoKey used for decryption.
+ * @param store - The store to save authenticated information.
  * @param wembatMessage - The WembatMessage to decrypt.
  * @param publicKey - The CryptoKey used for decryption.
  * @returns A Promise that resolves to a WembatActionResponse containing the decrypted message.
  */
 export async function decrypt(
-	privateKey: CryptoKey | undefined,
+	store: Store,
 	wembatMessage: WembatMessage,
 	publicKey: CryptoKey
 ): Promise<WembatActionResponse<WembatMessage>> {
@@ -21,18 +22,19 @@ export async function decrypt(
 	};
 
 	try {
-		if (privateKey == undefined) throw Error("Private Key undefined!");
+		const privateKey = store.getPrivateKey();
+		if (privateKey == undefined) throw new Error("Private Key undefined!");
 
 		const encryptionKey = await deriveEncryptionKey(privateKey, publicKey);
 		const iv = wembatMessage.iv;
 
-		const decrypted = await window.crypto.subtle.decrypt(
+		const decrypted = await crypto.subtle.decrypt(
 			{
 				name: "AES-GCM",
-				iv: str2ab(iv),
+				iv: fromBase64(iv),
 			},
 			encryptionKey,
-			str2ab(wembatMessage.encrypted)
+			fromBase64(wembatMessage.encrypted)
 		);
 
 		const decoder = new TextDecoder();
@@ -47,12 +49,12 @@ export async function decrypt(
 	} catch (error: Error | unknown) {
 		if (error instanceof Error) {
 			actionResponse.error = {
-				error: error.message,
+				message: error.message,
 			};
 			console.error(error);
 			return actionResponse;
 		} else {
-			throw Error("Unknown Error:");
+			throw new Error("Unknown Error:");
 		}
 	}
 }

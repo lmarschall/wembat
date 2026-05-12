@@ -1,34 +1,36 @@
-//// typescript
-// filepath: /home/lukas/Source/wembat/backend/src/api/webauthn/onboard.test.ts
-
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
-import { onboard } from "./onboard";
-import { verifyAuthenticationResponse } from "@simplewebauthn/server";
+import { PrismaClient } from "#prisma";
+// Sauberer ESM-Import (Passe den Pfad an, je nachdem in welchem Ordner onboard.ts liegt)
+import { onboard } from "#api/webauthn/onboard";
+import { vi, describe, beforeEach, it, expect } from "vitest";
 
-// Abhängigkeiten mocken (Prisma, simplewebauthn/server)
-jest.mock("@prisma/client", () => {
+// --- 1. HOISTING DER MOCK VARIABLEN ---
+const { mockPrisma, mockVerifyAuth } = vi.hoisted(() => {
   return {
-    PrismaClient: jest.fn().mockImplementation(() => ({
-      application: {
-        findUnique: jest.fn(),
-      },
-      user: {
-        findUnique: jest.fn(),
-      },
-      session: {
-        create: jest.fn(),
-      },
-    })),
+    mockPrisma: {
+      application: { findUnique: vi.fn() },
+      user: { findUnique: vi.fn() },
+      session: { create: vi.fn() },
+    },
+    mockVerifyAuth: vi.fn(),
   };
 });
 
-jest.mock("@simplewebauthn/server", () => ({
-  verifyAuthenticationResponse: jest.fn(),
+// --- 2. REGISTRIERUNG DER MOCKS ---
+// Nutzt jetzt sauber deinen #prisma Alias
+vi.mock("#prisma", () => ({
+  PrismaClient: vi.fn().mockImplementation(() => mockPrisma),
 }));
 
-const prisma = new PrismaClient();
+// Externes WebAuthn Modul sauber mocken
+vi.mock("@simplewebauthn/server", () => ({
+  __esModule: true,
+  verifyAuthenticationResponse: mockVerifyAuth,
+}));
 
+const prisma = (mockPrisma as unknown) as PrismaClient;
+
+// --- 3. TEST SUITE ---
 describe("testOnboard", () => {
   let req: Partial<Request>;
   let res: Partial<Response>;
@@ -39,11 +41,11 @@ describe("testOnboard", () => {
     };
     res = {
       locals: {},
-      status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
-      json: jest.fn(),
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn(),
+      json: vi.fn(),
     };
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // Wichtig: vi statt jest
   });
 
   it("should throw error if onboardRequest is not present", async () => {
@@ -79,8 +81,7 @@ describe("testOnboard", () => {
       aud: "https://example.de",
     };
 
-    // Mock application.findUnique, sodass kein Eintrag gefunden wird
-    (prisma.application.findUnique as jest.Mock).mockResolvedValue(undefined);
+    mockPrisma.application.findUnique.mockResolvedValue(null);
 
     await onboard(req as Request, res as Response, prisma);
 
@@ -101,13 +102,12 @@ describe("testOnboard", () => {
       aud: "https://example.de",
     };
 
-    (prisma.application.findUnique as jest.Mock).mockResolvedValue({
+    mockPrisma.application.findUnique.mockResolvedValue({
       uid: "appUid",
       domain: "example.de",
     });
 
-    // Mock, damit kein User zurückgegeben wird
-    (prisma.user.findUnique as jest.Mock).mockRejectedValue(
+    mockPrisma.user.findUnique.mockRejectedValue(
       new Error("Could not find user for given challenge")
     );
 
@@ -130,15 +130,15 @@ describe("testOnboard", () => {
       aud: "https://example.de",
     };
 
-    (prisma.application.findUnique as jest.Mock).mockResolvedValue({
+    mockPrisma.application.findUnique.mockResolvedValue({
       uid: "appUid",
       domain: "example.de",
     });
 
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+    mockPrisma.user.findUnique.mockResolvedValue({
       uid: "userId",
       challenge: "user-challenge",
-      devices: [], // keine passenden Devices
+      devices: [], // No matching devices
     });
 
     await onboard(req as Request, res as Response, prisma);
@@ -160,12 +160,12 @@ describe("testOnboard", () => {
       aud: "https://example.de",
     };
 
-    (prisma.application.findUnique as jest.Mock).mockResolvedValue({
+    mockPrisma.application.findUnique.mockResolvedValue({
       uid: "appUid",
       domain: "example.de",
     });
 
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+    mockPrisma.user.findUnique.mockResolvedValue({
       uid: "userId",
       challenge: "user-challenge",
       devices: [
@@ -179,8 +179,7 @@ describe("testOnboard", () => {
       ],
     });
 
-    // verifyAuthenticationResponse löst Fehler aus
-    (verifyAuthenticationResponse as jest.Mock).mockRejectedValue(
+    mockVerifyAuth.mockRejectedValue(
       new Error("Authentication Response could not be verified")
     );
 
@@ -203,12 +202,12 @@ describe("testOnboard", () => {
       aud: "https://example.de",
     };
 
-    (prisma.application.findUnique as jest.Mock).mockResolvedValue({
+    mockPrisma.application.findUnique.mockResolvedValue({
       uid: "appUid",
       domain: "example.de",
     });
 
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+    mockPrisma.user.findUnique.mockResolvedValue({
       uid: "userId",
       challenge: "user-challenge",
       devices: [
@@ -222,7 +221,7 @@ describe("testOnboard", () => {
       ],
     });
 
-    (verifyAuthenticationResponse as jest.Mock).mockResolvedValue({
+    mockVerifyAuth.mockResolvedValue({
       verified: false,
     });
 
@@ -248,12 +247,12 @@ describe("testOnboard", () => {
       aud: "https://example.de",
     };
 
-    (prisma.application.findUnique as jest.Mock).mockResolvedValue({
+    mockPrisma.application.findUnique.mockResolvedValue({
       uid: "appUid",
       domain: "example.de",
     });
 
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+    mockPrisma.user.findUnique.mockResolvedValue({
       uid: "userId",
       challenge: "user-challenge",
       devices: [
@@ -267,13 +266,12 @@ describe("testOnboard", () => {
       ],
     });
 
-    (verifyAuthenticationResponse as jest.Mock).mockResolvedValue({
+    mockVerifyAuth.mockResolvedValue({
       verified: true,
       authenticationInfo: {},
     });
 
-    // session.create löst Fehler aus
-    (prisma.session.create as jest.Mock).mockRejectedValue(
+    mockPrisma.session.create.mockRejectedValue(
       new Error("Updating user challenge failed")
     );
 
@@ -299,12 +297,12 @@ describe("testOnboard", () => {
       aud: "https://example.de",
     };
 
-    (prisma.application.findUnique as jest.Mock).mockResolvedValue({
+    mockPrisma.application.findUnique.mockResolvedValue({
       uid: "appUid",
       domain: "example.de",
     });
 
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+    mockPrisma.user.findUnique.mockResolvedValue({
       uid: "userId",
       challenge: "user-challenge",
       devices: [
@@ -318,12 +316,12 @@ describe("testOnboard", () => {
       ],
     });
 
-    (verifyAuthenticationResponse as jest.Mock).mockResolvedValue({
+    mockVerifyAuth.mockResolvedValue({
       verified: true,
       authenticationInfo: {},
     });
 
-    (prisma.session.create as jest.Mock).mockResolvedValue({
+    mockPrisma.session.create.mockResolvedValue({
       uid: "sessionuid",
       userUId: "userId",
       appUId: "appUid",
@@ -335,11 +333,11 @@ describe("testOnboard", () => {
 
     await onboard(req as Request, res as Response, prisma);
 
-    expect((prisma.application.findUnique as jest.Mock)).toHaveBeenCalledWith({
+    expect(mockPrisma.application.findUnique).toHaveBeenCalledWith({
       where: { domain: "example.de" },
     });
-    expect(verifyAuthenticationResponse).toHaveBeenCalled();
-    expect(prisma.session.create).toHaveBeenCalled();
+    expect(mockVerifyAuth).toHaveBeenCalled();
+    expect(mockPrisma.session.create).toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.send).toHaveBeenCalledWith(
       JSON.stringify({

@@ -6,8 +6,7 @@ import { token } from "./token";
 import {
 	AxiosHeaders,
 	type AxiosInstance,
-	type AxiosResponse,
-	type InternalAxiosRequestConfig,
+	type AxiosResponse
 } from "axios";
 import { jwtDecode } from "./helper";
 
@@ -30,7 +29,7 @@ describe("token", () => {
 	it("should return error if jwtString is undefined", async () => {
 		const result = await token(mockAxiosClient as AxiosInstance, undefined);
 		expect(result.success).toBe(false);
-		expect(result.error.error).toBe("JWT token is undefined!");
+		expect(result.error.message).toBe("JWT token is undefined!");
 	});
 
 	it("should return the same token if it is not expired", async () => {
@@ -104,6 +103,6 @@ describe("token", () => {
 
 		const result = await token(mockAxiosClient as AxiosInstance, expiredJWT);
 		expect(result.success).toBe(false);
-		expect(result.error.error).toBe("Refresh failed");
+		expect(result.error.message).toBe("Refresh failed");
 	});
 });

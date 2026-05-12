@@ -1,28 +1,49 @@
-//// typescript
-// filepath: /home/lukas/Source/wembat/backend/src/api/webauthn/register.test.ts
-
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
-import { register } from "./register";
-import { verifyRegistrationResponse } from "@simplewebauthn/server";
+import { PrismaClient } from "#prisma";
+import { register } from "#api/webauthn/register";
+import { vi, describe, beforeEach, it, expect } from "vitest";
 
-jest.mock("@prisma/client", () => ({
-  PrismaClient: jest.fn().mockImplementation(() => ({
-    user: {
-      findUnique: jest.fn(),
+// --- 1. HOISTING DER MOCK VARIABLEN ---
+const { mockPrisma, mockVerifyAuth, mockAddToWebAuthnTokens, mockCryptoService } = vi.hoisted(() => {
+  return {
+    mockAddToWebAuthnTokens: vi.fn(),
+    mockPrisma: {
+      user: { findUnique: vi.fn() },
+      device: { create: vi.fn() },
+      session: { create: vi.fn() }, // <-- Neu: Session Mock
     },
-    device: {
-      upsert: jest.fn(),
-    },
-  })),
+    mockVerifyAuth: vi.fn(),
+    mockCryptoService: { // <-- Neu: CryptoService Mock
+      createSessionToken: vi.fn(),
+      createSessionRefreshToken: vi.fn(),
+    }
+  };
+});
+
+// --- 2. REGISTRIERUNG DER MOCKS ---
+vi.mock("#prisma", () => ({
+  PrismaClient: vi.fn().mockImplementation(() => mockPrisma),
 }));
 
-jest.mock("@simplewebauthn/server", () => ({
-  verifyRegistrationResponse: jest.fn(),
+vi.mock("#redis", () => ({
+  redisService: {
+    addToWebAuthnTokens: mockAddToWebAuthnTokens,
+  },
 }));
 
-const prisma = new PrismaClient();
+// Neu: #crypto Mock
+vi.mock("#crypto", () => ({
+  cryptoService: mockCryptoService,
+}));
 
+vi.mock("@simplewebauthn/server", () => ({
+  __esModule: true,
+  verifyRegistrationResponse: mockVerifyAuth,
+}));
+
+const prisma = (mockPrisma as unknown) as PrismaClient;
+
+// --- 3. TEST SUITE ---
 describe("testRegister", () => {
   let req: Partial<Request>;
   let res: Partial<Response>;
@@ -31,10 +52,11 @@ describe("testRegister", () => {
     req = { body: {} };
     res = {
       locals: {},
-      status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
+      status: vi.fn().mockReturnThis(),
+      cookie: vi.fn().mockReturnThis(), // <-- Neu: res.cookie muss kettbar (chainable) sein
+      send: vi.fn(),
     };
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("should return 400 if registerChallengeResponse is not present", async () => {
@@ -46,6 +68,7 @@ describe("testRegister", () => {
 
   it("should return 400 if payload is missing", async () => {
     req.body = { registerChallengeResponse: { challenge: "testChallenge" } };
+    
     await register(req as Request, res as Response, prisma);
 
     expect(res.status).toHaveBeenCalledWith(400);
@@ -53,12 +76,10 @@ describe("testRegister", () => {
   });
 
   it("should return 400 if user is not found", async () => {
-    req.headers = req.headers || {};
-    res.locals = res.locals || {};
+    res.locals = { payload: { aud: "https://example.com" } };
     req.body = { registerChallengeResponse: { challenge: "testChallenge" } };
-    res.locals.payload = { aud: "https://example.com" };
 
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
+    mockPrisma.user.findUnique.mockResolvedValue(null);
 
     await register(req as Request, res as Response, prisma);
 
@@ -67,18 +88,16 @@ describe("testRegister", () => {
   });
 
   it("should return 400 if verifyRegistrationResponse fails", async () => {
-    req.headers = req.headers || {};
-    res.locals = res.locals || {};
+    res.locals = { payload: { aud: "https://example.com" } };
     req.body = { registerChallengeResponse: { challenge: "testChallenge", credentials: {} } };
-    res.locals.payload = { aud: "https://example.com" };
 
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+    mockPrisma.user.findUnique.mockResolvedValue({
       uid: "userUid",
       challenge: "testChallenge",
       devices: [],
     });
 
-    (verifyRegistrationResponse as jest.Mock).mockRejectedValue(
+    mockVerifyAuth.mockRejectedValue(
       new Error("Registration Response could not be verified")
     );
 
@@ -89,40 +108,40 @@ describe("testRegister", () => {
   });
 
   it("should return 400 if verified is false", async () => {
-    req.headers = req.headers || {};
-    res.locals = res.locals || {};
+    res.locals = { payload: { aud: "https://example.com" } };
     req.body = {
       registerChallengeResponse: { challenge: "testChallenge", credentials: {} },
     };
-    res.locals.payload = { aud: "https://example.com" };
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+    
+    mockPrisma.user.findUnique.mockResolvedValue({
       uid: "userUid",
       challenge: "testChallenge",
       devices: [],
     });
-    (verifyRegistrationResponse as jest.Mock).mockResolvedValue({
+    
+    mockVerifyAuth.mockResolvedValue({
       verified: false,
     });
 
     await register(req as Request, res as Response, prisma);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.send).toHaveBeenCalledWith("Could not verifiy reponse");
+    expect(res.send).toHaveBeenCalledWith("Could not verifiy reponse"); 
   });
 
   it("should return 400 if registrationInfo is missing", async () => {
-    req.headers = req.headers || {};
-    res.locals = res.locals || {};
+    res.locals = { payload: { aud: "https://example.com" } };
     req.body = {
       registerChallengeResponse: { challenge: "testChallenge", credentials: {} },
     };
-    res.locals.payload = { aud: "https://example.com" };
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+    
+    mockPrisma.user.findUnique.mockResolvedValue({
       uid: "userUid",
       challenge: "testChallenge",
       devices: [],
     });
-    (verifyRegistrationResponse as jest.Mock).mockResolvedValue({
+    
+    mockVerifyAuth.mockResolvedValue({
       verified: true,
       registrationInfo: null,
     });
@@ -133,9 +152,8 @@ describe("testRegister", () => {
     expect(res.send).toHaveBeenCalledWith("Registration Info not present");
   });
 
-  it("should return 400 if device upsert fails", async () => {
-    req.headers = req.headers || {};
-    res.locals = res.locals || {};
+  it("should return 400 if device create fails", async () => {
+    res.locals = { payload: { aud: "https://example.com" } };
     req.body = {
       registerChallengeResponse: {
         challenge: "testChallenge",
@@ -144,13 +162,14 @@ describe("testRegister", () => {
         },
       },
     };
-    res.locals.payload = { aud: "https://example.com" };
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+    
+    mockPrisma.user.findUnique.mockResolvedValue({
       uid: "userUid",
       challenge: "testChallenge",
       devices: [],
     });
-    (verifyRegistrationResponse as jest.Mock).mockResolvedValue({
+    
+    mockVerifyAuth.mockResolvedValue({
       verified: true,
       registrationInfo: {
         credential: {
@@ -160,8 +179,9 @@ describe("testRegister", () => {
         },
       },
     });
-    (prisma.device.upsert as jest.Mock).mockRejectedValue(
-      new Error("Device Registration update or create failed")
+    
+    mockPrisma.device.create.mockRejectedValue(
+      new Error("Device Regitration update or create failed")
     );
 
     await register(req as Request, res as Response, prisma);
@@ -171,23 +191,27 @@ describe("testRegister", () => {
   });
 
   it("should return 200 and verified if successful", async () => {
-    req.headers = req.headers || {};
-    res.locals = res.locals || {};
+    // payload braucht jetzt auch appUId, da es im Code aufgerufen wird
+    res.locals = { payload: { aud: "https://example.com", appUId: "testAppUid" } };
     req.body = {
       registerChallengeResponse: {
         challenge: "testChallenge",
         credentials: {
           response: { transports: ["usb"] },
         },
+        privateKey: "privKey",
+        publicKey: "pubKey",
+        cipherBlob: "blob"
       },
     };
-    res.locals.payload = { aud: "https://example.com" };
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+    
+    mockPrisma.user.findUnique.mockResolvedValue({
       uid: "userUid",
       challenge: "testChallenge",
       devices: [],
     });
-    (verifyRegistrationResponse as jest.Mock).mockResolvedValue({
+    
+    mockVerifyAuth.mockResolvedValue({
       verified: true,
       registrationInfo: {
         credential: {
@@ -197,11 +221,30 @@ describe("testRegister", () => {
         },
       },
     });
-    (prisma.device.upsert as jest.Mock).mockResolvedValue({});
+    
+    // Mocks für die neuen DB und Crypto Aufrufe
+    mockPrisma.device.create.mockResolvedValue({ uid: "deviceUid" });
+    mockPrisma.session.create.mockResolvedValue({ uid: "sessionUid" });
+    mockCryptoService.createSessionToken.mockResolvedValue("mockedToken");
+    mockCryptoService.createSessionRefreshToken.mockResolvedValue("mockedRefreshToken");
+    mockAddToWebAuthnTokens.mockResolvedValue(true);
 
     await register(req as Request, res as Response, prisma);
 
+    // Wir prüfen ob der Cookie korrekt gesetzt wurde
+    expect(res.cookie).toHaveBeenCalledWith(
+        'refreshToken', 
+        'mockedRefreshToken', 
+        expect.any(Object)
+    );
+
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.send).toHaveBeenCalledWith(JSON.stringify({ verified: true }));
+    
+    // Erwarteter JSON Body hat sich in deiner Implementierung geändert!
+    expect(res.send).toHaveBeenCalledWith(JSON.stringify({ 
+        verified: true,
+        token: "mockedToken",
+        sessionId: "sessionUid"
+    }));
   });
 });

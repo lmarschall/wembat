@@ -55,7 +55,16 @@
               >
                 Register
               </button>
+              <button
+                class="btn btn-secondary mx-auto"
+                type="submit"
+                @click="handleSSOClick()"
+                :disabled="loading"
+              >
+                SSO
+              </button>
             </div>
+            
             <div class="col-12 mt-5">
               <div id="liveAlertPlaceholder"></div>
             </div>
@@ -75,12 +84,14 @@ import { ref, inject } from "vue";
 import { useRouter } from "vue-router";
 import { WembatClient } from "@wembat/client";
 
-import TokenService from "../services/token";
+import KeyService from "../services/key";
 
 const loading = ref(false);
 const router = useRouter();
 const username = ref("" as string);
 const wembatClient: WembatClient = inject('wembatClient') as WembatClient
+const authEndpoint = 'https://localhost:8080/api/openid/login';
+const targetOrigin = 'https://localhost:8080';
 
 function appendAlert(message: string, type: string) {
   const alertPlaceholder = document.getElementById('liveAlertPlaceholder')
@@ -98,14 +109,15 @@ function appendAlert(message: string, type: string) {
 async function register() {
   loading.value = true;
 
-  const registerResponse = await wembatClient.register(username.value);
+  const registerResponse = await wembatClient.register(username.value, false);
 
   if(registerResponse.success) {
-    const verified = registerResponse.result;
-    appendAlert("Registration successful", "success");
+    const registerResult = registerResponse.result;
+    KeyService.setKey(registerResult.publicKey);
+    router.push("/");
   } else  {
     const errorResult = registerResponse.error;
-    appendAlert(errorResult.error, "danger");
+    appendAlert(errorResult.message, "danger");
   }
 
   loading.value = false;
@@ -119,16 +131,166 @@ async function login() {
   if(loginResponse.success) {
     const loginResult = loginResponse.result;
 
+    console.log(loginResult);
+
     if (loginResult.verified) {
       appendAlert("Login successful", "success");
-      TokenService.setToken(loginResult.token);
+      KeyService.setKey(loginResult.publicKey);
       router.push("/");
     }
   } else {
     const errorResult = loginResponse.error;
-    appendAlert(errorResult.error, "danger");
+    appendAlert(errorResult.message, "danger");
   }
 
   loading.value = false;
+}
+
+async function handleSSOClick()
+{
+  try {
+    // Das Popup öffnet sich hier
+    const currentUser: any = await loginWithSso();
+
+    console.log(currentUser);
+
+    username.value = currentUser.email;
+
+    // const registerResponse = await wembatClient.register(currentUser.email, false);
+
+    // console.log(registerResponse);
+    const loginResponse = await wembatClient.login(username.value);
+    console.log(loginResponse);
+
+    if(loginResponse.success) {
+      const loginResult = loginResponse.result;
+
+      console.log(loginResult);
+
+      if (loginResult.verified) {
+        appendAlert("Login successful", "success");
+        KeyService.setKey(loginResult.publicKey);
+        router.push("/");
+      }
+    } else {
+      const errorResult = loginResponse.error;
+      appendAlert(errorResult.message, "danger");
+    }
+
+    
+    // Wenn wir hier sind, war der Login erfolgreich!
+    // statusMsg.textContent = `Hallo ${currentUser.name}! Identität bestätigt.`;
+    // statusMsg.style.color = 'green';
+
+    // UI Wechseln: Login weg, Upgrade her
+    // btnLogin.style.display = 'none';
+    // btnUpgrade.style.display = 'block';
+    
+    // Optional: Kleiner visueller Hinweis
+    // alert("Identität bestätigt! Bitte erstellen Sie jetzt Ihren Schlüssel.");
+
+  } catch (err) {
+      // statusMsg.textContent = 'Fehler: ' + err.message;
+      // statusMsg.style.color = 'red';
+  }
+}
+
+/**
+ * Startet den Login-Prozess in einem Popup.
+ * Gibt ein Promise zurück, das resolved, wenn der User erfolgreich eingeloggt ist.
+ */
+// Helper to generate a random ID for the session
+function generateRequestId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+async function loginWithSso() {
+  // 1. Generate a unique ID for this login attempt
+  const requestId = generateRequestId();
+
+  // 2. Prepare the URL (Append the requestId)
+  // Assuming authEndpoint is something like "http://localhost:3000/auth/github"
+  const urlWithId = new URL(authEndpoint);
+  urlWithId.searchParams.set('requestId', requestId);
+
+  return new Promise((resolve, reject) => {
+    // 3. Calculate centered popup
+    const width = 500;
+    const height = 600;
+    const left = (window.screen.width - width) / 2;
+    const top = (window.screen.height - height) / 2;
+
+    // 4. Open the window
+    const popup = window.open(
+      urlWithId.toString(),
+      'WembatSSO',
+      `width=${width},height=${height},top=${top},left=${left},scrollbars=yes`
+    );
+
+    if (!popup) {
+      return reject(new Error('Popup was blocked. Please allow popups for this site.'));
+    }
+
+    // 5. Cleanup Helper
+    const cleanup = () => {
+      clearInterval(pollTimer);
+      clearTimeout(timeoutTimer);
+      if (popup && !popup.closed) popup.close();
+    };
+
+    // 6. Polling Timer (Checks status every 1 second)
+    const pollTimer = setInterval(async () => {
+      try {
+        console.log(popup);
+        // A. Check if user closed the window manually
+        // if (popup.closed) {
+        //   console.log("Popup closed");
+        //   cleanup();
+        //   reject(new Error('Login cancelled by user (Window closed).'));
+        //   return;
+        // }
+
+        // B. Poll the backend
+        // We assume your backend has a route: GET /auth/poll?requestId=...
+        // Note: You might need to adjust the base URL depending on where your API lives
+        const pollUrl = `${new URL(authEndpoint).origin}/api/openid/poll?requestId=${requestId}`;
+
+        console.log(pollUrl);
+        
+        const response = await fetch(pollUrl);
+
+        console.log(response);
+        
+        // If 404, it means the ID isn't registered yet or expired
+        if (!response.ok) return; 
+
+        const data = await response.json();
+
+        console.log(data);
+
+        // C. Check Status
+        if (data.status === 'success') {
+          cleanup();
+          resolve(data.user); // SUCCESS! We have the user data (and token)
+        } 
+        else if (data.status === 'error') {
+          cleanup();
+          reject(new Error(data.message || 'Login failed'));
+        }
+        // If status is 'pending', we do nothing and wait for the next loop
+
+      } catch (err) {
+        // Network errors are ignored (we just try again next second)
+        // unless you want to fail fast.
+        console.warn("Polling error:", err);
+      }
+    }, 1000);
+
+    // 7. Safety Timeout (Stop after 2 minutes)
+    const timeoutTimer = setTimeout(() => {
+      cleanup();
+      reject(new Error('Login timed out.'));
+    }, 120000);
+  });
 }
 </script>

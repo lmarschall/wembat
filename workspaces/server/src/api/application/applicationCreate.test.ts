@@ -1,28 +1,36 @@
 import { Request, Response } from "express";
-import { applicationCreate } from "./applicationCreate";
-import { redisService } from "../../redis";
+import { PrismaClient } from "#prisma";
+// Sauberer ESM Import ganz oben! Vitest kümmert sich um die richtige Reihenfolge.
+import { applicationCreate } from "#api/application/applicationCreate";
+import { vi, describe, beforeEach, it, expect } from "vitest";
 
-jest.mock("@prisma/client", () => {
+// --- 1. HOISTING DER MOCK VARIABLEN ---
+// Alles was innerhalb von vi.mock verwendet wird, MUSS hier rein!
+const { mockPrisma, mockAddToDomainWhitelist } = vi.hoisted(() => {
     return {
-        ...jest.requireActual('@prisma/client'),  // Keep other implementations intact
-        PrismaClient: jest.fn().mockImplementation(() => ({
+        mockPrisma: {
             application: {
-                create: jest.fn(),
+                create: vi.fn(),
             },
-        })),
+        },
+        mockAddToDomainWhitelist: vi.fn(),
     };
 });
 
-jest.mock("../../redis", () => ({
+// --- 2. REGISTRIERUNG DER MOCKS ---
+vi.mock("#prisma", () => ({
+    PrismaClient: vi.fn().mockImplementation(() => mockPrisma),
+}));
+
+vi.mock("#redis", () => ({
     redisService: {
-      addToDomainWhitelist: jest.fn(),
+        addToDomainWhitelist: mockAddToDomainWhitelist,
     }
 }));
 
-import { PrismaClient } from "@prisma/client";
+const prisma = (mockPrisma as unknown) as PrismaClient;
 
-const prisma = new PrismaClient();
-
+// --- 3. TEST SUITE ---
 describe("testApplicationCreate", () => {
     let req: Partial<Request>;
     let res: Partial<Response>;
@@ -32,10 +40,10 @@ describe("testApplicationCreate", () => {
             body: {},
         };
         res = {
-            status: jest.fn().mockReturnThis(),
-            send: jest.fn(),
+            status: vi.fn().mockReturnThis(),
+            send: vi.fn(),
         };
-        jest.clearAllMocks();
+        vi.clearAllMocks(); // Wichtig: vi statt jest
     });
 
     it("should return 500 if applicationInfo is not present", async () => {
@@ -54,7 +62,7 @@ describe("testApplicationCreate", () => {
             },
         };
 
-        (prisma.application.create as jest.Mock).mockRejectedValue(
+        mockPrisma.application.create.mockRejectedValue(
             new Error("Database error")
         );
 
@@ -79,14 +87,15 @@ describe("testApplicationCreate", () => {
             domain: "test.com",
         };
 
-        (prisma.application.create as jest.Mock).mockResolvedValue(
-            mockApplication
-        );
-
-        (redisService.addToDomainWhitelist as jest.Mock).mockResolvedValue({});
+        mockPrisma.application.create.mockResolvedValue(mockApplication);
+        mockAddToDomainWhitelist.mockResolvedValue({});
 
         await applicationCreate(req as Request, res as Response, prisma);
 
+        // Verify the mocks were called
+        expect(mockPrisma.application.create).toHaveBeenCalled();
+        expect(mockAddToDomainWhitelist).toHaveBeenCalled();
+        
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.send).toHaveBeenCalled();
     });

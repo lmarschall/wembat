@@ -92,7 +92,7 @@
     }
 
     function testInputDomain(): boolean {
-        const regName = RegExp("^([a-zA-Z0-9\.\:]{5,})$");
+        const regName = RegExp("^([a-zA-Z0-9.:]{5,})$");
         inputDomain.value?.classList.remove("is-invalid", "is-valid");
 
         if (inputDomain !== null && inputDomain.value !== null && regName.test(inputDomain.value.value)) {

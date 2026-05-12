@@ -1,32 +1,40 @@
-//// typescript
-// filepath: /home/lukas/Source/wembat/backend/src/api/application/applicationUpdate.test.ts
-
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
-import { applicationUpdate } from "./applicationUpdate";
-import { redisService } from "../../redis";
+import { PrismaClient } from "#prisma";
+// Sauberer ESM-Import dank Vitest-Hoisting
+import { applicationUpdate } from "#api/application/applicationUpdate";
+import { vi, describe, beforeEach, it, expect } from "vitest";
 
-// Prisma-Client mocken
-jest.mock("@prisma/client", () => {
+// --- 1. HOISTING DER MOCK VARIABLEN ---
+const { mockPrisma, mockAddToDomainWhitelist, mockRemoveFromDomainWhitelist } = vi.hoisted(() => {
   return {
-    PrismaClient: jest.fn().mockImplementation(() => ({
+    mockPrisma: {
       application: {
-        findUnique: jest.fn(),
-        update: jest.fn(),
+        findUnique: vi.fn(),
+        update: vi.fn(),
       },
-    })),
+    },
+    mockAddToDomainWhitelist: vi.fn(),
+    mockRemoveFromDomainWhitelist: vi.fn(),
   };
 });
 
-jest.mock("../../redis", () => ({
+// --- 2. REGISTRIERUNG DER MOCKS ---
+// Nutzt jetzt sauber deinen #prisma Alias
+vi.mock("#prisma", () => ({
+  PrismaClient: vi.fn().mockImplementation(() => mockPrisma),
+}));
+
+// Nutzt jetzt sauber deinen #redis Alias
+vi.mock("#redis", () => ({
   redisService: {
-    addToDomainWhitelist: jest.fn(),
-    removeFromDomainWhitelist: jest.fn(),
+    addToDomainWhitelist: mockAddToDomainWhitelist,
+    removeFromDomainWhitelist: mockRemoveFromDomainWhitelist,
   }
 }));
 
-const prisma = new PrismaClient();
+const prisma = (mockPrisma as unknown) as PrismaClient;
 
+// --- 3. TEST SUITE ---
 describe("testApplicationUpdate", () => {
   let req: Partial<Request>;
   let res: Partial<Response>;
@@ -36,14 +44,14 @@ describe("testApplicationUpdate", () => {
       body: {},
     };
     res = {
-      status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn(),
     };
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // Wichtig: vi statt jest
   });
 
   it("should return 500 if applicationInfo is not present", async () => {
-    // Keine applicationInfo im Request-Body
+    // No applicationInfo in the request body
     await applicationUpdate(req as Request, res as Response, prisma);
 
     expect(res.status).toHaveBeenCalledWith(500);
@@ -59,8 +67,8 @@ describe("testApplicationUpdate", () => {
       },
     };
 
-    // Simuliere einen Datenbankfehler bei findUnique
-    (prisma.application.findUnique as jest.Mock).mockRejectedValue(
+    // Simulate a database error on findUnique
+    mockPrisma.application.findUnique.mockRejectedValue(
       new Error("Database error")
     );
 
@@ -79,15 +87,14 @@ describe("testApplicationUpdate", () => {
       },
     };
 
-    // findUnique soll erfolgreich sein
-    (prisma.application.findUnique as jest.Mock).mockResolvedValue({
+    mockPrisma.application.findUnique.mockResolvedValue({
       uid: "test-app-id",
       name: "Old Name",
       domain: "old-domain.com",
     });
 
-    // update soll fehlschlagen
-    (prisma.application.update as jest.Mock).mockRejectedValue(
+    // Simulate a database error on update
+    mockPrisma.application.update.mockRejectedValue(
       new Error("Error while updating application")
     );
 
@@ -106,27 +113,31 @@ describe("testApplicationUpdate", () => {
       },
     };
 
-    // findUnique gibt ein bestehendes Objekt zurück
-    (prisma.application.findUnique as jest.Mock).mockResolvedValue({
+    mockPrisma.application.findUnique.mockResolvedValue({
       uid: "test-app-id",
       name: "Old Name",
       domain: "old-domain.com",
     });
 
-    // update liefert das aktualisierte Objekt zurück
-    (prisma.application.update as jest.Mock).mockResolvedValue({
+    mockPrisma.application.update.mockResolvedValue({
       uid: "test-app-id",
       name: "Updated Name",
       domain: "updated-domain.com",
     });
 
-    (redisService.addToDomainWhitelist as jest.Mock).mockResolvedValue({});
-    (redisService.removeFromDomainWhitelist as jest.Mock).mockResolvedValue({});
+    mockAddToDomainWhitelist.mockResolvedValue({});
+    mockRemoveFromDomainWhitelist.mockResolvedValue({});
 
     await applicationUpdate(req as Request, res as Response, prisma);
 
-    expect(prisma.application.findUnique).toHaveBeenCalled();
-    expect(prisma.application.update).toHaveBeenCalled();
+    // Verify explicitly mocked functions were called
+    expect(mockPrisma.application.findUnique).toHaveBeenCalled();
+    expect(mockPrisma.application.update).toHaveBeenCalled();
+    
+    // Depending on your controller logic, you can assert exact params passed to Redis here:
+    // expect(mockRemoveFromDomainWhitelist).toHaveBeenCalledWith("https://old-domain.com");
+    // expect(mockAddToDomainWhitelist).toHaveBeenCalledWith("https://updated-domain.com");
+
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.send).toHaveBeenCalled();
   });
