@@ -47,6 +47,6 @@ export async function validateApplicationToken(
 		next();
 	} catch (error: any) {
 		console.log(error);
-		res.status(401).send(error.message);
+		res.status(401).send("Unauthorized");
 	}
 }

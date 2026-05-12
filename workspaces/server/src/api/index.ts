@@ -10,9 +10,6 @@ import { applicationDelete } from "#api/application/applicationDelete";
 import { requestRegister } from "#api/webauthn/requestRegister";
 import { register } from "#api/webauthn/register";
 import { refresh } from "#api/webauthn/refresh";
-import { onboard } from "#api/webauthn/onboard";
-import { requestOnboard } from "#api/webauthn/requestOnboard";
-import { updateCredentials } from "#api/webauthn/updateCredentials";
 import { requestLogin } from "#api/webauthn/requestLogin";
 import { login } from "#api/webauthn/login";
 import { validateWebAuthnToken } from "#api/validate/validateWebAuthn";
@@ -133,24 +130,6 @@ export function createAPIRouter(): Router {
 		"/webauthn/login",
 		[validateApplicationToken],
 		async (req: Request, res: Response) => login(req, res, prisma)
-	);
-
-	apiRouter.post(
-		"/webauthn/update-credentials",
-		[validateWebAuthnToken],
-		async (req: Request, res: Response) => updateCredentials(req, res, prisma)
-	);
-
-	apiRouter.post(
-		"/webauthn/request-onboard",
-		[validateWebAuthnToken],
-		async (req: Request, res: Response) => requestOnboard(req, res, prisma)
-	);
-
-	apiRouter.post(
-		"/webauthn/onboard",
-		[validateWebAuthnToken],
-		async (req: Request, res: Response) => onboard(req, res, prisma)
 	);
 
 	apiRouter.post(

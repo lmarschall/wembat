@@ -2,6 +2,10 @@ name: test-client
 
 on: [push]
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   test-wembat-client:
     runs-on: ubuntu-latest

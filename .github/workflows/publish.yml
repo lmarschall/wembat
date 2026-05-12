@@ -2,6 +2,10 @@ name: publish
 
 on: [release]
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   publish-wembat-server-image:
     runs-on: ubuntu-latest

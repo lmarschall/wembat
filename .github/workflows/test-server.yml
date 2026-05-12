@@ -2,6 +2,10 @@ name: test-server
 
 on: [push]
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   test-wembat-server:
     runs-on: ubuntu-latest

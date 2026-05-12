@@ -28,7 +28,7 @@ describe("validateWebAuthnToken", () => {
     it("should return 401 if no Authorization header is present", async () => {
         await validateWebAuthnToken(req as Request, res as Response, next);
         expect(res.status).toHaveBeenCalledWith(401);
-        expect(res.send).toHaveBeenCalledWith("No Authorization header");
+        expect(res.send).toHaveBeenCalledWith("Unauthorized");
     });
 
     it("should return 401 if Authorization header is invalid", async () => {
@@ -36,7 +36,7 @@ describe("validateWebAuthnToken", () => {
         req.headers.authorization = "Invalid header";
         await validateWebAuthnToken(req as Request, res as Response, next);
         expect(res.status).toHaveBeenCalledWith(401);
-        expect(res.send).toHaveBeenCalledWith("Invalid Authorization header");
+        expect(res.send).toHaveBeenCalledWith("Unauthorized");
     });
 
     // Falls du diesen Test später mit vi.mock() und importOriginal (wie vorhin gezeigt) 
@@ -60,7 +60,7 @@ describe("validateWebAuthnToken", () => {
         await validateWebAuthnToken(req as Request, res as Response, next);
         
         expect(res.status).toHaveBeenCalledWith(401);
-        expect(res.send).toHaveBeenCalledWith("Invalid public key");
+        expect(res.send).toHaveBeenCalledWith("Unauthorized");
     });
 
     it("should call next if token is valid", async () => {

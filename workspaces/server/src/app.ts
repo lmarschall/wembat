@@ -77,7 +77,7 @@ async function init() {
   
   app.use(limiter);
   app.use(cors(corsOptionsDelegate));
-  // app.set("trust proxy", true);
+  app.set("trust proxy", true);
   app.use((req: any, res: any, next: NextFunction) => cookieParser(req, res, next));
   app.use(helmet());
   app.use(compression());
@@ -87,7 +87,7 @@ async function init() {
     secret: 'super-secret-session-key',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false, httpOnly: true }
+    cookie: { secure: true, httpOnly: true }
   }));
 
   app.use("/api", createAPIRouter());
