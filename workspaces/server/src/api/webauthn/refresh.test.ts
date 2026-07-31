@@ -1,46 +1,42 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "#prisma";
-// Sauberer ESM-Import (Pfad anpassen, falls refresh.ts woanders liegt)
 import { refresh } from "#api/webauthn/refresh";
+import { cryptoService, initCryptoTest } from "#crypto";
+import { initConfig } from "#config";
+import { generateKeyPair } from "jose";
 import { vi, describe, beforeEach, it, expect } from "vitest";
 
-// --- 1. HOISTING DER MOCK VARIABLEN ---
-const { mockPrisma, mockCreateSessionToken } = vi.hoisted(() => {
+const { mockPrisma } = vi.hoisted(() => {
   return {
     mockPrisma: {
       user: {
         findUnique: vi.fn(),
       },
     },
-    mockCreateSessionToken: vi.fn(),
   };
 });
 
-// --- 2. REGISTRIERUNG DER MOCKS ---
 vi.mock("#prisma", () => ({
   PrismaClient: vi.fn().mockImplementation(() => mockPrisma),
 }));
 
-vi.mock("#crypto", () => ({
-  cryptoService: {
-    createSessionToken: mockCreateSessionToken,
-  },
-}));
-
 const prisma = (mockPrisma as unknown) as PrismaClient;
+const audience = "https://example.de";
 
-// --- 3. TEST SUITE ---
 describe("testRefresh", () => {
   let req: Partial<Request>;
   let res: Partial<Response>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await initConfig();
+    await initCryptoTest();
+
     req = {
       cookies: {},
       body: {},
     };
     res = {
-      locals: {},
+      locals: { payload: { aud: audience } },
       status: vi.fn().mockReturnThis(),
       send: vi.fn(),
     };
@@ -54,22 +50,9 @@ describe("testRefresh", () => {
     expect(res.send).toHaveBeenCalledWith("Refresh Token not present");
   });
 
-  it("should return error if userInfo is missing", async () => {
-    req.cookies = { refreshToken: "test-refresh-token" };
-    await refresh(req as Request, res as Response, prisma);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.send).toHaveBeenCalledWith("User info not present");
-  });
-
   it("should return error if payload is missing", async () => {
-    req.cookies = { refreshToken: "test-refresh-token" };
-    req.body = {
-      userInfo: {
-        userMail: "test@user.com",
-        sessionId: "session123",
-      },
-    };
+    req.cookies = { refreshToken: "some-token" };
+    res.locals = {};
 
     await refresh(req as Request, res as Response, prisma);
 
@@ -77,15 +60,73 @@ describe("testRefresh", () => {
     expect(res.send).toHaveBeenCalledWith("Payload not present");
   });
 
-  it("should return error if user not found in database", async () => {
-    res.locals = { payload: { aud: "https://example.de" } };
-    req.cookies = { refreshToken: "test-refresh-token" };
+  it("should return error if refresh token is not a valid JWT", async () => {
+    req.cookies = { refreshToken: "not-a-jwt" };
+
+    await refresh(req as Request, res as Response, prisma);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it("should return error if refresh token was not signed by the server's current key", async () => {
+    const jwt = await cryptoService.createJWT(
+      { sessionId: "session123", userMail: "test@user.com" },
+      "ES256",
+      audience,
+      "7d"
+    );
+
+    // Simulate a forged/foreign token by rotating the key after signing.
+    const rotatedKeyPair = await generateKeyPair("ES256");
+    cryptoService.setPublicKey(rotatedKeyPair.publicKey);
+
+    req.cookies = { refreshToken: jwt };
+
+    await refresh(req as Request, res as Response, prisma);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("Invalid public key");
+  });
+
+  it("should not allow forging a session for another user via the request body", async () => {
+    // Attacker only controls the request body, not a valid refresh token for the victim.
+    const jwt = await cryptoService.createJWT(
+      { sessionId: "attacker-session", userMail: "attacker@evil.com" },
+      "ES256",
+      audience,
+      "7d"
+    );
+
+    req.cookies = { refreshToken: jwt };
     req.body = {
-      userInfo: {
-        userMail: "test@user.com",
-        sessionId: "session123",
-      },
+      userInfo: { userMail: "victim@user.com", sessionId: "victim-session" },
     };
+
+    mockPrisma.user.findUnique.mockResolvedValue({
+      uid: "attackerUserId",
+      mail: "attacker@evil.com",
+      devices: [],
+      sessions: [],
+    });
+
+    await refresh(req as Request, res as Response, prisma);
+
+    // Identity must come from the verified token, never from the request body.
+    expect(mockPrisma.user.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { mail: "attacker@evil.com" } })
+    );
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("User session not found");
+  });
+
+  it("should return error if user not found in database", async () => {
+    const jwt = await cryptoService.createJWT(
+      { sessionId: "session123", userMail: "test@user.com" },
+      "ES256",
+      audience,
+      "7d"
+    );
+    req.cookies = { refreshToken: jwt };
 
     mockPrisma.user.findUnique.mockRejectedValue(
       new Error("User could not be found in database")
@@ -98,14 +139,13 @@ describe("testRefresh", () => {
   });
 
   it("should return error if user is null", async () => {
-    res.locals = { payload: { aud: "https://example.de" } };
-    req.cookies = { refreshToken: "test-refresh-token" };
-    req.body = {
-      userInfo: {
-        userMail: "test@user.com",
-        sessionId: "session123",
-      },
-    };
+    const jwt = await cryptoService.createJWT(
+      { sessionId: "session123", userMail: "test@user.com" },
+      "ES256",
+      audience,
+      "7d"
+    );
+    req.cookies = { refreshToken: jwt };
 
     mockPrisma.user.findUnique.mockResolvedValue(null);
 
@@ -116,14 +156,13 @@ describe("testRefresh", () => {
   });
 
   it("should return error if user session not found", async () => {
-    res.locals = { payload: { aud: "https://example.de" } };
-    req.cookies = { refreshToken: "test-refresh-token" };
-    req.body = {
-      userInfo: {
-        userMail: "test@user.com",
-        sessionId: "session123",
-      },
-    };
+    const jwt = await cryptoService.createJWT(
+      { sessionId: "session123", userMail: "test@user.com" },
+      "ES256",
+      audience,
+      "7d"
+    );
+    req.cookies = { refreshToken: jwt };
 
     mockPrisma.user.findUnique.mockResolvedValue({
       uid: "testUserId",
@@ -138,15 +177,14 @@ describe("testRefresh", () => {
     expect(res.send).toHaveBeenCalledWith("User session not found");
   });
 
-  it("should return 200 and token if refresh is valid", async () => {
-    res.locals = { payload: { aud: "https://example.de" } };
-    req.cookies = { refreshToken: "test-refresh-token" };
-    req.body = {
-      userInfo: {
-        userMail: "test@user.com",
-        sessionId: "session123",
-      },
-    };
+  it("should return 200 and a fresh session token if refresh token is valid", async () => {
+    const jwt = await cryptoService.createJWT(
+      { sessionId: "session123", userMail: "test@user.com" },
+      "ES256",
+      audience,
+      "7d"
+    );
+    req.cookies = { refreshToken: jwt };
 
     mockPrisma.user.findUnique.mockResolvedValue({
       uid: "testUserId",
@@ -160,20 +198,15 @@ describe("testRefresh", () => {
           deviceUId: "deviceUid",
           publicKey: "publicKey",
           privateKey: "privateKey",
-          nonce: 1234,
         },
       ],
     });
 
-    mockCreateSessionToken.mockResolvedValue("test-session-token");
-
     await refresh(req as Request, res as Response, prisma);
 
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.send).toHaveBeenCalledWith(
-      JSON.stringify({
-        token: "test-session-token",
-      })
-    );
+    const sentBody = JSON.parse((res.send as any).mock.calls[0][0]);
+    expect(typeof sentBody.token).toBe("string");
+    expect(sentBody.token.split(".")).toHaveLength(3);
   });
 });

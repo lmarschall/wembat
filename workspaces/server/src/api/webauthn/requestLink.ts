@@ -47,8 +47,6 @@ export async function requestLink(req: Request, res: Response, prisma: PrismaCli
 		
 		if (user == null) throw Error("User could not be found in database");
 
-		console.log(user.salt);
-
 		const opts: GenerateRegistrationOptionsOpts = {
 			rpName: rpName,
 			rpID: rpId,
@@ -74,16 +72,12 @@ export async function requestLink(req: Request, res: Response, prisma: PrismaCli
 			} as any,
 		}
 
-		console.log(opts);
-
 		const options = await generateRegistrationOptions(opts).catch(
 			(err) => {
 				console.log(err);
 				throw Error("Registration Option could not be generated");
 			}
 		);
-
-		console.log(options);
 
 		await prisma.user
 			.update({
