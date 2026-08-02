@@ -10,6 +10,8 @@ if [ ! -f "$ROOT_DIR/.env" ]; then
   exit 1
 fi
 
+COMPOSE_FILES=(-f "$ROOT_DIR/docker-compose.yml" -f "$ROOT_DIR/docker-compose.dev.yml")
+
 PRISMA_PID=""
 DEMO_PID=""
 LOGS_PID=""
@@ -20,15 +22,15 @@ cleanup() {
   [ -n "$PRISMA_PID" ] && kill "$PRISMA_PID" 2>/dev/null || true
   [ -n "$DEMO_PID" ] && kill "$DEMO_PID" 2>/dev/null || true
   [ -n "$LOGS_PID" ] && kill "$LOGS_PID" 2>/dev/null || true
-  docker compose -f "$ROOT_DIR/docker-compose.yml" down
+  docker compose "${COMPOSE_FILES[@]}" down
 }
 trap cleanup EXIT INT TERM
 
 echo "Starting docker compose stack..."
-docker compose -f "$ROOT_DIR/docker-compose.yml" up postgres redis dashboard server -d
+docker compose "${COMPOSE_FILES[@]}" up postgres redis dashboard server -d --build
 
 echo "Following server logs - click the 'Dashboard Url' link once it appears below:"
-docker compose -f "$ROOT_DIR/docker-compose.yml" logs -f server &
+docker compose "${COMPOSE_FILES[@]}" logs -f server &
 LOGS_PID=$!
 
 echo "Starting Prisma Studio (workspaces/server)..."

@@ -52,7 +52,12 @@ npm run build            # vue-tsc --noEmit && vite build
 
 Local backend stack (Postgres + Redis + server + dashboard) is started via `docker-compose.yml`;
 copy `.env.template` to `.env` first (or run `install.sh`, which also downloads those two files
-from `main` — don't assume it reflects uncommitted local changes).
+from `main` — don't assume it reflects uncommitted local changes). `docker-compose.yml` alone
+pulls the published `ghcr.io/lmarschall/wembat-{server,dashboard}:latest` release images — for
+local development against uncommitted workspace code, layer `docker-compose.dev.yml` on top
+(`docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build`), which overrides
+those two services to build from `./workspaces/{server,dashboard}/Dockerfile` instead.
+`start_dev.sh` already does this.
 
 ## Architecture notes worth knowing before touching code
 

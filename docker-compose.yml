@@ -29,10 +29,7 @@ services:
           - ${REDIS_PORT}:6379 # for local development
 
     dashboard:
-        image: wembat-dashboard
-        build:
-            context: .
-            dockerfile: ./workspaces/dashboard/Dockerfile
+        image: ghcr.io/lmarschall/wembat-dashboard:latest
         restart: unless-stopped
         logging:
           driver: none
@@ -40,10 +37,7 @@ services:
             - ${DASHBOARD_PORT}:8080
 
     server:
-        image: wembat-server
-        build:
-            context: .
-            dockerfile: ./workspaces/server/Dockerfile
+        image: ghcr.io/lmarschall/wembat-server:latest
         depends_on:
             postgres:
                 condition: service_healthy

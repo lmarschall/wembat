@@ -1,0 +1,19 @@
+
+# Dev override: builds dashboard/server from the local workspaces instead of
+# pulling the published release images from docker-compose.yml.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+
+services:
+    dashboard:
+        image: wembat-dashboard
+        build:
+            context: .
+            dockerfile: ./workspaces/dashboard/Dockerfile
+
+    server:
+        image: wembat-server
+        build:
+            context: .
+            dockerfile: ./workspaces/server/Dockerfile
