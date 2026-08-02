@@ -14,15 +14,6 @@
       "lib": ["esnext", "dom"],
       "skipLibCheck": true
     },
-    "typedocOptions": { 
-      "entryPoints": [ 
-        "./src/index.ts",
-      ],
-      "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
-      "theme": "vitepress",
-      "includes": "src",
-      "out": "docs/client"
-    },
     "include": ["src/**/*.d.ts", "src/**/*.ts"],
     "references": [{ "path": "./tsconfig.node.json" }]
   }
