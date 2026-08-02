@@ -99,7 +99,9 @@ export class CryptoService {
 	}
 
 	async createAdminJWT() {
-		return await this.createJWT({ admin: true }, "ES256", "", "");
+		// Bounded lifetime: this token is printed to the server log and embedded in a
+		// URL, so it must not be valid forever if that URL ever leaks (history, logs).
+		return await this.createJWT({ admin: true }, "ES256", "", "30d");
 	}
 
 	async createJWT(

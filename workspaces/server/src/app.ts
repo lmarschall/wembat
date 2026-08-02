@@ -77,14 +77,14 @@ async function init() {
   
   app.use(limiter);
   app.use(cors(corsOptionsDelegate));
-  app.set("trust proxy", true);
+  app.set("trust proxy", configService.getTrustProxy());
   app.use((req: any, res: any, next: NextFunction) => cookieParser(req, res, next));
   app.use(helmet());
   app.use(compression());
   app.use(bodyParser.json({ limit: "1mb" }));
 
   app.use(session({
-    secret: 'super-secret-session-key',
+    secret: configService.getSessionSecret(),
     resave: false,
     saveUninitialized: false,
     cookie: { secure: true, httpOnly: true }

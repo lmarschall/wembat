@@ -1,0 +1,8 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["workspaces/client/src/index.ts"],
+  "tsconfig": "workspaces/client/tsconfig.json",
+  "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
+  "theme": "vitepress",
+  "out": "docs/client"
+}
